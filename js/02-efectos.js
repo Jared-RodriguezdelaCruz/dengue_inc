@@ -291,6 +291,60 @@ function aviso(texto, ms) {
 }
 
 // ---------------------------------------------------------------------------
+//  6. AUDIO PROCEDURAL — osciladores WebAudio, sin archivos externos
+// ---------------------------------------------------------------------------
+let ctxAudio = null;
+function audio() {
+    if (!ctxAudio) { try { ctxAudio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (ctxAudio.state === 'suspended') ctxAudio.resume();
+    return ctxAudio;
+}
+/** Un tono simple con envolvente exponencial. Barato y suficiente para SFX. */
+function tono(freq, dur, tipoOsc, vol, barridoA) {
+    if (!audioActivo) return;
+    const ac = audio(); if (!ac) return;
+    const t = ac.currentTime;
+    const osc = ac.createOscillator(), g = ac.createGain();
+    osc.type = tipoOsc || 'square';
+    osc.frequency.setValueAtTime(freq, t);
+    if (barridoA) osc.frequency.exponentialRampToValueAtTime(Math.max(30, barridoA), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.08, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(t); osc.stop(t + dur + 0.02);
+}
+/** Ruido blanco filtrado: la base de explosiones e impactos. */
+function ruido(dur, vol, freqFiltro) {
+    if (!audioActivo) return;
+    const ac = audio(); if (!ac) return;
+    const n = Math.floor(ac.sampleRate * dur);
+    const buf = ac.createBuffer(1, n, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.2);
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const filtro = ac.createBiquadFilter(); filtro.type = 'lowpass';
+    filtro.frequency.setValueAtTime(freqFiltro || 1200, ac.currentTime);
+    const g = ac.createGain(); g.gain.value = vol || 0.16;
+    src.connect(filtro); filtro.connect(g); g.connect(ac.destination);
+    src.start();
+}
+const sfx = {
+    salto:    () => tono(340, 0.10, 'square', 0.05, 620),
+    dash:     () => { ruido(0.16, 0.09, 2600); tono(180, 0.12, 'sawtooth', 0.04, 520); },
+    parry:    () => { tono(1180, 0.09, 'square', 0.10, 1750); tono(760, 0.22, 'triangle', 0.08, 1500); },
+    parryFail:() => tono(150, 0.16, 'sawtooth', 0.05, 80),
+    golpe:    () => { ruido(0.12, 0.14, 900); tono(110, 0.14, 'square', 0.06, 55); },
+    daño:     () => { tono(220, 0.24, 'sawtooth', 0.10, 70); ruido(0.18, 0.12, 600); },
+    explosion:() => { ruido(0.55, 0.30, 700); tono(70, 0.45, 'sawtooth', 0.12, 28); },
+    moneda:   () => { tono(880, 0.07, 'square', 0.05); setTimeout(() => tono(1320, 0.09, 'square', 0.05), 55); },
+    disparo:  () => { ruido(0.07, 0.07, 3200); tono(520, 0.06, 'square', 0.03, 300); },
+    telegrafia:()=> tono(300, 0.30, 'triangle', 0.035, 640),
+    nivel:    () => { [523,659,784,1046].forEach((f,i) => setTimeout(() => tono(f, 0.16, 'square', 0.06), i*90)); },
+    muerte:   () => { [400,320,240,160].forEach((f,i) => setTimeout(() => tono(f, 0.24, 'sawtooth', 0.08), i*130)); }
+};
+
+// ---------------------------------------------------------------------------
 //  6b. EMISORES COMPUESTOS — recetas de partículas reutilizables
 // ---------------------------------------------------------------------------
 function fxExplosion(x, y, radio, colA, colB) {
