@@ -1,0 +1,435 @@
+* { box-sizing: border-box; }
+body, html {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: radial-gradient(circle at 50% 40%, #1b2430 0%, #0a0d12 100%);
+    font-family: 'Segoe UI', Tahoma, sans-serif; color: #fff;
+    user-select: none;
+}
+/* El juego ocupa el marco central; los paneles de lectura viven en los rieles.
+   Nada de lo que se consulta debe taparle al jugador lo que está pasando. */
+#escenario {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+}
+#marco { position: relative; flex: 0 0 auto; width: 960px; height: 540px; }
+
+/* Los rieles pueden ser más altos que el marco: la tienda entera cabe sin
+   tener que adivinar que hay más abajo. */
+.riel {
+    flex: 0 0 300px; width: 300px; max-height: min(94vh, 960px);
+    display: flex; flex-direction: column; gap: 10px;
+    overflow-y: auto; overflow-x: hidden;
+}
+.riel::-webkit-scrollbar { width: 7px; }
+.riel::-webkit-scrollbar-thumb { background: #37474f; border-radius: 4px; }
+
+.panel {
+    background: rgba(20, 28, 38, .96); border: 2px solid #2c3e50;
+    border-radius: 9px; padding: 13px 15px; flex: 0 0 auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+}
+.panel h2 { margin: 0 0 4px 0; font-size: 16px; color: #f39c12; }
+.panel .nota { font-size: 11px; color: #90a4ae; margin-bottom: 10px; line-height: 1.4; }
+#game-container {
+    position: relative; width: 960px; height: 540px; overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,.9), 0 0 0 3px #2c3e50;
+    background: #87CEEB; border-radius: 6px;
+}
+canvas { display: block; }
+#container3d { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+
+/* ---------- HUD ---------- */
+.hud { position: absolute; z-index: 12; pointer-events: none; text-shadow: 2px 2px 0 rgba(0,0,0,.7); }
+#hud-sup-izq { top: 12px; left: 14px; }
+#hud-sup-der  { top: 12px; right: 14px; text-align: right; font-size: 15px; }
+#hud-centro   { top: 12px; width: 100%; text-align: center; font-size: 19px; color: #f1c40f; letter-spacing: 1px; }
+#hud-inf-izq  { bottom: 12px; left: 14px; font-size: 12px; color: #cfd8dc; }
+
+#corazones { font-size: 24px; letter-spacing: 3px; line-height: 1; height: 26px; }
+.corazon { display: inline-block; transition: transform .12s; }
+.corazon.vacio { filter: grayscale(1) brightness(.45); }
+.corazon.pulso { transform: scale(1.45); }
+
+#barra-estamina {
+    width: 180px; height: 10px; margin-top: 7px; background: rgba(0,0,0,.55);
+    border: 2px solid rgba(255,255,255,.35); border-radius: 6px; overflow: hidden;
+}
+#relleno-estamina {
+    height: 100%; width: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, #16a085, #1abc9c, #7bed9f);
+    transition: width .08s linear;
+}
+#relleno-estamina.agotada { background: linear-gradient(90deg, #7f8c8d, #95a5a6); }
+
+#habilidades { margin-top: 8px; display: flex; gap: 8px; }
+/* Ancho automático: "RAQUETA" no cabía en los 42 px fijos y salía cortada. */
+.hab {
+    min-width: 42px; height: 34px; padding: 0 7px;
+    border-radius: 6px; font-size: 11px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; position: relative;
+    background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.3); overflow: hidden;
+}
+.hab .cd {
+    position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(231,76,60,.65);
+    height: 0%;
+}
+.hab.listo { border-color: #f1c40f; color: #f1c40f; }
+.hab span { position: relative; z-index: 2; }
+
+#ui-semilla { font-size: 11px; color: #95a5a6; letter-spacing: .5px; }
+
+/* ---------- Crosshair 3D ---------- */
+#crosshair {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 22px; height: 22px; z-index: 15; pointer-events: none; display: none;
+}
+#crosshair::before, #crosshair::after {
+    content: ''; position: absolute; background: rgba(255,255,255,.85);
+}
+#crosshair::before { left: 50%; top: 0; width: 2px; height: 100%; margin-left: -1px; }
+#crosshair::after  { top: 50%; left: 0; height: 2px; width: 100%; margin-top: -1px; }
+#crosshair.parry { box-shadow: 0 0 0 3px #f1c40f, 0 0 18px #f1c40f; border-radius: 50%; }
+
+/* ---------- Overlays de pantalla completa ---------- */
+.overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 60; display: flex; flex-direction: column;
+    justify-content: safe center; align-items: center; text-align: center;
+    /* El reporte final es mas alto que el marco: sin scroll se perderia la
+       mitad, y "safe center" evita que el centrado corte la parte de arriba. */
+    overflow-y: auto; padding: 20px 0;
+}
+.overlay > * { flex-shrink: 0; }
+.overlay.oculto { display: none; }
+
+#pantalla-mensaje { background: rgba(8,12,18,.94); padding: 20px 60px; }
+#pantalla-mensaje h1 { margin: 0 0 6px 0; font-size: 40px; color: #f1c40f; text-shadow: 0 0 24px rgba(241,196,15,.5); }
+#pantalla-mensaje .sub { color: #b0bec5; font-size: 15px; line-height: 1.65; max-width: 720px; }
+.tabla-controles {
+    display: grid; grid-template-columns: repeat(4, auto); gap: 6px 14px;
+    margin: 18px 0 4px 0; font-size: 13px; color: #cfd8dc;
+}
+.tabla-controles b { color: #f1c40f; }
+.fila-semilla { margin-top: 16px; font-size: 13px; color: #90a4ae; }
+.fila-semilla input {
+    background: #16202b; border: 2px solid #37474f; color: #f1c40f; border-radius: 5px;
+    padding: 5px 8px; width: 130px; font-family: inherit; font-size: 13px; text-align: center;
+}
+
+.btn {
+    background: #27ae60; color: #fff; border: none; padding: 11px 26px; cursor: pointer;
+    border-radius: 6px; font-weight: bold; font-size: 16px; font-family: inherit;
+    transition: transform .12s, background .12s;
+}
+.btn:hover { background: #2ecc71; transform: translateY(-2px); }
+.btn.rojo { background: #c0392b; } .btn.rojo:hover { background: #e74c3c; }
+.btn.azul { background: #2980b9; } .btn.azul:hover { background: #3498db; }
+
+/* ---------- Tienda (en el riel derecho) ---------- */
+#tienda { border-color: #f39c12; }
+.item {
+    background: rgba(255,255,255,.06); padding: 9px 10px; margin-bottom: 8px; border-radius: 7px;
+    text-align: left; border: 2px solid rgba(255,255,255,.08);
+}
+.item h3 { margin: 0 0 3px 0; font-size: 13px; }
+.item p { margin: 0 0 7px 0; font-size: 10.5px; color: #b0bec5; line-height: 1.4; }
+.item button { background: #27ae60; border: none; color: #fff; border-radius: 5px; padding: 6px 10px;
+               cursor: pointer; font-weight: bold; font-size: 11px; font-family: inherit;
+               white-space: nowrap; width: 100%; }
+.item button.equipado { background: #f39c12; cursor: default; }
+.item button.caro { background: #566573; cursor: not-allowed; }
+.btn.peq { padding: 8px 14px; font-size: 13px; width: 100%; margin-top: 4px; }
+
+/* ---------- Efectos ---------- */
+#vineta {
+    position: absolute; inset: 0; z-index: 40; pointer-events: none; opacity: 0;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(180,20,20,.85) 100%);
+    transition: opacity .18s;
+}
+/* Sin transition: la opacidad la anima el bucle del juego, frame a frame. */
+#destello {
+    position: absolute; inset: 0; z-index: 55; pointer-events: none; opacity: 0;
+    background: #fff;
+}
+#aviso-central {
+    position: absolute; top: 38%; width: 100%; text-align: center; z-index: 45;
+    font-size: 44px; font-weight: bold; pointer-events: none; opacity: 0;
+    color: #f1c40f; text-shadow: 0 0 30px rgba(241,196,15,.9), 3px 3px 0 #000;
+}
+#aviso-central.mostrar { animation: pop .7s ease-out forwards; }
+@keyframes pop {
+    0%   { opacity: 0; transform: scale(.4); }
+    22%  { opacity: 1; transform: scale(1.18); }
+    45%  { transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.05); }
+}
+
+/* Temblor del marco durante la transición dimensional */
+@keyframes temblor {
+    0%,100% { transform: translate(0,0) rotate(0deg); }
+    10% { transform: translate(-6px,-3px) rotate(-.4deg); }
+    25% { transform: translate(5px,4px) rotate(.5deg); }
+    40% { transform: translate(-7px,2px) rotate(-.3deg); }
+    55% { transform: translate(6px,-4px) rotate(.4deg); }
+    70% { transform: translate(-4px,5px) rotate(-.5deg); }
+    85% { transform: translate(7px,-2px) rotate(.3deg); }
+}
+.temblor { animation: temblor .16s infinite; }
+
+/* ---------- Debug ---------- */
+#debug {
+    position: absolute; top: 96px; left: 14px; z-index: 30; display: none;
+    background: rgba(0,0,0,.68); border: 1px solid #37474f; border-radius: 5px;
+    padding: 8px 11px; font-family: Consolas, monospace; font-size: 11.5px;
+    line-height: 1.55; color: #7bed9f; white-space: pre; pointer-events: none;
+}
+
+/* === CAPA EDUCATIVA ====================================================== */
+
+/* .oculto solo existia acoplada a .overlay y a #tienda; los elementos nuevos la
+   usan sueltos, asi que hace falta la regla generica. */
+.oculto { display: none !important; }
+
+/* Botón seleccionado con el mando: el ratón tiene :hover, el mando necesita esto. */
+.foco-mando { outline: 3px solid #4dd0e1 !important; outline-offset: 2px; }
+
+/* Fiebre: barra propia bajo la estamina. Cuando se vacía NO estás a salvo —
+   ahí empieza la fase crítica, y el color lo dice. */
+#bloque-fiebre { margin-top: 7px; }
+#etiqueta-fiebre {
+    font-size: 9.5px; font-weight: bold; letter-spacing: 1px;
+    color: #e67e22; text-shadow: 0 1px 2px rgba(0,0,0,.8); margin-bottom: 2px;
+}
+#barra-fiebre {
+    width: 180px; height: 8px; background: rgba(0,0,0,.55);
+    border: 2px solid rgba(255,255,255,.35); border-radius: 6px; overflow: hidden;
+}
+#relleno-fiebre {
+    height: 100%; width: 0%; border-radius: 3px;
+    background: linear-gradient(90deg, #e67e22, #f39c12, #f1c40f);
+    transition: width .12s linear;
+}
+#bloque-fiebre.critica #etiqueta-fiebre { color: #ff5252; animation: latido-crit .7s infinite; }
+#bloque-fiebre.critica #relleno-fiebre { background: linear-gradient(90deg, #c0392b, #ff5252); }
+@keyframes latido-crit { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+
+/* Tarjeta de serotipos: cuatro casillas, se encienden al ganar inmunidad. */
+#serotipos { display: flex; gap: 4px; margin-top: 7px; }
+#serotipos .st {
+    width: 30px; height: 17px; border-radius: 4px; font-size: 8.5px; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid rgba(255,255,255,.28); color: rgba(255,255,255,.5);
+    background: rgba(0,0,0,.5);
+}
+#serotipos .st.inmune { color: #10171d; border-color: rgba(255,255,255,.85); }
+#serotipos .st.activo { animation: latido-crit .8s infinite; }
+
+/* Casos en la colonia: el marcador que de verdad importa. */
+#hud-colonia {
+    right: 14px; bottom: 12px; text-align: right; line-height: 1.25;
+}
+#hud-colonia .et { font-size: 10px; color: #90a4ae; display: block; }
+#hud-colonia #ui-casos { font-size: 21px; font-weight: bold; color: #e74c3c; }
+
+/* Aviso de los cuatro verbos en 3D (en 2D se dibuja sobre el canvas). */
+#prompt-verbos {
+    position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 26;
+    background: rgba(12,20,28,.9); border: 2px solid #1abc9c; border-radius: 8px;
+    padding: 8px 14px; text-align: center; pointer-events: none;
+}
+#prompt-verbos .pv-tit { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+#prompt-verbos .pv-v { font-size: 11px; font-weight: bold; margin: 0 7px; }
+
+/* Ficha nueva: aparece en el riel, sin cortar la partida ni tapar el juego. */
+#aviso-ficha {
+    border-color: #1abc9c; border-left-width: 5px;
+    animation: entra-ficha .35s ease-out;
+}
+@keyframes entra-ficha { from { opacity: 0; transform: translateX(-24px) } to { opacity: 1 } }
+#aviso-ficha .af-cab { font-size: 9px; letter-spacing: 1.2px; color: #1abc9c; font-weight: bold; }
+#aviso-ficha .af-tit { font-size: 13px; font-weight: bold; margin: 4px 0 5px; color: #ecf0f1; }
+#aviso-ficha .af-txt { font-size: 11px; line-height: 1.45; color: #b8c7d1; }
+#aviso-ficha .af-src { font-size: 9px; color: #78909c; margin-top: 6px; font-style: italic; }
+
+/* Fichero completo (tecla C) — columna del riel izquierdo */
+#fichero { border-color: #1abc9c; }
+#fichero h2 { color: #1abc9c; }
+#fichero-lista { max-height: 330px; overflow-y: auto; padding-right: 4px; }
+#fichero h3 {
+    font-size: 12px; letter-spacing: 1.4px; color: #f1c40f; margin: 14px 0 7px;
+    border-bottom: 1px solid #2c3e50; padding-bottom: 4px;
+}
+#fichero h3 .cont { color: #78909c; font-weight: normal; letter-spacing: 0; }
+#fichero .ficha {
+    background: rgba(255,255,255,.05); border-left: 3px solid #1abc9c;
+    border-radius: 5px; padding: 8px 11px; margin-bottom: 7px;
+}
+#fichero .ficha b { font-size: 12.5px; color: #ecf0f1; }
+#fichero .ficha p { font-size: 11px; line-height: 1.45; color: #b8c7d1; margin: 4px 0 0; }
+#fichero .ficha .src { font-size: 9px; color: #78909c; font-style: italic; }
+#fichero .ficha.bloq { border-left-color: #37474f; opacity: .45; }
+
+/* Mito vs realidad, entre niveles */
+.mito {
+    background: rgba(0,0,0,.32); border-radius: 8px; padding: 12px 15px;
+    margin: 14px auto; max-width: 560px; text-align: left;
+}
+.mito .m-falso { color: #ff7675; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+.mito .m-real  { color: #7bed9f; font-size: 13px; line-height: 1.5; }
+.mito .m-src   { color: #78909c; font-size: 10px; font-style: italic; margin-top: 7px; }
+
+/* Reporte final */
+.rep { max-width: 560px; margin: 8px auto 14px; text-align: left; }
+.rep-fila {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid rgba(255,255,255,.12); padding: 6px 2px; font-size: 13px;
+}
+.rep-fila span { font-size: 19px; font-weight: bold; color: #f1c40f; }
+.rep-fila span.bueno { color: #2ecc71; }
+.rep-fila span.malo  { color: #e74c3c; }
+.rep-detalle { font-size: 11px; color: #90a4ae; padding: 4px 2px 8px; }
+.rep-nota {
+    font-size: 11.5px; line-height: 1.5; background: rgba(241,196,15,.12);
+    border-left: 3px solid #f1c40f; padding: 7px 10px; margin: 8px 0; border-radius: 4px;
+}
+.rep-nota.malo  { background: rgba(231,76,60,.14); border-left-color: #e74c3c; }
+.rep-nota.buena { background: rgba(46,204,113,.13); border-left-color: #2ecc71; }
+.rep-pills { padding: 7px 0; }
+.pill {
+    display: inline-block; padding: 3px 8px; border-radius: 11px; font-size: 10.5px;
+    font-weight: bold; border: 2px solid #555; color: #90a4ae; margin-right: 4px;
+}
+.pill.on { color: #10171d; border-color: rgba(255,255,255,.8); }
+
+/* Cifras reales */
+.datos { max-width: 560px; margin: 0 auto; text-align: left; }
+.datos h3 { color: #1abc9c; font-size: 15px; margin: 14px 0 8px; }
+.datos p { font-size: 11.5px; line-height: 1.55; color: #b8c7d1; margin: 7px 0; }
+.datos .serie {
+    display: flex; gap: 26px; align-items: flex-end; justify-content: center;
+    padding: 10px 0 4px; min-height: 78px;
+}
+.datos .barra { display: flex; flex-direction: column; align-items: center; }
+.datos .barra .n { font-size: 12px; font-weight: bold; color: #f1c40f; margin-bottom: 3px; }
+.datos .barra .b {
+    width: 38px; background: linear-gradient(180deg, #e74c3c, #c0392b); border-radius: 3px 3px 0 0;
+}
+.datos .barra .y { font-size: 10px; color: #90a4ae; margin-top: 4px; }
+.datos .fuentes {
+    font-size: 9.5px; color: #78909c; font-style: italic;
+    border-top: 1px solid #2c3e50; padding-top: 7px; margin-top: 10px;
+}
+
+/* Tinte de la pantalla según la fase de la enfermedad */
+#game-container.febril { box-shadow: inset 0 0 120px rgba(230,126,34,.42); }
+#game-container.critica { box-shadow: inset 0 0 140px rgba(192,57,43,.5); }
+
+/* === RIELES: CONTENIDO ==================================================== */
+
+/* Legenda de las cuatro medidas: referencia permanente, nunca dice cuál toca. */
+#legenda { border-color: #16a085; }
+#legenda h2 { color: #1abc9c; }
+.lg-v {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 6px 0; border-top: 1px solid rgba(255,255,255,.08);
+}
+.lg-v:first-child { border-top: none; }
+.lg-v .lg-k {
+    flex: 0 0 auto; width: 20px; height: 20px; border-radius: 4px;
+    font-size: 11px; font-weight: bold; color: #10171d;
+    display: flex; align-items: center; justify-content: center;
+}
+.lg-v .lg-n { font-size: 12px; font-weight: bold; }
+.lg-v .lg-p { font-size: 10.5px; color: #90a4ae; line-height: 1.35; margin-top: 1px; }
+
+/* Panel de objetivo: lo que el HUD dice, pero con sitio para explicarse. */
+#panel-objetivo { border-color: #34495e; }
+#panel-objetivo h2 { color: #ecf0f1; font-size: 14px; }
+#objetivo-txt { font-size: 13px; line-height: 1.45; color: #f1c40f; font-weight: bold; }
+#panel-objetivo .nota { margin: 6px 0 0; }
+
+/* Brújula 3D: en un laberinto con niebla hay que saber hacia dónde. */
+#brujula {
+    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+    z-index: 26; text-align: center; pointer-events: none;
+    text-shadow: 0 2px 6px rgba(0,0,0,.9);
+}
+#brujula-aguja { font-size: 26px; line-height: 1; color: #1abc9c; transition: transform .09s linear; }
+#brujula-txt { font-size: 11px; color: #cfd8dc; margin-top: 2px; letter-spacing: .4px; }
+#brujula.meta #brujula-aguja { color: #bb6bd9; }
+
+/* Güero: el rescate del final. */
+#panel-guero { border-color: #e67e22; }
+#panel-guero h2 { color: #e67e22; }
+#g-estado { font-size: 12px; line-height: 1.5; color: #b8c7d1; margin-bottom: 8px; }
+#g-reloj {
+    height: 9px; background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.35);
+    border-radius: 6px; overflow: hidden; margin-bottom: 4px;
+}
+#g-reloj div { height: 100%; background: linear-gradient(90deg, #c0392b, #ff5252); }
+#g-reloj-txt { font-size: 10px; color: #ff7675; font-weight: bold; letter-spacing: .6px; margin-bottom: 9px; }
+.g-senal {
+    display: flex; gap: 7px; align-items: center; font-size: 11px;
+    color: #546a7b; padding: 3px 0;
+}
+.g-senal.on { color: #ff7675; font-weight: bold; }
+.g-op { margin-top: 4px; }
+.g-op button {
+    width: 100%; text-align: left; background: rgba(255,255,255,.06);
+    border: 2px solid rgba(255,255,255,.10); color: #ecf0f1; border-radius: 6px;
+    padding: 7px 9px; margin-bottom: 6px; cursor: pointer;
+    font-family: inherit; font-size: 11.5px; line-height: 1.35;
+}
+.g-op button:hover { border-color: #e67e22; }
+.g-op button.caro { opacity: .45; cursor: not-allowed; }
+.g-op button b { display: block; font-size: 12.5px; margin-bottom: 2px; }
+
+/* Desenlace de Güero en la pantalla final */
+.desenlace { max-width: 560px; margin: 10px auto; text-align: left; border-radius: 8px; padding: 13px 16px; }
+.desenlace.bien { background: rgba(46,204,113,.13); border-left: 4px solid #2ecc71; }
+.desenlace.mal  { background: rgba(231,76,60,.14);  border-left: 4px solid #e74c3c; }
+.desenlace h3 { margin: 0 0 6px; font-size: 15px; }
+.desenlace.bien h3 { color: #7bed9f; }
+.desenlace.mal h3  { color: #ff7675; }
+.desenlace p { font-size: 12px; line-height: 1.55; color: #cfd8dc; margin: 6px 0; }
+.desenlace .por-que { font-size: 11px; color: #b8c7d1; border-top: 1px solid rgba(255,255,255,.14);
+                      margin-top: 9px; padding-top: 8px; }
+.desenlace .por-que b { color: #f1c40f; }
+
+/* === RESPONSIVE ==========================================================
+   960 + 2x300 + huecos = 1588 px. Por debajo de eso los rieles se pegan a los
+   bordes del marco, y en pantallas estrechas vuelven a superponerse: mejor
+   tapar un poco que dejar un panel fuera de la pantalla. */
+@media (max-width: 1600px) {
+    .riel { flex: 0 0 264px; width: 264px; }
+}
+@media (max-width: 1500px) {
+    #escenario { gap: 0; }
+    .riel {
+        position: fixed; top: 50%; transform: translateY(-50%);
+        flex: 0 0 auto; width: 270px; z-index: 80; max-height: 96vh;
+    }
+    #riel-izq { left: 8px; }
+    #riel-der { right: 8px; }
+    .panel { background: rgba(12, 18, 26, .975); }
+    /* Aquí los rieles ya se montan encima del juego, así que solo puede quedar
+       lo que el jugador abre a propósito. La legenda y el objetivo son consulta
+       permanente: tapando el HUD estorban más de lo que ayudan. */
+    #legenda, #panel-objetivo { display: none; }
+}
+@media (max-width: 1100px) {
+    .riel { width: 240px; }
+}
+
+/* La grieta dimensional del nivel 4 al 5: sube, aguanta mientras se carga el
+   mundo nuevo, y baja. Va como animación CSS a propósito — la reproduce el
+   navegador de principio a fin, así que se termina aunque el bucle del juego se
+   pare. Con la animación en JS, una pestaña sin foco congelaba el rAF y la
+   pantalla se quedaba en blanco con el juego corriendo debajo. */
+@keyframes grieta {
+    0%   { opacity: 0 }
+    24%  { opacity: 1 }
+    55%  { opacity: 1 }
+    100% { opacity: 0 }
+}
+#destello.grieta { animation: grieta 1900ms ease-in-out both; }

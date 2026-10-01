@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dengue: Multiverso Aguascalientes v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="stylesheet" href="css/estilos.css?v=b5">
+</head>
+<body>
+
+<!-- El juego vive en el marco central de 960x540. Los paneles de consulta
+     (fichero, tienda, tips, Güero) viven en los rieles laterales: nada de lo
+     que se lee debe taparle al jugador lo que está pasando. -->
+<div id="escenario">
+
+  <aside class="riel" id="riel-izq">
+    <div class="panel" id="legenda">
+      <h2>Las cuatro medidas</h2>
+      <div class="nota">Cada envase pide la suya. El juego no te dice cuál: eso es lo que se aprende.</div>
+      <div id="legenda-lista"></div>
+    </div>
+    <div class="panel oculto" id="aviso-ficha"></div>
+    <div class="panel oculto" id="fichero">
+      <h2>Fichero del dengue</h2>
+      <div class="nota">Cada ficha se abre cuando lo vives en el juego. Todas citan su fuente.</div>
+      <div id="fichero-lista"></div>
+      <button class="btn rojo peq" onclick="cerrarFichero()">Cerrar (C)</button>
+    </div>
+  </aside>
+
+  <div id="marco">
+    <div id="game-container">
+      <canvas id="canvas2d" width="960" height="540"></canvas>
+      <div id="container3d"></div>
+
+      <div class="hud" id="hud-sup-izq">
+          <div id="corazones"></div>
+          <div id="barra-estamina"><div id="relleno-estamina"></div></div>
+          <div id="habilidades">
+              <div class="hab" id="hab-dash"><div class="cd"></div><span>DASH</span></div>
+              <div class="hab" id="hab-parry"><div class="cd"></div><span>RAQUETA</span></div>
+          </div>
+          <div id="bloque-fiebre" class="oculto">
+              <div id="etiqueta-fiebre">FIEBRE</div>
+              <div id="barra-fiebre"><div id="relleno-fiebre"></div></div>
+          </div>
+          <div id="serotipos"></div>
+      </div>
+
+      <div class="hud" id="hud-centro">
+          <span id="ui-nivel">Nivel 1</span>
+          <div id="ui-semilla">semilla 000000</div>
+      </div>
+
+      <div class="hud" id="hud-sup-der">
+          <span id="ui-fichas">0</span> 💰<br>
+          <span style="color:#f1c40f" id="ui-arma">Botas</span><br>
+          <span style="font-size:11px; color:#90a4ae">T tienda · C fichero · ESC pausa</span>
+      </div>
+
+      <div class="hud" id="hud-inf-izq"><span id="ui-objetivo"></span></div>
+      <div class="hud" id="hud-colonia">
+          <span class="et">Casos en la colonia</span>
+          <span id="ui-casos">0</span>
+      </div>
+
+      <!-- Brújula: en un laberinto con niebla hace falta saber hacia dónde. -->
+      <div id="brujula" class="oculto">
+          <div id="brujula-aguja">▲</div>
+          <div id="brujula-txt"></div>
+      </div>
+
+      <div id="prompt-verbos" class="oculto"></div>
+
+      <div id="crosshair"></div>
+      <div id="vineta"></div>
+      <div id="destello"></div>
+      <div id="aviso-central"></div>
+      <div id="debug"></div>
+
+      <div id="pantalla-mensaje" class="overlay">
+          <h1 id="pm-titulo">Dengue: Multiverso</h1>
+          <div class="sub" id="pm-desc"></div>
+          <div id="pm-controles"></div>
+          <div id="pm-semilla" class="fila-semilla"></div>
+          <div style="margin-top:20px; display:flex; gap:12px;">
+              <button class="btn" id="pm-boton" onclick="accionBotonMenu()">Iniciar</button>
+              <button class="btn azul" id="pm-boton2" style="display:none" onclick="accionBotonMenu2()">Menú</button>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="riel" id="riel-der">
+    <div class="panel" id="panel-objetivo">
+      <h2>Objetivo</h2>
+      <div id="objetivo-txt">—</div>
+      <div id="objetivo-detalle" class="nota"></div>
+    </div>
+
+    <div class="panel oculto" id="panel-guero"></div>
+
+    <div class="panel oculto" id="tienda">
+        <h2>Tienda de Prevención</h2>
+        <div class="nota">Cada compra es una medida real contra el <i>Aedes aegypti</i>.</div>
+        <div class="item">
+            <div>
+                <h3>🧴 Repelente — 5 💰</h3>
+                <p>Disparo rápido en línea recta. <b>En la vida real:</b> aplícalo sobre la piel expuesta para evitar picaduras.</p>
+            </div>
+            <button id="btn-repelente" onclick="comprar('repelente')">Comprar</button>
+        </div>
+        <div class="item">
+            <div>
+                <h3>🎒 Abate — 10 💰</h3>
+                <p>Se lanza en arco y <b>explota</b> al impactar. <b>En la vida real:</b> larvicida para tinacos y agua estancada.</p>
+            </div>
+            <button id="btn-abate" onclick="comprar('abate')">Comprar</button>
+        </div>
+        <div class="item">
+            <div>
+                <h3>❤️ Suero — 8 💰</h3>
+                <p>Recupera un corazón perdido. <b>En la vida real:</b> hidratación y atención médica temprana.</p>
+            </div>
+            <button id="btn-suero" onclick="comprar('suero')">Comprar</button>
+        </div>
+        <div class="item">
+            <div>
+                <h3>💊 Paracetamol — 4 💰</h3>
+                <p>Baja la fiebre y te cubre durante la fase crítica. <b>En la vida real:</b> es el único analgésico recomendado con dengue.</p>
+            </div>
+            <button id="btn-paracetamol" onclick="comprar('paracetamol')">Comprar</button>
+        </div>
+        <div class="item">
+            <div>
+                <h3>💊 Ibuprofeno — 3 💰</h3>
+                <p>Corta la fiebre al instante y cuesta menos. <b>En la vida real:</b> los antiinflamatorios afectan las plaquetas.</p>
+            </div>
+            <button id="btn-aine" onclick="comprar('aine')">Comprar</button>
+        </div>
+        <div class="item" id="item-vacuna">
+            <div>
+                <h3>💉 Vacuna Qdenga — 20 💰</h3>
+                <p>Reduce el riesgo de contagio, no lo elimina. <b>En la vida real:</b> aprobada por COFEPRIS en marzo de 2026; no sustituye eliminar criaderos.</p>
+            </div>
+            <button id="btn-vacuna" onclick="comprar('vacuna')">Comprar</button>
+        </div>
+        <button class="btn rojo peq" onclick="cerrarTienda()">Cerrar (T)</button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- El ?v= no es decoración: sin él, una recarga normal (F5 o doble clic)
+     puede seguir sirviendo los .js viejos de la caché, y un arreglo tarda
+     días en llegar. Al subir BUILD en 01-nucleo.js, subir también este v. -->
+<!-- El orden importa: 01 declara la configuracion y utilidades que usan los demas.
+     Son scripts clasicos (no modulos) a proposito: asi el juego sigue abriendose
+     con doble clic desde file:// sin necesidad de un servidor. -->
+<script src="js/01-nucleo.js?v=b5"></script>
+<script src="js/01b-datos-dengue.js?v=b5"></script>
+<script src="js/01c-mando.js?v=b5"></script>
+<script src="js/02-efectos.js?v=b5"></script>
+<script src="js/03-jugador.js?v=b5"></script>
+<script src="js/04-mundo2d-gen.js?v=b5"></script>
+<script src="js/05-mundo2d-fisica.js?v=b5"></script>
+<script src="js/06-mundo2d-ia.js?v=b5"></script>
+<script src="js/07-mundo2d-dibujo.js?v=b5"></script>
+<script src="js/08-mundo3d-gen.js?v=b5"></script>
+<script src="js/09-mundo3d-jugador.js?v=b5"></script>
+<script src="js/10-mundo3d-ia.js?v=b5"></script>
+<script src="js/11-flujo.js?v=b5"></script>
+<script src="js/11b-educacion.js?v=b5"></script>
+<script src="js/11c-guero.js?v=b5"></script>
+<script src="js/12-bucle.js?v=b5"></script>
+</body>
+</html>
