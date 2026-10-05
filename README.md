@@ -1,5 +1,10 @@
 # Dengue Inc
 
+[![Validar](https://github.com/Jared-RodriguezdelaCruz/dengue_inc/actions/workflows/validar.yml/badge.svg?branch=develop)](https://github.com/Jared-RodriguezdelaCruz/dengue_inc/actions/workflows/validar.yml)
+[![Publicación](https://github.com/Jared-RodriguezdelaCruz/dengue_inc/actions/workflows/pages.yml/badge.svg)](https://jared-rodriguezdelacruz.github.io/dengue_inc/)
+[![Estado](https://img.shields.io/badge/estado-UptimeRobot-brightgreen)](https://stats.uptimerobot.com/KSFC94VXhP)
+
+
 ## Descripción
 
 Este proyecto es un juego web de acción y aprendizaje sobre la prevención del dengue, ambientado en Aguascalientes. Combina mecánicas tipo arcade, exploración en 2D y 3D, y elementos educativos para enseñar cómo se comporta el dengue, cuáles son los criaderos más comunes y qué medidas reales ayudan a prevenirlo.
