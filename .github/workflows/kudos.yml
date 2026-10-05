@@ -1,0 +1,33 @@
+name: Kudos bot
+
+on:
+    pull_request:
+        types: [closed]
+
+permissions:
+    contents: read
+    pull-requests: read
+
+jobs:
+    felicitar:
+        name: Felicitar en Discord
+        if: github.event.pull_request.merged == true
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.pull_request.base.ref }}
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+            - name: Mandar el mensaje
+              env:
+                  DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+                  GH_TOKEN: ${{ github.token }}
+                  REPO: ${{ github.repository }}
+                  NUM: ${{ github.event.pull_request.number }}
+                  TITULO: ${{ github.event.pull_request.title }}
+                  URL: ${{ github.event.pull_request.html_url }}
+                  AUTOR: ${{ github.event.pull_request.user.login }}
+                  BASE: ${{ github.event.pull_request.base.ref }}
+              run: node .github/scripts/kudos.mjs
