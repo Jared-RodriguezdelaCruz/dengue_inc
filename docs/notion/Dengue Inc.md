@@ -23,9 +23,9 @@ Juego web educativo sobre la prevención del dengue en Aguascalientes, hecho por
 | Qué | Link |
 |---|---|
 | Repositorio en GitHub | https://github.com/Jared-RodriguezdelaCruz/dengue_inc |
-| Juego publicado | *(se agrega el 27 oct, cuando se publique en GitHub Pages)* |
-| Página de estado (UptimeRobot) | *(se agrega el 27 oct)* |
-| Servidor de Discord | *(Ana pega aquí la invitación)* |
+| Juego publicado | https://jared-rodriguezdelacruz.github.io/dengue_inc/ |
+| Página de estado (UptimeRobot) | https://stats.uptimerobot.com/KSFC94VXhP |
+| Servidor de Discord | *https://discord.gg/EwjnD4PZ* |
 
 ## Qué hay en este espacio
 

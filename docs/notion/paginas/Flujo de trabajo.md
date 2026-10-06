@@ -4,18 +4,8 @@ Cómo trabajamos como equipo: los rituales de cada semana y el camino que sigue 
 
 | Cuándo | Qué | Dónde |
 |---|---|---|
-| Todos los días | Daily asíncrona: ayer, hoy y bloqueos | Discord `#daily` |
 | Lunes | Revisión del tablero: qué se atrasó, qué sigue y bloqueos de más de 24 h | Notion → 📝 Minutas |
 | Viernes | Kudos: cada quien reconoce a un compañero por algo concreto | Discord `#kudos` y Notion → 🏆 Kudos |
-
-Plantilla de la daily (está fijada en `#daily`):
-
-```
-📅 Daily
-✅ Ayer: …
-🎯 Hoy: …
-🚧 Bloqueos: …
-```
 
 ## Estados de una tarea
 
@@ -46,8 +36,6 @@ flowchart LR
     H --> I[Deploy a<br/>GitHub Pages]
     I --> J[UptimeRobot<br/>revisa cada 5 min]
 ```
-
-Si el diagrama se ve como código: clic en el bloque → **Vista previa** (si no aparece, elige *Mermaid* como lenguaje del bloque).
 
 ## Quién es dueño de qué y quién revisa
 
