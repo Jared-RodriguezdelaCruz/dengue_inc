@@ -1,6 +1,6 @@
 # Dengue Inc — Roadmap
 
-> Documento vivo del equipo. Última actualización: **30 de septiembre de 2026** · build actual del juego: `b5`.
+> Documento vivo del equipo. Última actualización: **5 de octubre de 2026** · el juego ya está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/).
 > Todo lo que va en Notion está en [`docs/notion/`](notion/): la portada, las páginas del equipo y las bases de datos de tareas, kudos y minutas, listas para importarse.
 
 **Contenido:** [1. Visión](#1-visión-y-propósito) · [2. Equipo](#2-equipo-y-roles) · [3. Dónde estamos](#3-dónde-estamos) · [4. Fases](#4-fases) · [5. Calendario](#5-calendario-por-semana) · [6. Tareas](#6-tareas) · [7. Herramientas](#7-herramientas-todas-gratuitas) · [8. Terminado](#8-definición-de-terminado) · [9. Riesgos](#9-riesgos) · [10. Demo Day](#10-demo-day-guion-sugerido)
@@ -49,20 +49,24 @@
 
 ## 3. Dónde estamos
 
-El prototipo ya es un juego completo y jugable de principio a fin: unas 7,000 líneas de JavaScript sin dependencias (salvo Three.js), **5 niveles procedurales** (1, 3 y 4 en 2D; 2 y 5 en 3D en primera persona), jefe de dos fases, transición dimensional, final con Güero y una capa educativa en la que cada dato cita su fuente.
+**Avance al 5 de octubre: 55 de 114 tareas hechas (48 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
+
+El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas de JavaScript sin dependencias (salvo Three.js), **5 niveles procedurales** (1, 3 y 4 en 2D; 2 y 5 en 3D en primera persona), jefe de dos fases, transición dimensional, final con Güero y una capa educativa en la que cada dato cita su fuente.
 
 | Área | Estado | Qué hay / qué falta |
 |---|---|---|
 | Motor y entrada | ✅ Listo | PRNG con semilla, dt normalizado, teclado, ratón y mando |
-| Mundo 2D | ✅ Listo | 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases |
-| Mundo 3D | ✅ Listo | Salas procedurales, muros instanciados, brújula |
+| Mundo 2D | ✅ Listo | Funciona a la perfección (Jared y Gael): 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases. Solo falta acelerar la fase 2 del jefe (DI-462) |
+| Mundo 3D | ✅ Listo | Salas procedurales, muros instanciados, brújula. Vienen el nivel 4 en 3D, el jefe 3D y plataformas (DI-463 a DI-465) |
 | Capa educativa | ✅ Listo | 10 envases, 4 serotipos, 21 fichas, 5 mitos, tienda con datos reales, Güero |
-| Audio | 🟡 Parcial | 12 efectos sintetizados; **no hay música** ni control de volumen |
-| Interfaz y marca | 🟡 Parcial | HUD y menús completos; el nombre del juego no es consistente; faltan créditos y opciones |
-| Accesibilidad | 🔴 Falta | Los serotipos se distinguen solo por color; no se pueden reducir destellos; nada para celular |
+| Flujo de equipo | ✅ Listo | Notion, Discord, ramas protegidas, PRs con revisión, plantillas y CODEOWNERS. Falta subir `CONTRIBUTING.md` (DI-202) |
+| Automatización | ✅ Listo | *Validar* y *Título del PR* en cada PR; el bot de kudos felicita en Discord cada PR fusionado |
+| Publicación y monitoreo | ✅ Listo | GitHub Pages con cache-busting por commit, UptimeRobot cada 5 min y badges en el README |
+| Bugs del juego publicado | 🟡 En curso | 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) y 9 mejoras, repartidas en F4 por área |
+| Audio | 🟡 Parcial | 12 efectos sintetizados; **no hay música** ni control de volumen (DI-401 a DI-412 y DI-470) |
+| Interfaz y marca | 🟡 Parcial | HUD y menús completos; faltan el menú principal nuevo (DI-469), créditos, opciones, nombre único, favicon y etiquetas meta (DI-456) |
+| Accesibilidad y celular | 🔴 Falta | Los serotipos se distinguen solo por color; no se pueden reducir destellos; no se puede jugar en celular (DI-430) |
 | Guardado | 🔴 Falta | Nada persiste entre sesiones |
-| Flujo de equipo | 🔴 Falta | Sin Notion, sin Discord, sin PRs ni revisiones, sin CI |
-| Publicación y monitoreo | 🔴 Falta | El juego no está publicado ni monitoreado |
 
 ---
 
@@ -71,10 +75,10 @@ El prototipo ya es un juego completo y jugable de principio a fin: unas 7,000 l�
 | Fase | Fechas | Objetivo | Paso | Hito de salida |
 |---|---|---|---|---|
 | **F0 · Prototipo jugable** ✅ | 11 – 29 sep | Tener el juego completo | — | Build `b5`: 5 niveles, mando, capa educativa |
-| **F1 · Organización del equipo** | 30 sep – **6 oct** | Que el equipo trabaje en un solo lugar, con roles claros | Paso 1 | Link de Notion con visión, propósito y roles |
-| **F2 · Flujo de trabajo en GitHub** | 7 – 13 oct | Que todo cambio se pida y se apruebe por PR | Paso 2 | Ramas protegidas, CONTRIBUTING y primer PR revisado |
-| **F3 · Automatización y publicación** | 14 – 27 oct | Que el buen trabajo se valide y se celebre solo, y que el juego esté en línea | Pasos 3 y 4 | Video de 30 s del bot · link público de UptimeRobot |
-| **F4 · Audio, pulido y calidad** | 7 oct – 24 nov | Música completa y el juego listo para enseñarse | — | Música en todos los niveles, P0 y P1 hechas, 2 playtests |
+| **F1 · Organización del equipo** ✅ | 30 sep – **6 oct** | Que el equipo trabaje en un solo lugar, con roles claros | Paso 1 | Link de Notion con visión, propósito y roles |
+| **F2 · Flujo de trabajo en GitHub** ✅ | 7 – 13 oct | Que todo cambio se pida y se apruebe por PR | Paso 2 | Ramas protegidas, CONTRIBUTING y primer PR revisado |
+| **F3 · Automatización y publicación** ✅ | 14 – 27 oct | Que el buen trabajo se valide y se celebre solo, y que el juego esté en línea | Pasos 3 y 4 | Video de 30 s del bot · link público de UptimeRobot |
+| **F4 · Audio, pulido y calidad** | 7 oct – 24 nov | Música completa, los bugs y mejoras del juego publicado, y el juego listo para enseñarse | — | Música en todos los niveles, P0 y P1 hechas, 2 playtests |
 | **F5 · Cultura y cierre** | 18 – 29 nov | Reconocimiento visible y producto terminado | Paso 5 | Kudos de los 5, slides y **release v2.0 (29 nov)** |
 | **F6 · Testing final y Demo Day** | 30 nov – 4 dic | Probar la versión final y presentarla | Paso 6 | Presentación y evaluación entre equipos |
 
@@ -89,14 +93,14 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | Semana | Fechas | Fase | Paso | Entrega de la actividad | Foco en el juego |
 |---|---|---|---|---|---|
 | S0 | 11 – 29 sep | F0 | — | — | Prototipo `b5` (hecho) |
-| S1 | 30 sep – 6 oct | F1 | **1** | **6 oct:** link del workspace de Notion | — (solo organización) |
-| S2 | 7 – 13 oct | F2 | **2** | **13 oct:** flujo de GitHub documentado y configurado | Dirección musical, marca, Three.js local, plan de pruebas |
-| S3 | 14 – 20 oct | F3 | **3** | **20 oct:** video de 30 s de la automatización | Mezclador de audio |
-| S4 | 21 – 27 oct | F3 | **4** | **27 oct:** link de la página de estado de UptimeRobot | Reproductor de música, tema del menú, créditos |
-| S5 | 28 oct – 3 nov | F4 | — | — | Tema 2D, opciones, guardado, aviso en celular |
-| S6 | 4 – 10 nov | F4 | — | — | Tema 3D, SFX nuevos, accesibilidad, tutorial, rendimiento |
-| S7 | 11 – 17 nov | F4 | — | — | Tema del jefe y del final, playtest 1, extras P2 |
-| S8 | 18 – 24 nov | F4 · F5 | **5** | Kudos de los 5 y su evidencia | Bugs del playtest, playtest 2, extras P2 |
+| S1 | 30 sep – 6 oct | F1 | **1** | **6 oct:** link del workspace de Notion ✅ | Juego publicado en GitHub Pages ✅ |
+| S2 | 7 – 13 oct | F2 | **2** | **13 oct:** flujo de GitHub documentado y configurado ✅ | Bugs P0 (vida del HUD, ratón con Güero), dirección musical, marca, Three.js local, plan de pruebas |
+| S3 | 14 – 20 oct | F3 | **3** | **20 oct:** video de 30 s de la automatización ✅ | Mezclador de audio, favicon y etiquetas meta |
+| S4 | 21 – 27 oct | F3 | **4** | **27 oct:** link de la página de estado de UptimeRobot ✅ | Reproductor de música, tema del menú, créditos, fase 2 del jefe 2D |
+| S5 | 28 oct – 3 nov | F4 | — | — | Tema 2D, menú estilo Katana Zero, opciones, guardado, nivel 4 en 3D, aviso en celular |
+| S6 | 4 – 10 nov | F4 | — | — | Tema 3D, SFX nuevos, accesibilidad, tutorial 2D y 3D, skins de Güero e Ivan, rendimiento |
+| S7 | 11 – 17 nov | F4 | — | — | Tema del jefe y del final, música integrada, jefe 3D, gato aliado, playtest 1 |
+| S8 | 18 – 24 nov | F4 · F5 | **5** | Kudos de los 5 y su evidencia | Bugs del playtest, playtest 2, jugar en celular, plataformas 3D, extras P2 |
 | S9 | 25 – 29 nov | F5 | **5** | Slides y video de respaldo · **29 nov: release v2.0, proyecto terminado** | Código congelado |
 | S10 | 30 nov – 4 dic | F6 | **6** | Presentación en vivo · evaluación entre equipos | Testing final (solo arreglos P0) |
 
@@ -111,15 +115,17 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 
 ### Resumen por integrante
 
-| Integrante | Rol | Tareas hechas (F0) | Pendientes | Pendientes P0 | Horas estimadas pendientes |
+| Integrante | Rol | Tareas hechas | Pendientes | Pendientes P0 | Horas estimadas pendientes |
 |---|---|---|---|---|---|
-| Ana | CEO / Project Manager | 2 | 16 | 11 | 21.5 |
-| Jared | Backend | 12 | 19 | 11 | 39 |
-| Gael | Música y sonido | 2 | 9 | 5 | 35.5 |
-| Mau | Frontend | 11 | 11 | 3 | 41.5 |
-| Ivan | QA, métricas y documentación | 3 | 15 | 8 | 24 |
+| Ana | CEO / Project Manager | 12 | 6 | 3 | 12.5 |
+| Jared | Backend | 22 | 16 | 6 | 56 |
+| Gael | Música y sonido | 2 | 10 | 6 | 38.5 |
+| Mau | Frontend | 11 | 14 | 3 | 60.5 |
+| Ivan | QA, métricas y documentación | 8 | 10 | 5 | 21.5 |
 | Todos | — | 0 | 3 | 3 | 1 |
-| **Total** | | **30** | **73** | **41** | **162.5** |
+| **Total** | | **55** | **59** | **26** | **190** |
+
+Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)». Por ejemplo, Gael en todo el mundo 2D (DI-008 a DI-011).
 
 ### F0 · Prototipo jugable — ✅ hecho (11 – 29 sep)
 
@@ -132,10 +138,10 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | DI-005 | Sistema de entrada con detección de flancos (teclado y ratón) | Jared | `js/01-nucleo.js` | pulsada()/abajo(); acciones globales T (tienda), C (fichero), Esc (pausa), M (silencio), F3 (debug). |
 | DI-006 | Jugador compartido 2D/3D: vida, estamina, dash, esquive y raqueta | Jared | `js/03-jugador.js` | Frames de invulnerabilidad, cooldowns y castigo por parry fallido. |
 | DI-007 | Sistema de enfermedad: serotipos, fase febril y crítica, inmunidad y dengue grave | Jared (+ Ana) | `js/03-jugador.js` | Paracetamol vs ibuprofeno (AINE), vacuna Qdenga que reduce el riesgo pero no lo elimina. |
-| DI-008 | Generación procedural 2D por chunks con validación de jugabilidad | Jared | `js/04-mundo2d-gen.js` | 8 plantillas (llano, hueco, escalera, torre, flotantes, arena, criadero, tesoro); huecos y alturas limitados por la física real del salto. |
-| DI-009 | Física y combate 2D | Jared | `js/05-mundo2d-fisica.js` | Coyote time, buffer y salto variable; explosiones de barriles en cadena; armas: botas, repelente y abate. |
-| DI-010 | IA 2D: 4 tipos de mosquito y criaderos que reponen enemigos | Jared | `js/06-mundo2d-ia.js` | Zumbador, picador, enjambre (boids) y mutante; máximo 2 atacantes a la vez; aviso obligatorio antes de cada ataque. |
-| DI-011 | Jefe final 2D de dos fases | Jared (+ Mau) | `js/06-mundo2d-ia.js`, `js/07-mundo2d-dibujo.js` | Fase 1: devolver el orbe con la raqueta para bajar el escudo. Fase 2: esquivar la embestida y golpear el núcleo. |
+| DI-008 | Generación procedural 2D por chunks con validación de jugabilidad | Jared (+ Gael) | `js/04-mundo2d-gen.js` | 8 plantillas (llano, hueco, escalera, torre, flotantes, arena, criadero, tesoro); huecos y alturas limitados por la física real del salto. |
+| DI-009 | Física y combate 2D | Jared (+ Gael) | `js/05-mundo2d-fisica.js` | Coyote time, buffer y salto variable; explosiones de barriles en cadena; armas: botas, repelente y abate. |
+| DI-010 | IA 2D: 4 tipos de mosquito y criaderos que reponen enemigos | Jared (+ Gael) | `js/06-mundo2d-ia.js` | Zumbador, picador, enjambre (boids) y mutante; máximo 2 atacantes a la vez; aviso obligatorio antes de cada ataque. |
+| DI-011 | Jefe final 2D de dos fases | Jared (+ Gael y Mau) | `js/06-mundo2d-ia.js`, `js/07-mundo2d-dibujo.js` | Fase 1: devolver el orbe con la raqueta para bajar el escudo. Fase 2: esquivar la embestida y golpear el núcleo. |
 | DI-012 | Generación procedural 3D por salas | Jared (+ Mau) | `js/08-mundo3d-gen.js` | Salas conectadas con pasillos y atajos; BFS para poner la meta en la sala más lejana; salas de inicio, arena, criadero, botín y meta. |
 | DI-013 | IA 3D de mosquitos y proyectiles | Jared (+ Mau) | `js/10-mundo3d-ia.js` | Culling por distancia de niebla, separación entre mosquitos, parry 3D del orbe morado. |
 | DI-014 | Bucle principal, hitstop, manejo de errores y overlay de depuración (F3) | Jared | `js/12-bucle.js` | FPS, ms de lógica y estadísticas de generación en pantalla; un error no deja la pantalla tapada. |
@@ -156,7 +162,7 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | DI-029 | Efectos de sonido procedurales con WebAudio | Gael | `js/02-efectos.js` | 12 efectos sintetizados sin archivos: salto, dash, parry, parry fallido, golpe, daño, explosión, moneda, disparo, aviso de ataque, nivel y muerte. |
 | DI-030 | Silenciar y activar el audio (M o botón View/Share del mando) | Gael (+ Jared) | `js/01-nucleo.js` |  |
 
-### F1 · Organización del equipo — Paso 1 (30 sep – 6 oct)
+### F1 · Organización del equipo — Paso 1 — ✅ hecho (30 sep – 6 oct)
 
 | ID | Tarea | Responsable | Entrega | Prio. | Est. (h) | Criterio de aceptación |
 |---|---|---|---|---|---|---|
@@ -168,7 +174,7 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | DI-106 | Rituales del equipo: daily, revisión del tablero y kudos semanales | Ana (+ Todos) | 6 oct | P1 | 2 | Daily en #daily (ayer / hoy / bloqueos); los lunes se revisa el tablero; los viernes, kudos en #kudos. |
 | DI-107 | Entregar el link del workspace (Paso 1) | Ana | 6 oct | P0 | 0.5 | Link con permiso de lectura que muestra visión, propósito y roles. Entrega: 6 de octubre. |
 
-### F2 · Flujo de trabajo en GitHub — Paso 2 (7 – 13 oct)
+### F2 · Flujo de trabajo en GitHub — Paso 2 — ✅ hecho, falta subir CONTRIBUTING.md (7 – 13 oct)
 
 | ID | Tarea | Responsable | Entrega | Prio. | Est. (h) | Criterio de aceptación |
 |---|---|---|---|---|---|---|
@@ -181,7 +187,7 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | DI-207 | Primer PR real siguiendo el flujo: subir el roadmap | Jared (+ Ana) | 13 oct | P0 | 0.5 | PR de docs/ROADMAP.md y docs/notion/ hacia develop, revisado y aprobado por Ana. |
 | DI-208 | Evidencia del Paso 2 | Ana (+ Jared) | 13 oct | P0 | 0.5 | Capturas de las reglas de protección y del PR revisado (DI-207). Entrega: 13 de octubre. |
 
-### F3 · Automatización y publicación — Pasos 3 y 4 (14 – 27 oct)
+### F3 · Automatización y publicación — Pasos 3 y 4 — ✅ hecho (14 – 27 oct)
 
 | ID | Tarea | Responsable | Entrega | Prio. | Est. (h) | Criterio de aceptación |
 |---|---|---|---|---|---|---|
@@ -215,22 +221,26 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | DI-410 | Música adaptativa a la fiebre | Gael (+ Jared) | 24 nov | P2 | 2 | Filtro paso-bajo en fase febril, más marcado en fase crítica; se quita al curarse. |
 | DI-411 | Reusar los buffers de ruido en ruido() | Jared (+ Gael) | 10 nov | P2 | 1 | Hoy se crea un buffer nuevo en cada golpe o explosión; se precalcula una sola vez. |
 | DI-412 | Créditos y licencias del audio | Gael | 24 nov | P0 | 0.5 | Autor y licencia de cada pista en el README y en la pantalla de créditos. |
+| DI-470 | Integrar las pistas de música en el juego | Gael (+ Jared) | 17 nov | P0 | 3 | Las pistas MP3 llegan a audio/ y cada una se conecta a su contexto (menú, 2D, 3D, jefe y final) con el reproductor (DI-403). Su autor y licencia van en DI-412. |
 
 #### Frontend: 2D, 3D e interfaz — Mau
 
 | ID | Tarea | Responsable | Entrega | Prio. | Est. (h) | Criterio de aceptación |
 |---|---|---|---|---|---|---|
-| DI-420 | Unificar la marca «Dengue Inc» | Mau (+ Ana) | 13 oct | P0 | 2 | Hoy conviven «Dengue Inc» (README), «Dengue: Multiverso» (menú) y «Dengue: Multiverso Aguascalientes v2» (pestaña). Un solo nombre, logo y favicon. |
+| DI-420 | Unificar la marca «Dengue Inc» | Mau (+ Ana) | 13 oct | P0 | 2 | Hoy conviven «Dengue Inc» (README), «Dengue: Multiverso» (menú) y «Dengue: Multiverso Aguascalientes v2» (pestaña). Un solo nombre y logo; el favicon va en DI-456. |
 | DI-421 | Incluir Three.js dentro del repositorio | Mau | 13 oct | P0 | 0.5 | Hoy se carga del CDN: sin internet los niveles 2 y 5 no funcionan. Copia local de r128 como respaldo. |
 | DI-422 | Pantalla de créditos con el equipo y sus roles | Mau | 27 oct | P0 | 2 | Se abre desde el menú y al terminar el juego; incluye créditos de audio. |
-| DI-423 | Menú de opciones | Mau (+ Gael) | 3 nov | P1 | 4 | Volumen de música y SFX, sensibilidad 3D, reducir destellos y sacudidas; se guarda entre sesiones (DI-440). |
+| DI-423 | Menú de opciones | Mau (+ Gael) | 3 nov | P1 | 4 | Volumen de música y SFX, sensibilidad 3D, reducir destellos y sacudidas; se guarda entre sesiones (DI-440). Es el submenú Opciones del menú principal (DI-469). |
 | DI-424 | Aviso en celulares y pantallas pequeñas | Mau | 3 nov | P1 | 1 | El Demo Day se abrirá el link desde celulares: explicar que se juega con teclado o mando. |
 | DI-425 | Serotipos distinguibles sin depender del color (2D y 3D) | Mau | 10 nov | P1 | 4 | DENV-2 (rojo) y DENV-4 (verde) se confunden con daltonismo: añadir número o patrón en mosquitos y proyectiles. |
-| DI-426 | Tutorial interactivo en el nivel 1 | Mau (+ Jared) | 10 nov | P1 | 5 | Carteles contextuales la primera vez: moverse, saltar, dash, raqueta y las 4 medidas. |
+| DI-426 | Tutorial interactivo en el primer nivel 2D y el primer 3D | Mau (+ Jared) | 10 nov | P1 | 7 | Carteles contextuales la primera vez. En 2D: moverse, saltar, dash, raqueta y las 4 medidas. En 3D: mirar con el ratón, disparar, rodar y seguir la brújula. |
 | DI-427 | Pulido visual 3D: texturas procedurales y luz por tipo de sala | Mau | 17 nov | P2 | 6 |  |
 | DI-428 | Fichero con filtros por categoría y animación de ficha nueva | Mau (+ Ivan) | 17 nov | P2 | 3 |  |
-| DI-429 | Modelos 3D más detallados de envases y de Güero | Mau | 24 nov | P2 | 6 | Con primitivas de Three.js, sin archivos externos. |
-| DI-430 | Controles táctiles en pantalla | Mau (+ Jared) | 24 nov | P2 | 8 | Stick y botones táctiles para los niveles 2D. |
+| DI-429 | Modelos 3D más detallados de los envases | Mau | 24 nov | P2 | 6 | Con primitivas de Three.js, sin archivos externos. Güero pasa a DI-466. |
+| DI-430 | Jugar en celular: controles táctiles en 2D y 3D | Mau (+ Jared) | 24 nov | P1 | 10 | Stick y botones en pantalla para 2D y 3D (en 3D se mira arrastrando el dedo), en horizontal y sin zoom accidental. Cuando esté listo, reemplaza el aviso de DI-424. |
+| DI-466 | Skin low poly de Güero (melena de león) | Mau (+ Jared) | 10 nov | P1 | 5 | A partir de la imagen de referencia: en 3D con primitivas de Three.js (low poly) y en 2D un sprite que lo distinga. Su rasgo: la melena de león. |
+| DI-467 | NPC de Ivan (con gorra): otro caso de dengue | Mau (+ Ivan) | 10 nov | P1 | 4 | Otro vecino con dengue en un nivel distinto al de Güero, con su propia skin low poly (rasgo: la gorra) a partir de la imagen de referencia. |
+| DI-469 | Menú principal estilo Katana Zero con submenús | Mau (+ Jared) | 3 nov | P1 | 6 | Pantalla de título con estética Katana Zero y submenús: Jugar (con semilla), Opciones (DI-423), Ayuda y controles, y Créditos (DI-422). Se navega con teclado, ratón y mando. |
 
 #### Backend y sistemas — Jared
 
@@ -241,6 +251,13 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | DI-442 | Selector de dificultad | Jared (+ Ana) | 17 nov | P2 | 3 | Fácil y Normal: vida, daño y ritmo de los criaderos. |
 | DI-443 | Logros dentro del juego | Jared (+ Mau) | 24 nov | P2 | 4 | Por ejemplo «Cerraste 10 criaderos sin atajos» o «Salvaste a Güero»; aparecen en el reporte final. |
 | DI-444 | Arreglar los bugs críticos del playtest | Jared (+ Mau) | 24 nov | P0 | 4 | Todo hallazgo P0 del playtest 1 (DI-454) queda cerrado antes del playtest 2. |
+| DI-460 | Arreglar: la vida del HUD no se actualiza al recibir daño | Jared (+ Mau) | 13 oct | P0 | 2 | Al recibir daño, los corazones del HUD no bajan en ese momento. Cada golpe y cada curación se ven al instante, en 2D y en 3D, también después de reintentar un nivel. |
+| DI-461 | Arreglar: no se pueden elegir con el ratón las opciones para salvar a Güero | Jared (+ Ivan) | 13 oct | P0 | 1 | Hoy el cursor no se mueve sobre las opciones y hay que abrir la tienda con T para liberarlo. Al abrirse el panel de Güero el ratón queda libre y cada opción se elige con clic, teclado o mando. |
+| DI-462 | Jefe 2D: fase 2 más rápida pero igual de difícil | Jared (+ Gael) | 27 oct | P1 | 3 | La fase 2 dura de más. Que se resuelva en menos tiempo (embestidas más seguidas o núcleo con menos vida) sin quitar el aviso antes de cada ataque ni bajar el reto. |
+| DI-463 | Jefe final en 3D | Jared (+ Mau) | 17 nov | P1 | 8 | Sala de arena con un jefe propio del modo 3D y aviso antes de cada ataque, como el jefe 2D. En qué nivel queda se decide junto con DI-464. |
+| DI-464 | Nivel 4 en 3D: dos niveles 2D y dos 3D | Jared (+ Mau) | 3 nov | P1 | 3 | Hoy NIVEL_ES_2D marca 1, 3 y 4 como 2D, y el jefe 2D vive en el 4. Quedan 1 y 3 en 2D y 2 y 4 en 3D; el jefe 2D se mueve a un nivel 2D y el 5 sigue siendo el final con Güero. |
+| DI-465 | Plataformas en los niveles 3D | Jared (+ Mau) | 24 nov | P2 | 5 | Plataformas y desniveles dentro de las salas, alcanzables con el salto 3D; la generación valida que la meta siga siendo alcanzable. |
+| DI-468 | Gato aliado que ataca mosquitos (se compra en la tienda) | Jared (+ Mau) | 17 nov | P2 | 6 | Aliado inspirado en la Gorda (imagen de referencia): se compra en la tienda y acompaña al jugador en 2D y 3D atacando a los mosquitos cercanos. |
 
 #### Calidad, documentación y contenido — Ivan y Ana
 
@@ -252,7 +269,7 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | DI-453 | Revisión de exactitud del contenido educativo | Ana (+ Ivan) | 10 nov | P1 | 2 | Fuentes vigentes (OMS, SSA, COFEPRIS) y cifras de Aguascalientes actualizadas. |
 | DI-454 | Playtest 1 con 3 a 5 personas externas | Ivan (+ Todos) | 17 nov | P1 | 3 | Cada hallazgo se registra como tarea en Notion con su prioridad. |
 | DI-455 | Playtest 2 con los arreglos | Ivan (+ Todos) | 24 nov | P1 | 2 | Otras personas, misma checklist; confirma que los bugs críticos ya no aparecen. |
-| DI-456 | Vista previa al compartir el link (Open Graph) | Ivan (+ Mau) | 24 nov | P2 | 1 | Título, descripción e imagen al pegar el link en Discord o WhatsApp. |
+| DI-456 | Favicon, etiquetas meta y vista previa al compartir (Open Graph) | Ivan (+ Mau) | 20 oct | P1 | 1.5 | El juego ya está publicado: favicon, descripción, theme-color y Open Graph (título, descripción e imagen al pegar el link en Discord o WhatsApp). |
 | DI-457 | Encuesta de aprendizaje al terminar (Google Forms) | Ana (+ Jared) | 24 nov | P2 | 2 | Botón en la pantalla final con 3 preguntas; respuestas en Sheets para medir el impacto educativo. |
 
 ### F5 · Cultura de reconocimiento y cierre — Paso 5 (18 – 29 nov)
@@ -344,7 +361,7 @@ flowchart LR
 
 **Decisión: GitHub Actions.** Cubre las dos opciones que pide el paso —validar el formato del trabajo y felicitar al equipo en Discord— y el video de 30 s se puede grabar sin esperar 15 minutos a que un zap se dispare.
 
-Workflows previstos:
+Workflows (ya funcionando en `.github/workflows/`):
 
 1. **`validar.yml`** (en cada PR): sintaxis de todos los `.js`; que cada `<script>` de `index.html` exista; que los `?v=` coincidan con `BUILD`; que **cada ficha y cada mito cite su fuente** (el formato de `01b-datos-dengue.js`); título del PR con Conventional Commits.
 2. **`kudos.yml`** (al fusionar un PR): mensaje en `#github-bot`, por ejemplo:
@@ -386,6 +403,8 @@ Una tarea pasa a **Hecho** solo si:
 | Mau concentra todo el frontend (2D, 3D e interfaz) | Media | Medio | Sus tareas extra son P2 y se recortan primero; Jared apoya en 3D y controles |
 | El testing final encuentra algo grave sin tiempo para arreglarlo | Baja | Alto | Proyecto terminado el 29 nov, 2 playtests antes y en S10 solo se arreglan bugs P0 |
 | Se pierde el ritmo a mitad de noviembre | Media | Medio | Rituales semanales y la gráfica de avance de Notion revisada cada lunes |
+| Se sumaron 11 tareas (5 oct) con las mismas fechas | Alta | Medio | Los bugs P0 van primero (13 oct); las P2 nuevas (gato aliado, plataformas 3D) se recortan antes que cualquier otra |
+| Faltan las imágenes de referencia (Güero, Ivan, la Gorda) | Media | Bajo | Se piden a Jared antes de S6; mientras, se modela con primitivas y se ajusta después |
 
 ---
 
@@ -393,9 +412,10 @@ Una tarea pasa a **Hecho** solo si:
 
 | Tiempo | Quién | Qué |
 |---|---|---|
-| 0:00 – 0:45 | Ana | El problema: dengue en Aguascalientes y por qué un juego |
-| 0:45 – 2:45 | Mau | Demo en vivo: nivel 2D → la grieta → nivel 3D → Güero *(respaldo: video)* |
-| 2:45 – 3:30 | Gael | El audio: cómo cambia la música con el nivel y con la fiebre |
-| 3:30 – 4:30 | Jared | El flujo: PR → Validar → revisión → kudos bot en Discord (video de 30 s) |
-| 4:30 – 5:15 | Ivan | Calidad y métricas: testing, uptime, PRs por persona, % de tareas, kudos |
-| 5:15 – 6:30 | Ana | La cultura de reconocimiento, qué aprendimos y cierre |
+| 0:00 – 1:30 | Ana | Intro (equipo y juego) y Notion: visión, roles y tablero de tareas (Paso 1) |
+| 1:30 – 2:30 | Gael | Discord: canales, roles y el canal del bot |
+| 2:30 – 4:30 | Jared | GitHub: ramas protegidas y flujo del PR (Paso 2) · GitHub Actions: Validar, Título del PR y Kudos bot, con el video de 30 s (Paso 3) |
+| 4:30 – 5:30 | Mau | Revisión de PRs y publicación en GitHub Pages |
+| 5:30 – 6:30 | Ivan | UptimeRobot y métricas (Paso 4), y links |
+
+El guion completo, con qué decir y qué mostrar en cada parte, está en la página 🎤 Demo Day de Notion (`docs/notion/paginas/Demo Day.md`).
