@@ -22,6 +22,7 @@ function abrirTienda() {
 function cerrarTienda() {
     elTienda.classList.add('oculto');
     if (estado === estados.PAUSA) estado = estadoPrevio;
+    capturarRaton3D();
 }
 
 const PRECIOS = { repelente: 5, abate: 10, suero: 8, paracetamol: 4, aine: 3, vacuna: 20 };
@@ -222,7 +223,7 @@ function actualizarHUDContinuo() {
         brujula3D(null);
     } else {
         if (!document.pointerLockElement && !mandoActivo && estado === estados.J3D) {
-            objetivo('🖱️ Haz clic para capturar el ratón', '');
+            objetivo('🖱️ Haz clic o pulsa una tecla para capturar el ratón', '');
         } else if (guero && guero.encontrado && !guero.resuelto) {
             objetivo('Decide qué hacer con Güero',
                      'Está en fase crítica. El panel de la derecha tiene las opciones.');
@@ -323,7 +324,7 @@ function tablaControles() {
         ['Medidas', '1 lava · 2 tapa · 3 voltea · 4 tira'],
         ['Fichero', 'C'],
         ['Debug', 'F3'],         ['Silencio', 'M'],
-        ['Mirar (3D)', 'ratón'], ['Capturar (3D)', 'clic'],
+        ['Mirar (3D)', 'ratón'], ['Capturar (3D)', 'automático · clic'],
         ['Gancho (3D)', 'Q (mantener)']
     ];
     const tabla = f => '<div class="tabla-controles">' +
@@ -337,9 +338,9 @@ function tablaControles() {
         ['Raqueta', e.Y + ' · ' + e.LT], ['Atacar', e.X + ' · ' + e.RT],
         ['Tienda', e.LB],          ['Pausa', e.START],
         ['Medidas', 'cruceta ↑ lava · → tapa · ↓ voltea · ← tira'],
-        ['Fichero', e.RB],
-        ['Mirar (3D)', 'stick der.'], ['Silencio', e.BACK],
-        ['Gancho (3D)', 'clic stick der. (mantener)']
+        ['Fichero', 'clic stick der.'],
+        ['Mirar (3D) · desplazar menús', 'stick der.'], ['Silencio', e.BACK],
+        ['Gancho (3D)', e.RB + ' (mantener)']
     ];
     return tabla(filas) +
         '<div style="margin-top:8px;font-size:12px;color:#4dd0e1">🎮 ' + e.nombre + '</div>' +
@@ -469,7 +470,7 @@ function pausar() {
         boton2: 'Menú principal', accion2: menuPrincipal
     });
 }
-function reanudar() { ocultarMenu(); estado = estadoPrevio; }
+function reanudar() { ocultarMenu(); estado = estadoPrevio; capturarRaton3D(); }
 
 // --- Control de niveles ----------------------------------------------------
 function iniciarNivel(n) {
@@ -507,6 +508,7 @@ function iniciarNivel(n) {
     actualizarHUD();
     sfx.nivel();
     aviso('NIVEL ' + n, 1100);
+    capturarRaton3D();       // si se llegó con un clic («Nivel 2», «Reintentar»), ya no hace falta otro
 }
 
 /** Cierre de nivel: qué hiciste y un mito derribado. Es la pausa donde el

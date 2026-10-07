@@ -197,6 +197,16 @@ function actualizarJugador3D(dt) {
     if (!chocaCirculo(cam.position.x, nz, RADIO_JUG)) cam.position.z = nz;
     else if (jugador.dashT > 0) jugador.dashT = 0;
 
+    // Los envases son sólidos: antes se atravesaban. Se empuja hacia fuera,
+    // salvo que eso meta al jugador en un muro.
+    for (const c of criaderos3D) {
+        const ex = cam.position.x - c.x, ez = cam.position.z - c.z;
+        const min = c.radioCol + RADIO_JUG, d2 = ex * ex + ez * ez;
+        if (d2 >= min * min || d2 < 1e-6) continue;
+        const d = Math.sqrt(d2), px = c.x + ex / d * min, pz = c.z + ez / d * min;
+        if (!chocaCirculo(px, pz, RADIO_JUG)) { cam.position.x = px; cam.position.z = pz; }
+    }
+
     // Salto y gravedad
     jugador.vy3 -= CFG.gravedad3D * dt;
     cam.position.y += jugador.vy3 * dt;

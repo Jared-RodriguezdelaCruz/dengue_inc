@@ -95,6 +95,7 @@ http://localhost:8000
 ### Solo en 3D
 - `Q` (mantener) — gancho: te jala hacia la pared o el mosquito que tengas en la mira. Cuesta estamina y tiene cooldown; al mosquito lo aturde y le quita 1 de vida, no lo mata de un golpe.
 - `Ctrl + Shift` — rodar
+- El ratón se captura solo al entrar a un nivel 3D o al volver de la pausa, la tienda o el fichero. Si el navegador no lo permite (por ejemplo, tras la transición al nivel 5), basta un clic o cualquier tecla.
 
 ### Medidas para criaderos
 - `1` — lava
@@ -106,18 +107,18 @@ http://localhost:8000
 Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. Los botones van por posición (Xbox / PlayStation / Nintendo):
 
 - Stick izquierdo — mover (en 3D: caminar)
-- Stick derecho — mirar (3D, sin necesidad de capturar el ratón)
+- Stick derecho — mirar (3D, sin necesidad de capturar el ratón) · desplazar el texto de menús, fichero y tienda
 - `A` / `✕` / `B` — saltar · confirmar en menús
 - `B` / `○` / `A` — dash (con stick abajo: esquive) · volver en menús
 - `X` / `□` / `Y` o `RT` / `R2` / `ZR` — atacar (gatillo sostenido = autofuego en 3D)
 - `Y` / `△` / `X` o `LT` / `L2` / `ZL` — raqueta
 - `LB` / `L1` / `L` — tienda
-- `RB` / `R1` / `R` — fichero
+- `RB` / `R1` / `R` (mantener) — gancho (3D)
 - `Menu` / `Options` / `+` — pausa
 - `View` / `Share` / `−` — silenciar
 - `L3` — rodar (3D)
-- `R3` (clic del stick derecho, mantener) — gancho (3D)
-- Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección)
+- `R3` (clic del stick derecho) — fichero
+- Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección; en el primer o el último botón, desplaza el texto que falte por ver)
 
 El código está en `js/01c-mando.js`.
 

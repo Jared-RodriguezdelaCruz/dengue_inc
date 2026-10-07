@@ -230,12 +230,16 @@ window.addEventListener('keydown', e => {
     if (e.code === 'F3') { e.preventDefault(); mostrarDebug = !mostrarDebug;
                            document.getElementById('debug').style.display = mostrarDebug ? 'block' : 'none'; }
     accionGlobal(e.code);
+    // Una tecla también es un gesto: en 3D captura el ratón sin pedir clic.
+    if (estado === estados.J3D) capturarRaton3D();
 });
 window.addEventListener('keyup', e => { teclas[e.code] = false; });
 window.addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
 
 const contenedor = document.getElementById('game-container');
 contenedor.addEventListener('mousedown', e => {
+    // En 3D sin capturar, ese clic es para capturar el ratón: no dispara ni pega.
+    if (estado === estados.J3D && !document.pointerLockElement) return;
     if (e.button < 3) { ratonAbajo[e.button] = true; ratonNuevo[e.button] = true; }
 });
 window.addEventListener('mouseup',  e => { if (e.button < 3) ratonAbajo[e.button] = false; });

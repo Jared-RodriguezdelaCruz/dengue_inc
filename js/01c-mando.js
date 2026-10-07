@@ -40,6 +40,8 @@ function detectarMarca(id) {
 const CODIGOS_GLOBALES = ['Escape', 'KeyC', 'KeyT', 'KeyM'];
 const ZONA_MUERTA_MOV = 0.4;
 const ZONA_MUERTA_CAM = 0.15;
+const PASO_SCROLL_MANDO = 90;   // px por pulsación de cruceta al llegar al borde de un panel
+const VEL_SCROLL_MANDO = 16;    // px por frame con el stick derecho a tope
 
 const padPrev = {};           // estado del frame anterior, por código virtual
 let indicePad = -1;
@@ -91,7 +93,8 @@ function vibrar(ms, fuerza) {
 
 // --- Navegación de menús ---------------------------------------------------
 //  Con un panel abierto, la cruceta (y el stick) mueven un foco entre sus
-//  botones y A pulsa el que esté marcado. Los paneles a pantalla completa se
+//  botones y A pulsa el que esté marcado; el stick derecho desplaza el texto
+//  (ver scrollDePanel, más abajo). Los paneles a pantalla completa se
 //  tragan todo lo demás; el de Güero se ve en plena partida, así que solo
 //  captura la cruceta vertical y A: el jugador tiene que poder seguir moviéndose.
 let focoPanel = null, focoIdx = 0, focoEl = null;
@@ -124,6 +127,30 @@ function soltarFoco() {
     focoEl = null; focoPanel = null;
 }
 
+// Con mando, el menú lleva dos tablas de controles y ya no cabe en el marco; el
+// fichero tiene un solo botón y una lista larga. Sin esto el mando solo saltaba
+// entre botones y lo que quedaba arriba o abajo no se podía leer.
+/** Lo que se desplaza en cada panel. */
+function scrollDePanel(panel) {
+    if (panel.id === 'fichero') return document.getElementById('fichero-lista');
+    if (panel.id === 'tienda') return panel.closest('.riel');
+    return panel;
+}
+
+/** ¿Queda contenido por ver en esa dirección (-1 arriba, +1 abajo)? */
+function quedaScroll(s, dir) {
+    return dir < 0 ? s.scrollTop > 0 : s.scrollTop + s.clientHeight < s.scrollHeight - 1;
+}
+
+/** Zona muerta y curva cuadrática: precisión cerca del centro del stick. */
+function curvaStick(v, dz) {
+    const a = Math.abs(v);
+    if (a < dz) return 0;
+    const n = (a - dz) / (1 - dz);
+    return Math.sign(v) * n * n;
+}
+let restoScroll = 0;            // el navegador redondea scrollTop: se acumula la fracción
+
 /** -1 arriba, +1 abajo, 0 nada. Repite al mantener, como un teclado. */
 function pasoNavegacion(dir, dtMs) {
     if (dir === 0) { navDirPrev = 0; return 0; }
@@ -149,9 +176,9 @@ function actualizarMando(dtReal) {
         KeyJ:        bt(BOTON.X) || bt(BOTON.RT),
         KeyF:        bt(BOTON.Y) || bt(BOTON.LT),
         ControlLeft: bt(BOTON.L3),
-        KeyQ:        bt(BOTON.R3),        // gancho 3D: clic del stick de la cámara
+        KeyQ:        bt(BOTON.RB),        // gancho 3D: se mantiene pulsado, y RB aguanta mejor que el clic del stick
         KeyT:        bt(BOTON.LB),
-        KeyC:        bt(BOTON.RB),
+        KeyC:        bt(BOTON.R3),        // fichero
         KeyM:        bt(BOTON.BACK),
         Escape:      bt(BOTON.START),
         Digit1:      bt(BOTON.ARRIBA),
@@ -179,8 +206,25 @@ function actualizarMando(dtReal) {
         if (ahora.Digit1 || (p.completo && ly < -0.5) || (p.completo && ahora.Digit4)) dir = -1;
         else if (ahora.Digit3 || (p.completo && ly > 0.5) || (p.completo && ahora.Digit2)) dir = 1;
         const paso = pasoNavegacion(dir, dtReal * 16.667);
-        if (paso && botones.length) focoIdx = (focoIdx + paso + botones.length) % botones.length;
+        if (paso) {
+            // En el primer o el último botón, si aún queda texto en esa dirección,
+            // se desplaza el panel; solo cuando ya no queda nada da la vuelta.
+            const s = p.completo ? scrollDePanel(p.el) : null;
+            const enBorde = !botones.length || focoIdx === (paso < 0 ? 0 : botones.length - 1);
+            if (enBorde && s && quedaScroll(s, paso)) s.scrollTop += paso * PASO_SCROLL_MANDO;
+            else if (botones.length) focoIdx = (focoIdx + paso + botones.length) % botones.length;
+        }
         marcarFoco(botones);
+
+        // Stick derecho: desplazamiento libre. En un panel completo no hay cámara.
+        if (p.completo) {
+            const s = scrollDePanel(p.el), v = curvaStick(ax(3), ZONA_MUERTA_CAM);
+            if (s && v) {
+                restoScroll += v * VEL_SCROLL_MANDO * Math.min(dtReal, 3);
+                const px = Math.trunc(restoScroll);
+                if (px) { s.scrollTop += px; restoScroll -= px; }
+            } else restoScroll = 0;
+        }
 
         if (nuevo('Space') && focoEl) focoEl.click();
         else if (p.completo && estado === estados.MENU && nuevo('Escape') && focoEl) focoEl.click();
@@ -211,14 +255,8 @@ function actualizarMando(dtReal) {
 
     // --- Cámara 3D con el stick derecho ---
     if (estado === estados.J3D && !completo) {
-        const cam = (v, dz) => {
-            const a = Math.abs(v);
-            if (a < dz) return 0;
-            const n = (a - dz) / (1 - dz);
-            return Math.sign(v) * n * n;       // curva cuadrática: precisión cerca del centro
-        };
         const k = CFG.velCamaraMando * Math.min(dtReal, 3);
-        ratonDX += cam(ax(2), ZONA_MUERTA_CAM) * k;
-        ratonDY += cam(ax(3), ZONA_MUERTA_CAM) * k;
+        ratonDX += curvaStick(ax(2), ZONA_MUERTA_CAM) * k;
+        ratonDY += curvaStick(ax(3), ZONA_MUERTA_CAM) * k;
     }
 }
