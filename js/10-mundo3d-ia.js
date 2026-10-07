@@ -29,8 +29,14 @@ function actualizarMosquitos3D(dt) {
         // Aleteo: escala vertical de los planos de las alas.
         const al = Math.abs(Math.sin(e.fase * 9)) * 0.9 + 0.25;
         e.alaI.scale.y = al; e.alaD.scale.y = al;
-        e.malla.material.color.setHex(e.flash > 0 ? 0xffffff :
-            (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0 ? 0xffffff : parseInt(a.color.slice(1), 16)));
+        // Destello de golpe y parpadeo de telegrafía por emissive: con textura,
+        // poner el color en blanco solo dejaba ver la textura sin teñir. Solo se
+        // toca el material cuando el estado cambia, no en cada frame.
+        const blanco = e.flash > 0 || (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0);
+        if (blanco !== e.blanco) {
+            e.blanco = blanco;
+            e.malla.material.emissive.setHex(blanco ? 0xffffff : 0x000000);
+        }
 
         if (e.aturdido > 0) {
             e.aturdido -= dt;
@@ -272,14 +278,19 @@ function actualizarObjetos3D(dt) {
     for (const c of criaderos3D) {
         const seco = c.neutralizado || c.vaciado;
         if (c.agua) c.agua.visible = !seco;
-        if (c.neutralizado && c.malla) c.malla.material.color.setHex(0x6b7a8f);
+        // Gris una sola vez al cerrarse (antes era un setHex en cada frame).
+        if (c.neutralizado && !c.gris) {
+            c.gris = true;
+            for (const m of c.mats) m.color.setHex(GRIS_CERRADO);
+        }
     }
     for (const ti of tinacos3D) {
         if (!ti.agua.visible) continue;
-        ti.agua.position.y = 2.42 + Math.sin(t * 1.6 + ti.fase) * 0.045;
+        ti.agua.position.y = ti.aguaY + Math.sin(t * 1.6 + ti.fase) * 0.012;
         ti.agua.material.opacity = 0.7 + Math.sin(t * 2.2 + ti.fase) * 0.12;
         if (Math.random() < 0.02)
-            emitir3D(ti.malla.position.x + rndRango(-.8,.8), 2.5, ti.malla.position.z + rndRango(-.8,.8),
+            emitir3D(ti.malla.position.x + rndRango(-ti.r, ti.r) * 0.7, ti.aguaY + 0.08,
+                     ti.malla.position.z + rndRango(-ti.r, ti.r) * 0.7,
                      0, 0.008, 0, 40, 0.2, 0.7, 0.75, 0.0004);
     }
     if (meta3D) {

@@ -89,8 +89,13 @@ http://localhost:8000
 - `T` — tienda
 - `C` — fichero
 - `Esc` — pausa
-- `M` — silenciar/activar audio
+- `M` — silenciar/activar audio (en el menú hay botones para música y sonidos por separado; se recuerdan al recargar)
 - `F3` — mostrar debug
+
+### Solo en 3D
+- `Q` (mantener) — gancho: te jala hacia la pared o el mosquito que tengas en la mira. Cuesta estamina y tiene cooldown; al mosquito lo aturde y le quita 1 de vida, no lo mata de un golpe.
+- `Ctrl + Shift` — rodar
+- El ratón se captura solo al entrar a un nivel 3D o al volver de la pausa, la tienda o el fichero. Si el navegador no lo permite (por ejemplo, tras la transición al nivel 5), basta un clic o cualquier tecla.
 
 ### Medidas para criaderos
 - `1` — lava
@@ -102,17 +107,18 @@ http://localhost:8000
 Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. Los botones van por posición (Xbox / PlayStation / Nintendo):
 
 - Stick izquierdo — mover (en 3D: caminar)
-- Stick derecho — mirar (3D, sin necesidad de capturar el ratón)
+- Stick derecho — mirar (3D, sin necesidad de capturar el ratón) · desplazar el texto de menús, fichero y tienda
 - `A` / `✕` / `B` — saltar · confirmar en menús
 - `B` / `○` / `A` — dash (con stick abajo: esquive) · volver en menús
 - `X` / `□` / `Y` o `RT` / `R2` / `ZR` — atacar (gatillo sostenido = autofuego en 3D)
 - `Y` / `△` / `X` o `LT` / `L2` / `ZL` — raqueta
 - `LB` / `L1` / `L` — tienda
-- `RB` / `R1` / `R` — fichero
+- `RB` / `R1` / `R` (mantener) — gancho (3D)
 - `Menu` / `Options` / `+` — pausa
 - `View` / `Share` / `−` — silenciar
 - `L3` — rodar (3D)
-- Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección)
+- `R3` (clic del stick derecho) — fichero
+- Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección; en el primer o el último botón, desplaza el texto que falte por ver)
 
 El código está en `js/01c-mando.js`.
 
@@ -133,7 +139,9 @@ El juego usa una semilla para generar niveles reproducibles. Si ingresas una sem
 ## Recomendaciones
 
 - Si modificas archivos JavaScript, recuerda mantener el orden de carga definido en `index.html`.
-- El proyecto usa caché-busting mediante parámetros como `?v=b5` en los scripts para evitar que el navegador use versiones antiguas.
+- El proyecto usa caché-busting mediante parámetros como `?v=b6` en los scripts para evitar que el navegador use versiones antiguas. Al subir `BUILD` en `js/01-nucleo.js`, sube también el `?v=` de `index.html` (el CI revisa que coincidan).
+- **Modo Coco (para probar):** `P` activa modo dios, espadazo y dash apuntados con el ratón (2D). Solo funciona en local (`file://`, `localhost`) o si la URL lleva `?coco`; en la versión publicada no se puede activar por accidente.
+- Las texturas de `assets/textures/` deben ser PNG con transparencia y con el personaje mirando a la derecha (el juego las voltea según la dirección). Abriendo con doble clic (`file://`), el 3D no puede usar texturas y se queda con colores: para verlas, usa el servidor local.
 - Si quieres probar cambios visuales o gameplay, puedes abrir el juego y generar una nueva semilla para observar distintos recorridos.
 
 ## Créditos y propósito

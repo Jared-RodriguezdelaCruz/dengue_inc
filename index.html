@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dengue: Multiverso Aguascalientes v2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<link rel="stylesheet" href="css/estilos.css?v=b5">
+<link rel="stylesheet" href="css/estilos.css?v=b6">
 </head>
 <body>
 
@@ -83,9 +83,9 @@
           <h1 id="pm-titulo">Dengue: Multiverso</h1>
           <div class="sub" id="pm-desc"></div>
           <div id="pm-controles"></div>
-          <div id="pm-audio" style="margin-top:16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-              <button class="btn azul" id="pm-musica" type="button" onclick="alternarMusicaMenu()">Música: ON</button>
-              <button class="btn azul" id="pm-sonidos" type="button" onclick="alternarSonidosMenu()">Sonidos: ON</button>
+          <div id="pm-audio" class="fila-audio">
+              <button class="btn azul" id="pm-musica" type="button" aria-pressed="true" onclick="alternarMusicaMenu()">Música: ON</button>
+              <button class="btn azul" id="pm-sonidos" type="button" aria-pressed="true" onclick="alternarSonidosMenu()">Sonidos: ON</button>
           </div>
           <div id="pm-semilla" class="fila-semilla"></div>
           <div style="margin-top:20px; display:flex; gap:12px;">
@@ -162,21 +162,21 @@
 <!-- El orden importa: 01 declara la configuracion y utilidades que usan los demas.
      Son scripts clasicos (no modulos) a proposito: asi el juego sigue abriendose
      con doble clic desde file:// sin necesidad de un servidor. -->
-<script src="js/01-nucleo.js?v=b5"></script>
-<script src="js/01b-datos-dengue.js?v=b5"></script>
-<script src="js/01c-mando.js?v=b5"></script>
-<script src="js/02-efectos.js?v=b5"></script>
-<script src="js/03-jugador.js?v=b5"></script>
-<script src="js/04-mundo2d-gen.js?v=b5"></script>
-<script src="js/05-mundo2d-fisica.js?v=b5"></script>
-<script src="js/06-mundo2d-ia.js?v=b5"></script>
-<script src="js/07-mundo2d-dibujo.js?v=b5"></script>
-<script src="js/08-mundo3d-gen.js?v=b5"></script>
-<script src="js/09-mundo3d-jugador.js?v=b5"></script>
-<script src="js/10-mundo3d-ia.js?v=b5"></script>
-<script src="js/11-flujo.js?v=b5"></script>
-<script src="js/11b-educacion.js?v=b5"></script>
-<script src="js/11c-guero.js?v=b5"></script>
-<script src="js/12-bucle.js?v=b5"></script>
+<script src="js/01-nucleo.js?v=b6"></script>
+<script src="js/01b-datos-dengue.js?v=b6"></script>
+<script src="js/01c-mando.js?v=b6"></script>
+<script src="js/02-efectos.js?v=b6"></script>
+<script src="js/03-jugador.js?v=b6"></script>
+<script src="js/04-mundo2d-gen.js?v=b6"></script>
+<script src="js/05-mundo2d-fisica.js?v=b6"></script>
+<script src="js/06-mundo2d-ia.js?v=b6"></script>
+<script src="js/07-mundo2d-dibujo.js?v=b6"></script>
+<script src="js/08-mundo3d-gen.js?v=b6"></script>
+<script src="js/09-mundo3d-jugador.js?v=b6"></script>
+<script src="js/10-mundo3d-ia.js?v=b6"></script>
+<script src="js/11-flujo.js?v=b6"></script>
+<script src="js/11b-educacion.js?v=b6"></script>
+<script src="js/11c-guero.js?v=b6"></script>
+<script src="js/12-bucle.js?v=b6"></script>
 </body>
 </html>

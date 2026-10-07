@@ -31,9 +31,9 @@ jobs:
           TITULO: ${{ github.event.pull_request.title }}
         run: |
           echo "Título: $TITULO"
-          if printf '%s' "$TITULO" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|chore|ci)(\([a-z0-9-]+\))?!?: .+'; then
+          if printf '%s' "$TITULO" | grep -Eqi '^((feat|fix|docs|style|refactor|perf|test|chore|ci)(\([a-z0-9-]+\))?!?: .+|(feat|fix|docs|style|refactor|perf|test|chore|ci)(/[a-z0-9-]+) .+)$'; then
             echo "✅ Formato correcto"
           else
-            echo "::error::El título debe ser 'tipo(área): descripción', por ejemplo 'feat(audio): tema del menú (DI-404)'. Tipos: feat, fix, docs, style, refactor, perf, test, chore, ci."
+            echo "::error::El título debe ser 'tipo(área): descripción' (ej. 'feat(audio): tema del menú (DI-404)') o 'tipo/área descripción' (ej. 'fix/rendimiento ultimos commits'). Tipos: feat, fix, docs, style, refactor, perf, test, chore, ci."
             exit 1
           fi

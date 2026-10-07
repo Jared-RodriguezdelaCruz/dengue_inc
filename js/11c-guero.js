@@ -14,18 +14,26 @@
 
 let guero = null;
 const elPanelGuero = () => document.getElementById('panel-guero');
-const texturaGuero = new THREE.TextureLoader().load('assets/textures/guero.png');
-texturaGuero.colorSpace = THREE.SRGBColorSpace;
+const texturaGuero = cargarTextura3D('assets/textures/guero.png');   // null desde file://
 const audioGueroDialogue1 = new Audio('assets/sounds/guero_dialogue1.mp3');
 audioGueroDialogue1.preload = 'auto';
-audioGueroDialogue1.volume = 0.8;
+// 1.0 es el máximo: HTMLMediaElement lanza IndexSizeError con un volumen > 1,
+// y esa excepción cortaba la carga del script entero. Para que suene más fuerte
+// hay que exportar el MP3 con más ganancia.
+audioGueroDialogue1.volume = 1.0;
 audioGueroDialogue1.loop = false;
 
+/** No reinicia si ya está hablando: así no se duplica el frame del hallazgo ni
+ *  vuelve a empezar cada vez que cruzas el borde del radio. */
 function reproducirDialogoGuero() {
-    if (!guero || !audioActivo || !sfxActivo) return;
+    if (!guero || !sfxActivo || !audioGueroDialogue1.paused) return;
     audioGueroDialogue1.currentTime = 0;
-    audioGueroDialogue1.muted = false;
     audioGueroDialogue1.play().catch(() => {});
+}
+
+/** Al pausar, silenciar o cambiar de nivel, Güero se calla. */
+function detenerDialogoGuero() {
+    if (!audioGueroDialogue1.paused) audioGueroDialogue1.pause();
 }
 
 /**
@@ -43,6 +51,7 @@ const panelG = { montado: false, barra: null, reloj: null, senales: [], botones:
 
 function reiniciarGuero() {
     guero = null;
+    detenerDialogoGuero();
     const el = elPanelGuero();
     if (el) { el.classList.add('oculto'); el.innerHTML = ''; }
     // El panel se vacía: hay que volver a montarlo, con sus listeners.
@@ -64,13 +73,26 @@ function crearGuero3D(x, z) {
 
     const cabeza = new THREE.Mesh(
         new THREE.SphereGeometry(0.21, 24, 20),
-        new THREE.MeshLambertMaterial({ map: texturaGuero, color: 0xffffff })
+        new THREE.MeshLambertMaterial({ color: 0xe8c39e })
     );
     cabeza.position.set(0, 1.24, 0.06);
     g.add(cabeza);
 
+    // La foto va en una media esfera frontal, no envolviendo la cabeza entera:
+    // en una esfera completa el centro de la imagen quedaba mirando a +X y de
+    // frente se veía media cara estirada. Con phiStart 0 y phiLength π el centro
+    // de la imagen (u = 0.5) cae en +Z, del lado contrario a la melena.
+    if (texturaGuero) {
+        const cara = new THREE.Mesh(
+            new THREE.SphereGeometry(0.212, 24, 16, 0, Math.PI, Math.PI * 0.2, Math.PI * 0.6),
+            new THREE.MeshLambertMaterial({ map: texturaGuero })
+        );
+        cara.position.copy(cabeza.position);
+        g.add(cara);
+    }
+
     const melena = new THREE.Group();
-    const matMelena = new THREE.MeshLambertMaterial({ color: 0xd7b15c, side: THREE.DoubleSide });
+    const matMelena = new THREE.MeshLambertMaterial({ color: 0xd7b15c });
     for (let i = 0; i < 9; i++) {
         const a = (i / 9) * Math.PI * 2;
         const mechon = new THREE.Mesh(
@@ -142,6 +164,10 @@ function actualizarGuero(dt) {
 
     const d = camera3D.position.distanceTo(guero.grupo.position);
     const cerca = d < 3.4;
+
+    // Te da la cara mientras siga consciente (el frente del modelo es +Z).
+    if (!guero.resuelto || guero.salvado)
+        guero.grupo.rotation.y = Math.atan2(camera3D.position.x - guero.x, camera3D.position.z - guero.z);
 
     if (cerca && !guero.encontrado) {
         guero.encontrado = true;                 // el reloj arranca AQUÍ

@@ -12,19 +12,26 @@ let meta3D = null, luzMeta = null;
 let raqueta3D = null, mallaRaqueta = null, luzRaqueta = null;
 let bobCam = 0, kickCam = 0, sacudida3D = 0;
 
+// Desde file:// (abrir index.html con doble clic) TextureLoader pide la imagen
+// con CORS y el navegador la bloquea: la textura queda vacía, el mosquito sale
+// negro y la consola marca el error. En ese caso el 3D se queda con materiales de
+// color, como antes. (El 2D no tiene el problema: un <img> normal sí carga.)
+const TEXTURAS_3D = location.protocol !== 'file:';
+const cargarTextura3D = ruta => TEXTURAS_3D ? new THREE.TextureLoader().load(ruta) : null;
+
+// Sin ajuste de espacio de color: en r128 el renderer sale en lineal y las
+// texturas lineales se ven tal cual (THREE.SRGBColorSpace no existe hasta r152).
 const texturasEnemigos3D = {
-    base: new THREE.TextureLoader().load('assets/textures/enemy_base.png'),
-    mini: new THREE.TextureLoader().load('assets/textures/enemy_mini.png'),
-    giant: new THREE.TextureLoader().load('assets/textures/enemy_giant.png')
+    base: cargarTextura3D('assets/textures/enemy_base.png'),
+    mini: cargarTextura3D('assets/textures/enemy_mini.png'),
+    giant: cargarTextura3D('assets/textures/enemy_giant.png')
 };
-for (const tex of Object.values(texturasEnemigos3D)) {
-    tex.colorSpace = THREE.SRGBColorSpace;
-}
 function texturaEnemigo3D(tipo) {
     if (tipo === 'enjambre') return texturasEnemigos3D.mini;
     if (tipo === 'mutante') return texturasEnemigos3D.giant;
     return texturasEnemigos3D.base;
 }
+const BLANCO3 = new THREE.Color(0xffffff);
 
 const GW = 46, GH = 46;          // celdas de la rejilla del mapa
 const CELDA3 = 3.2;              // unidades de mundo por celda
@@ -212,9 +219,24 @@ function iniciarMotor3D() {
 
     crearRaqueta3D();
 
-    renderer.domElement.addEventListener('click', () => {
-        if (estado === estados.J3D && !tiendaAbierta()) renderer.domElement.requestPointerLock();
-    });
+    renderer.domElement.addEventListener('click', () => capturarRaton3D(true));
+}
+
+/**
+ * Captura el ratón para mirar en 3D. Se llama al entrar a un nivel 3D, al volver
+ * de la pausa, la tienda o el fichero, y con cualquier tecla: así no hace falta
+ * el clic extra. El navegador solo lo permite dentro de un gesto (clic o tecla);
+ * fuera de uno —la transición al nivel 5, el botón A del mando— lo rechaza y se
+ * queda el aviso de «haz clic». Con el panel de Güero abierto solo captura un
+ * clic sobre la vista (`aunConGuero`): ahí el ratón hace falta para elegir.
+ */
+function capturarRaton3D(aunConGuero) {
+    if (estado !== estados.J3D || !renderer || document.pointerLockElement) return;
+    if (tiendaAbierta() || ficheroAbierto()) return;
+    const pg = document.getElementById('panel-guero');
+    if (!aunConGuero && pg && !pg.classList.contains('oculto')) return;
+    const p = renderer.domElement.requestPointerLock();
+    if (p && p.catch) p.catch(() => {});      // rechazado fuera de un gesto: no pasa nada
 }
 
 // Las dos poses del viewmodel. El barrido cruza la vista pero se detiene antes
@@ -282,6 +304,7 @@ function limpiarNivel3D() {
     mosquitos3D = []; monedas3D = []; proy3D = []; tinacos3D = []; criaderos3D = [];
     meta3D = null; murosInst = null; P3.n = 0;
     reiniciarGuero();          // su malla vive en grupoNivel: ya quedó liberada
+    limpiarGancho3D();         // no puede seguir jalando hacia un mosquito del nivel anterior
     for (const a of anillos) { a.libre = true; a.mesh.visible = false; }
 }
 
@@ -415,8 +438,12 @@ function crearMosquito3D(tipo, x, z, y) {
     const a = ARQUETIPOS[tipo];
     const escala = tipo === 'enjambre' ? 0.62 : (tipo === 'mutante' ? 1.7 : 1);
     const g = new THREE.BoxGeometry(0.62 * escala, 0.5 * escala, 0.92 * escala);
+    // Con textura, el color del arquetipo se aclara: la tiñe sin taparla y el
+    // tipo se sigue leyendo. El destello va por emissive (ver 10-mundo3d-ia.js).
     const tex = texturaEnemigo3D(tipo);
-    const mat = new THREE.MeshLambertMaterial({ map: tex, color: 0xffffff });
+    const color = new THREE.Color(a.color);
+    if (tex) color.lerp(BLANCO3, 0.4);
+    const mat = new THREE.MeshLambertMaterial({ map: tex, color, emissive: 0x000000 });
     const malla = new THREE.Mesh(g, mat);
     malla.position.set(x, y === undefined ? 1.6 + Math.random() * 1.4 : y, z);
 
@@ -435,7 +462,7 @@ function crearMosquito3D(tipo, x, z, y) {
         vida: vidaBase, vidaMax: vidaBase, vivo: true,
         vx: 0, vy: 0, vz: 0, est: 'patrulla', t: 0,
         hogar: malla.position.clone(), ultX: x, ultZ: z, memT: 0,
-        cargaT: 0, cd: rndEnt(0, 90), aturdido: 0, flash: 0, token: false,
+        cargaT: 0, cd: rndEnt(0, 90), aturdido: 0, flash: 0, blanco: false, token: false,
         selloRaqueta: -1,
         fase: rndRango(0, 6.28),
         serotipo: serotipoDeNivel(nivelActual), origen: null
@@ -452,34 +479,202 @@ function crearMoneda3D(x, z, y) {
     monedas3D.push(m);
 }
 
+// --- Envases 3D --------------------------------------------------------------
+//  Antes todos eran el mismo cilindro de 2.3 m, casi negro y más alto que los
+//  ojos: simétrico y sin detalle, se veía igual desde cualquier lado y parecía
+//  un dibujo que giraba para mirarte. Ahora cada uno es el envase que es, con
+//  los colores del 2D, más bajo que los ojos (el agua se ve por dentro) y con
+//  algo que rompe la simetría: el asa, la rueda, la maceta fuera del centro.
+const GRIS_CERRADO = 0x6b7a8f;
+
+/** Material del envase. Se guarda en `mats` para ponerlo gris al cerrarlo. */
+function matEnvase(mats, color, doble) {
+    const m = new THREE.MeshLambertMaterial({ color, side: doble ? THREE.DoubleSide : THREE.FrontSide });
+    mats.push(m);
+    return m;
+}
+
+function pieza3D(g, geo, mat, x, y, z) {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    g.add(m);
+    return m;
+}
+
+/** Recipiente abierto, con fondo y aro en el borde. y0 = altura de la base. */
+function vaso3D(g, mats, rArr, rAb, alto, color, y0 = 0) {
+    const m = matEnvase(mats, color, true);       // DoubleSide: se ve por dentro
+    pieza3D(g, new THREE.CylinderGeometry(rArr, rAb, alto, 20, 1, true), m, 0, y0 + alto / 2, 0);
+    pieza3D(g, new THREE.CircleGeometry(rAb, 20).rotateX(-Math.PI / 2), m, 0, y0 + 0.01, 0);
+    pieza3D(g, new THREE.TorusGeometry(rArr, 0.035, 6, 24).rotateX(Math.PI / 2), m, 0, y0 + alto, 0);
+}
+
+/** Refuerzos horizontales (tambo, tinaco). */
+function aros3D(g, mats, r, ys, color) {
+    const m = matEnvase(mats, color);
+    for (const y of ys) pieza3D(g, new THREE.TorusGeometry(r, 0.04, 6, 24).rotateX(Math.PI / 2), m, 0, y, 0);
+}
+
+/** Superficie de agua: mientras se vea, el criadero produce. `geo` ya horizontal. */
+function agua3D(g, geo, y) {
+    return pieza3D(g, geo, new THREE.MeshBasicMaterial({
+        color: 0x2a7f8f, transparent: true, opacity: 0.85, side: THREE.DoubleSide
+    }), 0, y, 0);
+}
+const discoAgua = (r, lados = 20) => new THREE.CircleGeometry(r, lados).rotateX(-Math.PI / 2);
+
+/**
+ * El envase de cada tipo, con el origen en el suelo. Devuelve el grupo, sus
+ * materiales, el agua, a qué altura está (aguaY), cuánto mide (aguaR, para las
+ * partículas) y su radio de choque. No usa rnd(): no le mueve la semilla al nivel.
+ */
+function modeloEnvase3D(tipo) {
+    const g = new THREE.Group(), mats = [];
+    let agua, aguaY, aguaR, radio;
+    switch (tipo) {
+        case 'cubeta': {
+            vaso3D(g, mats, 0.5, 0.4, 0.8, 0x2980b9);
+            // El asa, caída hacia un lado: es lo que la delata como cubeta.
+            const asa = pieza3D(g, new THREE.TorusGeometry(0.5, 0.025, 5, 16, Math.PI),
+                                matEnvase(mats, 0x95a5a6), 0, 0.8, 0);
+            asa.rotation.x = -1.05;
+            aguaY = 0.62; aguaR = 0.47; radio = 0.5;
+            agua = agua3D(g, discoAgua(aguaR), aguaY);
+            break;
+        }
+        case 'tambo':
+            vaso3D(g, mats, 0.55, 0.55, 1.1, 0x7f6a3d);
+            aros3D(g, mats, 0.565, [0.3, 0.75], 0x5e4e2c);
+            aguaY = 0.95; aguaR = 0.54; radio = 0.55;
+            agua = agua3D(g, discoAgua(aguaR), aguaY);
+            break;
+        case 'tinaco':
+            vaso3D(g, mats, 0.8, 0.8, 1.4, 0x2c3e50);
+            aros3D(g, mats, 0.815, [0.35, 0.7, 1.05], 0x22303d);
+            aguaY = 1.25; aguaR = 0.79; radio = 0.8;
+            agua = agua3D(g, discoAgua(aguaR), aguaY);
+            break;
+        case 'cisterna': {
+            // Losa baja con una boca cuadrada: lo único que asoma de una cisterna.
+            pieza3D(g, new THREE.BoxGeometry(1.8, 0.45, 1.8), matEnvase(mats, 0x4a3f35), 0, 0.225, 0);
+            const mb = matEnvase(mats, 0x5d5147);
+            for (const s of [-1, 1]) {
+                pieza3D(g, new THREE.BoxGeometry(1.1, 0.14, 0.1), mb, 0, 0.52, s * 0.5);
+                pieza3D(g, new THREE.BoxGeometry(0.1, 0.14, 0.9), mb, s * 0.5, 0.52, 0);
+            }
+            aguaY = 0.5; aguaR = 0.45; radio = 1.05;
+            agua = agua3D(g, new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2), aguaY);
+            break;
+        }
+        case 'maceta': {
+            // El criadero es el plato; la maceta va encima y fuera del centro.
+            vaso3D(g, mats, 0.6, 0.52, 0.12, 0xa0482a);
+            pieza3D(g, new THREE.CylinderGeometry(0.4, 0.3, 0.6, 16), matEnvase(mats, 0xb1552f), 0.12, 0.42, 0.06);
+            pieza3D(g, discoAgua(0.37, 16), matEnvase(mats, 0x4e342e), 0.12, 0.721, 0.06);
+            pieza3D(g, new THREE.IcosahedronGeometry(0.3, 0), matEnvase(mats, 0x2e7d32), 0.16, 0.98, 0.04);
+            aguaY = 0.09; aguaR = 0.55; radio = 0.6;
+            agua = agua3D(g, discoAgua(aguaR), aguaY);
+            break;
+        }
+        case 'bebedero':
+            vaso3D(g, mats, 0.45, 0.36, 0.22, 0xd35400);
+            // Junto al de agua, el de croquetas: rompe la simetría y dice qué es.
+            pieza3D(g, new THREE.CylinderGeometry(0.26, 0.21, 0.15, 14), matEnvase(mats, 0xe67e22), 0.72, 0.075, 0.2);
+            pieza3D(g, discoAgua(0.23, 12), matEnvase(mats, 0x8d5a2b), 0.72, 0.151, 0.2);
+            aguaY = 0.17; aguaR = 0.42; radio = 0.5;
+            agua = agua3D(g, discoAgua(aguaR), aguaY);
+            break;
+        case 'florero': {
+            const perfil = [[0, 0], [0.22, 0], [0.3, 0.15], [0.32, 0.35], [0.24, 0.6], [0.14, 0.75], [0.16, 0.9]]
+                .map(p => new THREE.Vector2(p[0], p[1]));
+            pieza3D(g, new THREE.LatheGeometry(perfil, 18), matEnvase(mats, 0x8e6fb5, true), 0, 0, 0);
+            const tallo = matEnvase(mats, 0x2e7d32);
+            [[0.3, 0.2], [-0.25, 2.3], [0.15, 4.2]].forEach(([incl, giro]) => {
+                const t = pieza3D(g, new THREE.CylinderGeometry(0.012, 0.012, 0.55, 5).translate(0, 0.275, 0),
+                                  tallo, 0, 0.82, 0);
+                t.rotation.set(incl, giro, 0, 'YXZ');
+            });
+            // Flor en la punta del primer tallo (0.55 de largo, inclinado 0.3, girado 0.2).
+            pieza3D(g, new THREE.IcosahedronGeometry(0.07, 0), matEnvase(mats, 0xf1c40f), 0.032, 1.35, 0.159);
+            aguaY = 0.85; aguaR = 0.15; radio = 0.34;
+            agua = agua3D(g, discoAgua(aguaR, 14), aguaY);
+            break;
+        }
+        case 'carretilla': {
+            // Batea de cuatro lados (un cilindro de 4 segmentos girado 45° y
+            // estirado), rueda delante, patas y mangos detrás.
+            const batea = geo => geo.rotateY(Math.PI / 4).scale(1.5, 1, 1);
+            const mt = matEnvase(mats, 0xc0392b, true);
+            pieza3D(g, batea(new THREE.CylinderGeometry(0.6, 0.42, 0.35, 4, 1, true)), mt, 0, 0.675, 0);
+            pieza3D(g, batea(discoAgua(0.42, 4)), mt, 0, 0.505, 0);
+            pieza3D(g, new THREE.TorusGeometry(0.2, 0.06, 6, 16), matEnvase(mats, 0x22282e), 0.75, 0.26, 0);
+            const mf = matEnvase(mats, 0x7f8c8d);
+            for (const s of [-1, 1]) {
+                pieza3D(g, new THREE.BoxGeometry(0.05, 0.5, 0.05), mf, -0.42, 0.25, s * 0.3);
+                pieza3D(g, new THREE.CylinderGeometry(0.025, 0.025, 0.8, 6).rotateZ(Math.PI / 2), mf, -1.0, 0.8, s * 0.3);
+            }
+            aguaY = 0.7; aguaR = 0.5; radio = 0.85;
+            agua = agua3D(g, batea(discoAgua(0.5, 4)), aguaY);
+            break;
+        }
+        case 'llanta':
+            // De pie: de frente es un aro y de lado una banda, imposible de
+            // confundir con un dibujo. El agua se junta abajo, por dentro.
+            pieza3D(g, new THREE.TorusGeometry(0.5, 0.22, 10, 24), matEnvase(mats, 0x22282e), 0, 0.72, 0);
+            aguaY = 0.5; aguaR = 0.17; radio = 0.6;
+            agua = agua3D(g, new THREE.PlaneGeometry(0.34, 0.4).rotateX(-Math.PI / 2), aguaY);
+            break;
+        case 'botella': {
+            // Basura suelta: una botella de pie, otra tirada, una lata y el charco.
+            const mv = new THREE.MeshLambertMaterial({ color: 0x78be8c, transparent: true, opacity: 0.85 });
+            mats.push(mv);
+            const botella = (padre, x, y, z) => {
+                pieza3D(padre, new THREE.CylinderGeometry(0.16, 0.16, 0.5, 12), mv, x, y + 0.25, z);
+                pieza3D(padre, new THREE.CylinderGeometry(0.06, 0.16, 0.14, 12), mv, x, y + 0.57, z);
+                pieza3D(padre, new THREE.CylinderGeometry(0.06, 0.06, 0.14, 8), mv, x, y + 0.71, z);
+            };
+            botella(g, -0.25, 0, 0.12);
+            const tirada = new THREE.Group();
+            botella(tirada, 0, -0.39, 0);
+            tirada.position.set(0.3, 0.16, -0.2);
+            tirada.rotation.set(0, 0.6, Math.PI / 2, 'YXZ');
+            g.add(tirada);
+            pieza3D(g, new THREE.CylinderGeometry(0.09, 0.09, 0.24, 12), matEnvase(mats, 0xbdc3c7), 0.2, 0.12, 0.38);
+            aguaY = 0.02; aguaR = 0.4; radio = 0.45;
+            agua = agua3D(g, discoAgua(0.42, 18).scale(1.4, 1, 0.9), aguaY);
+            break;
+        }
+        default:
+            vaso3D(g, mats, 0.5, 0.4, 0.8, 0x16a085);
+            aguaY = 0.62; aguaR = 0.47; radio = 0.5;
+            agua = agua3D(g, discoAgua(aguaR), aguaY);
+    }
+    return { grupo: g, mats, agua, aguaY, aguaR, radio };
+}
+
+/** Giro fijo por posición. No sale de rnd() para no correr la semilla del nivel. */
+function giroFijo(x, z) {
+    const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
+    return (h - Math.floor(h)) * Math.PI * 2;
+}
+
 /** Un criadero en 3D: el mismo envase, con el mismo verbo, que en 2D. */
 function crearCriadero3D(tipo, x, z) {
     const d = CRIADEROS[tipo];
-    const alto = 2.3, r = 1.1;
-    const m = new THREE.Mesh(
-        new THREE.CylinderGeometry(r * 0.88, r, alto, 14),
-        new THREE.MeshLambertMaterial({ color: 0x1c2833 })
-    );
-    m.position.set(x, alto / 2, z);
-    grupoNivel.add(m);
-    // Superficie de agua: mientras se vea, el criadero produce.
-    const agua = new THREE.Mesh(
-        new THREE.CircleGeometry(r * 0.86, 18),
-        new THREE.MeshBasicMaterial({ color: 0x2a7f8f, transparent: true,
-                                     opacity: 0.85, side: THREE.DoubleSide })
-    );
-    agua.rotation.x = -Math.PI / 2;
-    agua.position.set(x, alto + 0.02, z);
-    grupoNivel.add(agua);
+    const m = modeloEnvase3D(tipo);
+    m.grupo.position.set(x, 0, z);
+    m.grupo.rotation.y = giroFijo(x, z);
+    grupoNivel.add(m.grupo);
 
     const c = {
-        tipo, verbo: d.verbo, x, y: 0, z, malla: m, agua,
+        tipo, verbo: d.verbo, x, y: 0, z, malla: m.grupo, agua: m.agua,
+        aguaY: m.aguaY, mats: m.mats, radioCol: m.radio, gris: false,
         activo: true, neutralizado: false, vaciado: false, tRevive: 0, conVerbo: null,
         prod: rndRango(0, 90), producidos: 0, vivos: 0,
         radio: 9, fase: rndRango(0, 6.28)
     };
     criaderos3D.push(c);
-    tinacos3D.push({ malla: m, agua, fase: c.fase });
+    tinacos3D.push({ malla: m.grupo, agua: m.agua, fase: c.fase, aguaY: m.aguaY, r: m.aguaR });
     return c;
 }
 
@@ -505,7 +700,7 @@ function actualizarCriaderos3D(dt) {
             if (c.tRevive <= 0) {
                 c.vaciado = false; c.activo = true;
                 if (c.agua) c.agua.visible = true;
-                fxExplosion3D(c.x, 2.4, c.z, 1.4, 0.2, 0.7, 0.4);
+                fxExplosion3D(c.x, c.aguaY + 0.4, c.z, 1.4, 0.2, 0.7, 0.4);
                 sacudida3D = Math.max(sacudida3D, 0.5); sfx.parryFail();
                 aviso('EL CRIADERO REVIVIÓ · LOS HUEVOS SOBREVIVEN SECOS', 2600);
                 desbloquearFicha('huevos_secos');
@@ -523,7 +718,7 @@ function actualizarCriaderos3D(dt) {
                                   c.x + rndRango(-1.4, 1.4), c.z + rndRango(-1.4, 1.4), 1.2);
         e.origen = c;
         c.vivos++; c.producidos++;
-        fxChispas3D(c.x, 2.5, c.z, 6, 0.2, 0.7, 0.45, 0.05);
+        fxChispas3D(c.x, c.aguaY + 0.1, c.z, 6, 0.2, 0.7, 0.45, 0.05);
         tono(150, 0.14, 'sawtooth', 0.035, 90);
         if (c.producidos === 6) desbloquearFicha('criadero_infinito');
     }
