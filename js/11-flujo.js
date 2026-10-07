@@ -334,10 +334,31 @@ function tablaControles() {
         tabla(filasMando);
 }
 
+function actualizarBotonesAudioMenu() {
+    const m = document.getElementById('pm-musica');
+    const s = document.getElementById('pm-sonidos');
+    if (m) m.textContent = 'Música: ' + (musicaActiva ? 'ON' : 'OFF');
+    if (s) s.textContent = 'Sonidos: ' + (sfxActivo ? 'ON' : 'OFF');
+}
+
+function alternarMusicaMenu() {
+    musicaActiva = !musicaActiva;
+    if (!musicaActiva) audioActivo = true;
+    actualizarMusicaFondo();
+    actualizarBotonesAudioMenu();
+}
+
+function alternarSonidosMenu() {
+    sfxActivo = !sfxActivo;
+    if (!sfxActivo) audioActivo = true;
+    actualizarBotonesAudioMenu();
+}
+
 function mostrarMenu(o) {
     document.getElementById('pm-titulo').innerHTML = o.titulo;
     document.getElementById('pm-desc').innerHTML = o.desc || '';
     document.getElementById('pm-controles').innerHTML = o.controles ? tablaControles() : '';
+    actualizarBotonesAudioMenu();
     document.getElementById('pm-semilla').innerHTML = o.semilla
         ? 'Semilla (deja vacío para una nueva): <input id="in-semilla" value="' + semillaRun + '">'
         : '';

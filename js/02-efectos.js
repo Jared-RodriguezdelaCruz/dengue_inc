@@ -294,14 +294,63 @@ function aviso(texto, ms) {
 //  6. AUDIO PROCEDURAL — osciladores WebAudio, sin archivos externos
 // ---------------------------------------------------------------------------
 let ctxAudio = null;
+let musicaFondo = null;
+let musicaActiva = true;
+let sfxActivo = true;
+
 function audio() {
     if (!ctxAudio) { try { ctxAudio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
     if (ctxAudio.state === 'suspended') ctxAudio.resume();
     return ctxAudio;
 }
+
+function actualizarMusicaFondo() {
+    if (!musicaFondo) return;
+    const habilitada = audioActivo && musicaActiva;
+    musicaFondo.muted = !habilitada;
+    if (!habilitada) {
+        if (!musicaFondo.paused) musicaFondo.pause();
+        return;
+    }
+    if (document.visibilityState === 'hidden') {
+        if (!musicaFondo.paused) musicaFondo.pause();
+        return;
+    }
+    if (musicaFondo.paused) {
+        musicaFondo.play().catch(() => {});
+    }
+}
+
+function inicializarMusicaFondo() {
+    if (musicaFondo) return musicaFondo;
+    const sonido = new Audio('assets/sounds/dg_song.mp3');
+    sonido.loop = true;
+    sonido.preload = 'auto';
+    sonido.volume = 0.45;
+    sonido.muted = !audioActivo || !musicaActiva;
+    musicaFondo = sonido;
+
+    const reintentar = () => {
+        if (!audioActivo) return;
+        if (document.visibilityState === 'hidden') return;
+        musicaFondo.muted = false;
+        musicaFondo.play().catch(() => {});
+    };
+
+    window.addEventListener('pointerdown', reintentar, { once: true });
+    window.addEventListener('keydown', reintentar, { once: true });
+    window.addEventListener('touchstart', reintentar, { once: true });
+    document.addEventListener('visibilitychange', actualizarMusicaFondo);
+    window.addEventListener('load', actualizarMusicaFondo, { once: true });
+    setTimeout(actualizarMusicaFondo, 200);
+
+    return sonido;
+}
+
+inicializarMusicaFondo();
 /** Un tono simple con envolvente exponencial. Barato y suficiente para SFX. */
 function tono(freq, dur, tipoOsc, vol, barridoA) {
-    if (!audioActivo) return;
+    if (!audioActivo || !sfxActivo) return;
     const ac = audio(); if (!ac) return;
     const t = ac.currentTime;
     const osc = ac.createOscillator(), g = ac.createGain();
@@ -316,7 +365,7 @@ function tono(freq, dur, tipoOsc, vol, barridoA) {
 }
 /** Ruido blanco filtrado: la base de explosiones e impactos. */
 function ruido(dur, vol, freqFiltro) {
-    if (!audioActivo) return;
+    if (!audioActivo || !sfxActivo) return;
     const ac = audio(); if (!ac) return;
     const n = Math.floor(ac.sampleRate * dur);
     const buf = ac.createBuffer(1, n, ac.sampleRate);

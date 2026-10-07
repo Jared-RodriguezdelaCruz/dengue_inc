@@ -5,6 +5,146 @@
 // frame: si se sumaran sin restarlos, la posición lógica derivaría sola y el
 // jugador acabaría empujado dentro de un muro.
 let offVisX = 0, offVisY = 0;
+const gancho3D = { activo: false, destino: null, objetivo: null, tipo: null, t: 0, cooldown: 0, mesh: null, linea: null, disparado: false };
+
+function crearGanchoVisual3D() {
+    if (!scene || gancho3D.mesh) return;
+    const hookGeo = new THREE.SphereGeometry(0.12, 10, 10);
+    const hookMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, emissive: 0x6d4500, metalness: 0.2, roughness: 0.5 });
+    gancho3D.mesh = new THREE.Mesh(hookGeo, hookMat);
+    gancho3D.mesh.visible = false;
+    scene.add(gancho3D.mesh);
+
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 1)
+    ]);
+    gancho3D.linea = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xf1c40f, transparent: true, opacity: 0.9 }));
+    gancho3D.linea.visible = false;
+    scene.add(gancho3D.linea);
+}
+
+function limpiarGancho3D() {
+    gancho3D.activo = false;
+    gancho3D.destino = null;
+    gancho3D.objetivo = null;
+    gancho3D.tipo = null;
+    gancho3D.t = 0;
+    gancho3D.disparado = false;
+    gancho3D.cooldown = 0.15;
+    if (gancho3D.mesh) gancho3D.mesh.visible = false;
+    if (gancho3D.linea) gancho3D.linea.visible = false;
+}
+
+function iniciarGancho3D() {
+    if (!camera3D || jugador.muerto || estado !== estados.J3D || gancho3D.cooldown > 0 || gancho3D.disparado) return;
+    crearGanchoVisual3D();
+    const cam = camera3D;
+    const origen = cam.position.clone();
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion).normalize();
+    const maxDist = 18;
+
+    let mejorEnemigo = null, mejorEnemigoDist = maxDist + 1;
+    let mejorPunto = null, mejorPuntoDist = maxDist + 1;
+
+    for (const e of mosquitos3D) {
+        if (!e.vivo) continue;
+        const to = e.malla.position.clone().sub(origen);
+        const along = to.dot(dir);
+        if (along <= 0 || along > maxDist) continue;
+        const lateral = to.clone().sub(dir.clone().multiplyScalar(along));
+        if (lateral.length() > 1.25) continue;
+        const d = to.length();
+        if (d < mejorEnemigoDist) { mejorEnemigo = e; mejorEnemigoDist = d; }
+    }
+
+    for (let i = 1; i <= 64; i++) {
+        const t = i / 64;
+        const px = origen.x + dir.x * t * maxDist;
+        const pz = origen.z + dir.z * t * maxDist;
+        if (solidoMundo(px, pz) || chocaCirculo(px, pz, 0.35)) {
+            const p = new THREE.Vector3(px, origen.y, pz);
+            const d = p.distanceTo(origen);
+            if (d < mejorPuntoDist) { mejorPunto = p; mejorPuntoDist = d; }
+        }
+    }
+
+    if (mejorEnemigo && (!mejorPunto || mejorEnemigoDist <= mejorPuntoDist)) {
+        gancho3D.activo = true;
+        gancho3D.destino = mejorEnemigo.malla.position.clone();
+        gancho3D.objetivo = mejorEnemigo;
+        gancho3D.tipo = 'enemigo';
+        gancho3D.t = 0;
+        gancho3D.disparado = true;
+        gancho3D.cooldown = 0.18;
+        return;
+    }
+    if (mejorPunto) {
+        gancho3D.activo = true;
+        gancho3D.destino = mejorPunto.clone();
+        gancho3D.objetivo = null;
+        gancho3D.tipo = 'pared';
+        gancho3D.t = 0;
+        gancho3D.disparado = true;
+        gancho3D.cooldown = 0.18;
+    }
+}
+
+function actualizarGancho3D(dt) {
+    if (!gancho3D.activo || !camera3D) return;
+    const cam = camera3D;
+    const target = gancho3D.objetivo ? gancho3D.objetivo.malla.position.clone() : gancho3D.destino.clone();
+    const v = target.clone().sub(cam.position);
+    const d = v.length();
+    if (d <= 0.2) {
+        if (gancho3D.objetivo && gancho3D.objetivo.vivo) {
+            matarMosquito3D(gancho3D.objetivo);
+        }
+        gancho3D.activo = false;
+        gancho3D.destino = null;
+        gancho3D.objetivo = null;
+        gancho3D.tipo = null;
+        gancho3D.t = 0;
+        gancho3D.disparado = true;
+        return;
+    }
+
+    const step = Math.min(d, 0.85 + dt * 0.28);
+    const next = cam.position.clone().add(v.clone().normalize().multiplyScalar(step));
+    if (solidoMundo(next.x, next.z) || chocaCirculo(next.x, next.z, RADIO_JUG)) {
+        gancho3D.activo = false;
+        gancho3D.destino = null;
+        gancho3D.objetivo = null;
+        gancho3D.tipo = null;
+        gancho3D.t = 0;
+        gancho3D.disparado = true;
+        return;
+    }
+
+    cam.position.copy(next);
+    gancho3D.t += dt;
+    if (gancho3D.mesh) {
+        gancho3D.mesh.visible = true;
+        gancho3D.mesh.position.copy(target);
+        if (gancho3D.linea) {
+            const pts = [cam.position.clone(), target.clone()];
+            gancho3D.linea.geometry.setFromPoints(pts);
+            gancho3D.linea.visible = true;
+        }
+    }
+
+    if (d < 1.2) {
+        if (gancho3D.objetivo && gancho3D.objetivo.vivo) {
+            matarMosquito3D(gancho3D.objetivo);
+        }
+        gancho3D.activo = false;
+        gancho3D.destino = null;
+        gancho3D.objetivo = null;
+        gancho3D.tipo = null;
+        gancho3D.t = 0;
+        gancho3D.disparado = true;
+    }
+}
 
 function actualizarJugador3D(dt) {
     const cam = camera3D;
@@ -24,6 +164,17 @@ function actualizarJugador3D(dt) {
     // Base ortonormal en el plano XZ a partir del yaw.
     const fx = -Math.sin(jugador.yaw), fz = -Math.cos(jugador.yaw);
     const rx =  Math.cos(jugador.yaw), rz = -Math.sin(jugador.yaw);
+
+    if (gancho3D.cooldown > 0) gancho3D.cooldown = Math.max(0, gancho3D.cooldown - dt / 60);
+    if (pulsada('KeyQ')) {
+        if (!gancho3D.disparado && !gancho3D.activo) iniciarGancho3D();
+    }
+    if (gancho3D.activo) {
+        actualizarGancho3D(dt);
+    }
+    if (!cualqAbajo('KeyQ') && (gancho3D.activo || gancho3D.disparado)) {
+        limpiarGancho3D();
+    }
 
     let av = 0, lat = 0;
     if (!jugador.muerto) {

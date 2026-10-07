@@ -5,6 +5,23 @@
 // ---------------------------------------------------------------------------
 const canvas = document.getElementById('canvas2d');
 const ctx = canvas.getContext('2d', { alpha: false });
+const texturaJugador = new Image();
+texturaJugador.src = 'assets/textures/player.png';
+const texturasEnemigos = {
+    base: new Image(),
+    mini: new Image(),
+    giant: new Image()
+};
+texturasEnemigos.base.src = 'assets/textures/enemy_base.png';
+texturasEnemigos.mini.src = 'assets/textures/enemy_mini.png';
+texturasEnemigos.giant.src = 'assets/textures/enemy_giant.png';
+
+function texturaEnemigo2D(tipo) {
+    if (tipo === 'enjambre') return texturasEnemigos.mini;
+    if (tipo === 'mutante') return texturasEnemigos.giant;
+    return texturasEnemigos.base;
+}
+
 let gradCielo = null;
 
 function actualizarCamara2D(dt) {
@@ -518,8 +535,16 @@ function dibujarEnemigos() {
         }
         // Cuerpo
         const flash = e.flash > 0 || (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0);
-        ctx.fillStyle = flash ? '#ffffff' : e.arq.color;
-        ctx.fillRect(-e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+        const texEnemigo = texturaEnemigo2D(e.tipo);
+        if (texEnemigo && texEnemigo.complete && texEnemigo.naturalWidth > 0) {
+            ctx.save();
+            if (flash) ctx.filter = 'brightness(1.6) saturate(1.2)';
+            ctx.drawImage(texEnemigo, -e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = flash ? '#ffffff' : e.arq.color;
+            ctx.fillRect(-e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+        }
         {
             // Trompa (el aparato picador del Aedes)
             ctx.fillStyle = flash ? '#fff' : '#2c1810';
@@ -589,20 +614,30 @@ function dibujarJugador() {
     ctx.scale(jugador.escX, jugador.escY);
 
     const w = jugador.ancho, h = jugador.alto;
-    // Cuerpo
-    ctx.fillStyle = jugador.dashT > 0 ? '#7fdbff' : '#2e86de';
-    ctx.fillRect(-w / 2, -h / 2, w, h);
-    ctx.fillStyle = '#54a0ff';
-    ctx.fillRect(-w / 2, -h / 2, w, 8);
-    // Gorra
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(-w / 2 - 2, -h / 2 - 6, w + 4, 7);
-    ctx.fillRect(jugador.dir > 0 ? 0 : -w / 2 - 8, -h / 2 - 5, w / 2 + 8, 4);
-    // Ojo
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(jugador.dir > 0 ? 2 : -8, -h / 2 + 12, 6, 6);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(jugador.dir > 0 ? 4 : -6, -h / 2 + 14, 3, 3);
+    if (texturaJugador && texturaJugador.complete && texturaJugador.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(-w / 2, -h / 2);
+        const escala = Math.min(w / texturaJugador.width, h / texturaJugador.height);
+        const iw = texturaJugador.width * escala;
+        const ih = texturaJugador.height * escala;
+        ctx.drawImage(texturaJugador, (w - iw) / 2, (h - ih) / 2, iw, ih);
+        ctx.restore();
+    } else {
+        // Cuerpo
+        ctx.fillStyle = jugador.dashT > 0 ? '#7fdbff' : '#2e86de';
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        ctx.fillStyle = '#54a0ff';
+        ctx.fillRect(-w / 2, -h / 2, w, 8);
+        // Gorra
+        ctx.fillStyle = '#c0392b';
+        ctx.fillRect(-w / 2 - 2, -h / 2 - 6, w + 4, 7);
+        ctx.fillRect(jugador.dir > 0 ? 0 : -w / 2 - 8, -h / 2 - 5, w / 2 + 8, 4);
+        // Ojo
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(jugador.dir > 0 ? 2 : -8, -h / 2 + 12, 6, 6);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(jugador.dir > 0 ? 4 : -6, -h / 2 + 14, 3, 3);
+    }
     ctx.restore();
 
     if (jugador.raquetaT > 0) dibujarRaqueta2D(cx, cy);

@@ -14,6 +14,19 @@
 
 let guero = null;
 const elPanelGuero = () => document.getElementById('panel-guero');
+const texturaGuero = new THREE.TextureLoader().load('assets/textures/guero.png');
+texturaGuero.colorSpace = THREE.SRGBColorSpace;
+const audioGueroDialogue1 = new Audio('assets/sounds/guero_dialogue1.mp3');
+audioGueroDialogue1.preload = 'auto';
+audioGueroDialogue1.volume = 0.8;
+audioGueroDialogue1.loop = false;
+
+function reproducirDialogoGuero() {
+    if (!guero || !audioActivo || !sfxActivo) return;
+    audioGueroDialogue1.currentTime = 0;
+    audioGueroDialogue1.muted = false;
+    audioGueroDialogue1.play().catch(() => {});
+}
 
 /**
  * El panel se MONTA una vez y después solo se mutan textos y clases.
@@ -50,11 +63,33 @@ function crearGuero3D(x, z) {
     g.add(torso);
 
     const cabeza = new THREE.Mesh(
-        new THREE.SphereGeometry(0.21, 12, 10),
-        new THREE.MeshLambertMaterial({ color: 0xe8c39e })
+        new THREE.SphereGeometry(0.21, 24, 20),
+        new THREE.MeshLambertMaterial({ map: texturaGuero, color: 0xffffff })
     );
-    cabeza.position.y = 1.24;
+    cabeza.position.set(0, 1.24, 0.06);
     g.add(cabeza);
+
+    const melena = new THREE.Group();
+    const matMelena = new THREE.MeshLambertMaterial({ color: 0xd7b15c, side: THREE.DoubleSide });
+    for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2;
+        const mechon = new THREE.Mesh(
+            new THREE.SphereGeometry(0.17, 12, 10),
+            matMelena
+        );
+        mechon.position.set(Math.cos(a) * 0.24, 0.18 + Math.sin(a * 2.2) * 0.10, -0.18 + Math.sin(a) * 0.12);
+        mechon.scale.set(1.5, 2.0, 1.2);
+        melena.add(mechon);
+    }
+    const melenaBase = new THREE.Mesh(
+        new THREE.SphereGeometry(0.25, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.92),
+        matMelena
+    );
+    melenaBase.position.set(0, 0.06, -0.22);
+    melenaBase.scale.set(1.4, 1.3, 1.1);
+    melena.add(melenaBase);
+    melena.position.y = 1.18;
+    g.add(melena);
 
     // Baliza: una columna tenue que sube. Sin esto, encontrarlo entre la niebla
     // sería cosa de suerte, y el reloj de la fase crítica ya está corriendo.
@@ -114,9 +149,11 @@ function actualizarGuero(dt) {
         destellar('#e67e22', 0.3, 620);
         desbloquearFicha('guero_alarma');
         desbloquearFicha('fase_critica');
+        reproducirDialogoGuero();
     }
     if (cerca !== guero.cerca) {
         guero.cerca = cerca;
+        if (cerca && !guero.resuelto) reproducirDialogoGuero();
         if (!cerca && !guero.resuelto) elPanelGuero().classList.add('oculto');
     }
     if (cerca && !guero.resuelto) pintarPanelGuero();
