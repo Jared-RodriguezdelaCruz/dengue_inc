@@ -7,6 +7,21 @@ const canvas = document.getElementById('canvas2d');
 const ctx = canvas.getContext('2d', { alpha: false });
 const texturaJugador = new Image();
 texturaJugador.src = 'assets/textures/player.png';
+const texturasEnemigos = {
+    base: new Image(),
+    mini: new Image(),
+    giant: new Image()
+};
+texturasEnemigos.base.src = 'assets/textures/enemy_base.png';
+texturasEnemigos.mini.src = 'assets/textures/enemy_mini.png';
+texturasEnemigos.giant.src = 'assets/textures/enemy_giant.png';
+
+function texturaEnemigo2D(tipo) {
+    if (tipo === 'enjambre') return texturasEnemigos.mini;
+    if (tipo === 'mutante') return texturasEnemigos.giant;
+    return texturasEnemigos.base;
+}
+
 let gradCielo = null;
 
 function actualizarCamara2D(dt) {
@@ -520,8 +535,16 @@ function dibujarEnemigos() {
         }
         // Cuerpo
         const flash = e.flash > 0 || (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0);
-        ctx.fillStyle = flash ? '#ffffff' : e.arq.color;
-        ctx.fillRect(-e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+        const texEnemigo = texturaEnemigo2D(e.tipo);
+        if (texEnemigo && texEnemigo.complete && texEnemigo.naturalWidth > 0) {
+            ctx.save();
+            if (flash) ctx.filter = 'brightness(1.6) saturate(1.2)';
+            ctx.drawImage(texEnemigo, -e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = flash ? '#ffffff' : e.arq.color;
+            ctx.fillRect(-e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+        }
         {
             // Trompa (el aparato picador del Aedes)
             ctx.fillStyle = flash ? '#fff' : '#2c1810';

@@ -112,6 +112,7 @@ function parryExitoso(x, y) {
 }
 
 function dañarJugador(n, fx, fy) {
+    if (debugGodMode) return false;
     if (invulnerable() || jugador.muerto || estado === estados.TRANSICION) return false;
     // En fase crítica se escapa plasma de los vasos: cualquier golpe pega el doble.
     // El paracetamol amortigua, pero no vuelve segura la fase crítica.

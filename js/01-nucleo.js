@@ -79,6 +79,9 @@ let armaActiva = 'botas';
 let semillaRun = 0;
 let mostrarDebug = false;
 let audioActivo = true;
+let debugMode = false;
+let debugGodMode = false;
+let debugEspada = false;
 
 // Los niveles impares (1, 3) y el 4 son 2D; el 2 y el post-transición son 3D.
 const NIVEL_ES_2D = n => n === 1 || n === 3 || n === 4;
@@ -134,6 +137,7 @@ const teclas = {};          // estado sostenido
 const teclasNuevas = {};    // flanco de bajada: true solo el frame en que se pulsó
 let ratonNuevo = [false, false, false];
 let ratonAbajo = [false, false, false];
+let ratonX = ANCHO / 2, ratonY = ALTO / 2;
 let ratonDX = 0, ratonDY = 0;
 // El mando escribe en sus propios mapas (ver 01c-mando.js): así un keyup del
 // teclado no suelta un botón que el mando sigue manteniendo, ni al revés.
@@ -154,7 +158,29 @@ function limpiarFlancos() {
 
 /** Acciones que no dependen del bucle: se disparan en el mismo instante de la
  *  pulsación. Las comparten teclado y mando. */
+function activarModoDebug() {
+    debugMode = !debugMode;
+    debugGodMode = debugMode;
+    debugEspada = debugMode;
+    jugador.vida = debugMode ? CFG.vidaMax : Math.min(jugador.vida, CFG.vidaMax);
+    jugador.estamina = debugMode ? CFG.estaminaMax : Math.min(jugador.estamina, CFG.estaminaMax);
+    if (debugMode) {
+        aviso('DEBUG MODE ON', 900);
+        if (estado === estados.J2D || estado === estados.J3D) {
+            sfx.nivel();
+        }
+    } else {
+        aviso('DEBUG MODE OFF', 900);
+    }
+    return debugMode;
+}
+
 function accionGlobal(code) {
+    if (code === 'KeyP') {
+        activarModoDebug();
+        return;
+    }
+
     if (code === 'KeyM') {
         audioActivo = !audioActivo;
         musicaActiva = audioActivo;
@@ -199,6 +225,11 @@ contenedor.addEventListener('mousedown', e => {
 window.addEventListener('mouseup',  e => { if (e.button < 3) ratonAbajo[e.button] = false; });
 contenedor.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('mousemove', e => {
+    const rect = contenedor.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / Math.max(rect.width, 1);
+    const py = (e.clientY - rect.top) / Math.max(rect.height, 1);
+    ratonX = clamp(px * ANCHO, 0, ANCHO);
+    ratonY = clamp(py * ALTO, 0, ALTO);
     if (document.pointerLockElement) { ratonDX += e.movementX; ratonDY += e.movementY; }
 });
 
