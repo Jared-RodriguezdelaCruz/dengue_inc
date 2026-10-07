@@ -155,7 +155,14 @@ function limpiarFlancos() {
 /** Acciones que no dependen del bucle: se disparan en el mismo instante de la
  *  pulsación. Las comparten teclado y mando. */
 function accionGlobal(code) {
-    if (code === 'KeyM') { audioActivo = !audioActivo; aviso(audioActivo ? '🔊' : '🔇', 400); }
+    if (code === 'KeyM') {
+        audioActivo = !audioActivo;
+        musicaActiva = audioActivo;
+        sfxActivo = audioActivo;
+        if (typeof actualizarMusicaFondo === 'function') actualizarMusicaFondo();
+        if (typeof actualizarBotonesAudioMenu === 'function') actualizarBotonesAudioMenu();
+        aviso(audioActivo ? '🔊' : '🔇', 400);
+    }
 
     if (code === 'KeyC' && (estado === estados.J2D || estado === estados.J3D)) alternarFichero();
     else if (code === 'KeyC' && estado === estados.PAUSA && ficheroAbierto()) cerrarFichero();

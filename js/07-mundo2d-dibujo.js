@@ -5,6 +5,8 @@
 // ---------------------------------------------------------------------------
 const canvas = document.getElementById('canvas2d');
 const ctx = canvas.getContext('2d', { alpha: false });
+const texturaJugador = new Image();
+texturaJugador.src = 'assets/textures/player.png';
 let gradCielo = null;
 
 function actualizarCamara2D(dt) {
@@ -589,20 +591,30 @@ function dibujarJugador() {
     ctx.scale(jugador.escX, jugador.escY);
 
     const w = jugador.ancho, h = jugador.alto;
-    // Cuerpo
-    ctx.fillStyle = jugador.dashT > 0 ? '#7fdbff' : '#2e86de';
-    ctx.fillRect(-w / 2, -h / 2, w, h);
-    ctx.fillStyle = '#54a0ff';
-    ctx.fillRect(-w / 2, -h / 2, w, 8);
-    // Gorra
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(-w / 2 - 2, -h / 2 - 6, w + 4, 7);
-    ctx.fillRect(jugador.dir > 0 ? 0 : -w / 2 - 8, -h / 2 - 5, w / 2 + 8, 4);
-    // Ojo
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(jugador.dir > 0 ? 2 : -8, -h / 2 + 12, 6, 6);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(jugador.dir > 0 ? 4 : -6, -h / 2 + 14, 3, 3);
+    if (texturaJugador && texturaJugador.complete && texturaJugador.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(-w / 2, -h / 2);
+        const escala = Math.min(w / texturaJugador.width, h / texturaJugador.height);
+        const iw = texturaJugador.width * escala;
+        const ih = texturaJugador.height * escala;
+        ctx.drawImage(texturaJugador, (w - iw) / 2, (h - ih) / 2, iw, ih);
+        ctx.restore();
+    } else {
+        // Cuerpo
+        ctx.fillStyle = jugador.dashT > 0 ? '#7fdbff' : '#2e86de';
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        ctx.fillStyle = '#54a0ff';
+        ctx.fillRect(-w / 2, -h / 2, w, 8);
+        // Gorra
+        ctx.fillStyle = '#c0392b';
+        ctx.fillRect(-w / 2 - 2, -h / 2 - 6, w + 4, 7);
+        ctx.fillRect(jugador.dir > 0 ? 0 : -w / 2 - 8, -h / 2 - 5, w / 2 + 8, 4);
+        // Ojo
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(jugador.dir > 0 ? 2 : -8, -h / 2 + 12, 6, 6);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(jugador.dir > 0 ? 4 : -6, -h / 2 + 14, 3, 3);
+    }
     ctx.restore();
 
     if (jugador.raquetaT > 0) dibujarRaqueta2D(cx, cy);
