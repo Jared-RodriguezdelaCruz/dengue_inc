@@ -91,14 +91,20 @@ const elHabParry  = document.getElementById('hab-parry');
 const elObjetivo  = document.getElementById('ui-objetivo');
 let vidaDibujada = -1;
 
+/** Solo reescribe los corazones si la vida cambió: se puede llamar a menudo.
+ *  Antes vivía solo en actualizarHUD, que nadie llamaba al recibir daño, y los
+ *  corazones seguían llenos hasta recoger una moneda. */
+function pintarCorazones() {
+    if (jugador.vida === vidaDibujada) return;
+    vidaDibujada = jugador.vida;
+    let html = '';
+    for (let i = 0; i < CFG.vidaMax; i++)
+        html += '<span class="corazon' + (i < jugador.vida ? '' : ' vacio') + '">❤️</span>';
+    elCorazones.innerHTML = html;
+}
+
 function actualizarHUD() {
-    if (jugador.vida !== vidaDibujada) {
-        vidaDibujada = jugador.vida;
-        let html = '';
-        for (let i = 0; i < CFG.vidaMax; i++)
-            html += '<span class="corazon' + (i < jugador.vida ? '' : ' vacio') + '">❤️</span>';
-        elCorazones.innerHTML = html;
-    }
+    pintarCorazones();
     document.getElementById('ui-fichas').textContent = fichas;
     document.getElementById('ui-arma').textContent =
         armaActiva === 'botas' ? 'Botas' : (armaActiva === 'abate' ? 'Abate' : 'Repelente');
@@ -147,6 +153,7 @@ function pintarPromptVerbos() {
 }
 
 function latirCorazones() {
+    pintarCorazones();          // primero el valor nuevo; luego el pulso sobre él
     const cs = elCorazones.children;
     for (let i = 0; i < cs.length; i++) {
         cs[i].classList.add('pulso');
@@ -155,6 +162,9 @@ function latirCorazones() {
 }
 
 function actualizarHUDContinuo() {
+    // Red de seguridad para cualquier camino que cambie la vida sin avisar.
+    pintarCorazones();
+
     // --- Enfermedad -------------------------------------------------------
     const inf = jugador.infeccion;
     const bloque = document.getElementById('bloque-fiebre');
@@ -313,7 +323,8 @@ function tablaControles() {
         ['Medidas', '1 lava · 2 tapa · 3 voltea · 4 tira'],
         ['Fichero', 'C'],
         ['Debug', 'F3'],         ['Silencio', 'M'],
-        ['Mirar (3D)', 'ratón'], ['Capturar (3D)', 'clic']
+        ['Mirar (3D)', 'ratón'], ['Capturar (3D)', 'clic'],
+        ['Gancho (3D)', 'Q (mantener)']
     ];
     const tabla = f => '<div class="tabla-controles">' +
         f.map(x => '<div>' + x[0] + ' <b>' + x[1] + '</b></div>').join('') + '</div>';
@@ -327,7 +338,8 @@ function tablaControles() {
         ['Tienda', e.LB],          ['Pausa', e.START],
         ['Medidas', 'cruceta ↑ lava · → tapa · ↓ voltea · ← tira'],
         ['Fichero', e.RB],
-        ['Mirar (3D)', 'stick der.'], ['Silencio', e.BACK]
+        ['Mirar (3D)', 'stick der.'], ['Silencio', e.BACK],
+        ['Gancho (3D)', 'clic stick der. (mantener)']
     ];
     return tabla(filas) +
         '<div style="margin-top:8px;font-size:12px;color:#4dd0e1">🎮 ' + e.nombre + '</div>' +
@@ -337,20 +349,21 @@ function tablaControles() {
 function actualizarBotonesAudioMenu() {
     const m = document.getElementById('pm-musica');
     const s = document.getElementById('pm-sonidos');
-    if (m) m.textContent = 'Música: ' + (musicaActiva ? 'ON' : 'OFF');
-    if (s) s.textContent = 'Sonidos: ' + (sfxActivo ? 'ON' : 'OFF');
+    if (m) { m.textContent = 'Música: ' + (musicaActiva ? 'ON' : 'OFF'); m.setAttribute('aria-pressed', musicaActiva); }
+    if (s) { s.textContent = 'Sonidos: ' + (sfxActivo ? 'ON' : 'OFF'); s.setAttribute('aria-pressed', sfxActivo); }
 }
 
 function alternarMusicaMenu() {
     musicaActiva = !musicaActiva;
-    if (!musicaActiva) audioActivo = true;
+    guardarPrefsAudio();
     actualizarMusicaFondo();
     actualizarBotonesAudioMenu();
 }
 
 function alternarSonidosMenu() {
     sfxActivo = !sfxActivo;
-    if (!sfxActivo) audioActivo = true;
+    guardarPrefsAudio();
+    if (!sfxActivo) detenerDialogoGuero();
     actualizarBotonesAudioMenu();
 }
 
@@ -447,6 +460,7 @@ function pausar() {
     if (estado !== estados.J2D && estado !== estados.J3D) return;
     estadoPrevio = estado;
     estado = estados.PAUSA;
+    detenerDialogoGuero();
     mostrarMenu({
         titulo: 'Pausa',
         desc: 'Nivel ' + nivelActual + ' · semilla ' + semillaRun + ' · ' + fichas + ' 💰',

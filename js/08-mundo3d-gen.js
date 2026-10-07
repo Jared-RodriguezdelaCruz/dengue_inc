@@ -12,19 +12,26 @@ let meta3D = null, luzMeta = null;
 let raqueta3D = null, mallaRaqueta = null, luzRaqueta = null;
 let bobCam = 0, kickCam = 0, sacudida3D = 0;
 
+// Desde file:// (abrir index.html con doble clic) TextureLoader pide la imagen
+// con CORS y el navegador la bloquea: la textura queda vacía, el mosquito sale
+// negro y la consola marca el error. En ese caso el 3D se queda con materiales de
+// color, como antes. (El 2D no tiene el problema: un <img> normal sí carga.)
+const TEXTURAS_3D = location.protocol !== 'file:';
+const cargarTextura3D = ruta => TEXTURAS_3D ? new THREE.TextureLoader().load(ruta) : null;
+
+// Sin ajuste de espacio de color: en r128 el renderer sale en lineal y las
+// texturas lineales se ven tal cual (THREE.SRGBColorSpace no existe hasta r152).
 const texturasEnemigos3D = {
-    base: new THREE.TextureLoader().load('assets/textures/enemy_base.png'),
-    mini: new THREE.TextureLoader().load('assets/textures/enemy_mini.png'),
-    giant: new THREE.TextureLoader().load('assets/textures/enemy_giant.png')
+    base: cargarTextura3D('assets/textures/enemy_base.png'),
+    mini: cargarTextura3D('assets/textures/enemy_mini.png'),
+    giant: cargarTextura3D('assets/textures/enemy_giant.png')
 };
-for (const tex of Object.values(texturasEnemigos3D)) {
-    tex.colorSpace = THREE.SRGBColorSpace;
-}
 function texturaEnemigo3D(tipo) {
     if (tipo === 'enjambre') return texturasEnemigos3D.mini;
     if (tipo === 'mutante') return texturasEnemigos3D.giant;
     return texturasEnemigos3D.base;
 }
+const BLANCO3 = new THREE.Color(0xffffff);
 
 const GW = 46, GH = 46;          // celdas de la rejilla del mapa
 const CELDA3 = 3.2;              // unidades de mundo por celda
@@ -282,6 +289,7 @@ function limpiarNivel3D() {
     mosquitos3D = []; monedas3D = []; proy3D = []; tinacos3D = []; criaderos3D = [];
     meta3D = null; murosInst = null; P3.n = 0;
     reiniciarGuero();          // su malla vive en grupoNivel: ya quedó liberada
+    limpiarGancho3D();         // no puede seguir jalando hacia un mosquito del nivel anterior
     for (const a of anillos) { a.libre = true; a.mesh.visible = false; }
 }
 
@@ -415,8 +423,12 @@ function crearMosquito3D(tipo, x, z, y) {
     const a = ARQUETIPOS[tipo];
     const escala = tipo === 'enjambre' ? 0.62 : (tipo === 'mutante' ? 1.7 : 1);
     const g = new THREE.BoxGeometry(0.62 * escala, 0.5 * escala, 0.92 * escala);
+    // Con textura, el color del arquetipo se aclara: la tiñe sin taparla y el
+    // tipo se sigue leyendo. El destello va por emissive (ver 10-mundo3d-ia.js).
     const tex = texturaEnemigo3D(tipo);
-    const mat = new THREE.MeshLambertMaterial({ map: tex, color: 0xffffff });
+    const color = new THREE.Color(a.color);
+    if (tex) color.lerp(BLANCO3, 0.4);
+    const mat = new THREE.MeshLambertMaterial({ map: tex, color, emissive: 0x000000 });
     const malla = new THREE.Mesh(g, mat);
     malla.position.set(x, y === undefined ? 1.6 + Math.random() * 1.4 : y, z);
 
@@ -435,7 +447,7 @@ function crearMosquito3D(tipo, x, z, y) {
         vida: vidaBase, vidaMax: vidaBase, vivo: true,
         vx: 0, vy: 0, vz: 0, est: 'patrulla', t: 0,
         hogar: malla.position.clone(), ultX: x, ultZ: z, memT: 0,
-        cargaT: 0, cd: rndEnt(0, 90), aturdido: 0, flash: 0, token: false,
+        cargaT: 0, cd: rndEnt(0, 90), aturdido: 0, flash: 0, blanco: false, token: false,
         selloRaqueta: -1,
         fase: rndRango(0, 6.28),
         serotipo: serotipoDeNivel(nivelActual), origen: null

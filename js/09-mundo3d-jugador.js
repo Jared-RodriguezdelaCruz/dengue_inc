@@ -5,145 +5,123 @@
 // frame: si se sumaran sin restarlos, la posición lógica derivaría sola y el
 // jugador acabaría empujado dentro de un muro.
 let offVisX = 0, offVisY = 0;
-const gancho3D = { activo: false, destino: null, objetivo: null, tipo: null, t: 0, cooldown: 0, mesh: null, linea: null, disparado: false };
+
+// --- Gancho (Q) --------------------------------------------------------------
+// Q lo lanza, mantenerla jala y soltarla lo recoge. Contra una pared es
+// movilidad; contra un mosquito te acerca y lo aturde, pero no lo mata. Cuesta
+// estamina y tiene cooldown, como el dash.
+const gancho3D = { activo: false, objetivo: null, cd: 0, mesh: null, linea: null };
+// Vectores reutilizados: el gancho corre cada frame y no debe asignar memoria.
+const destinoGancho = new THREE.Vector3();
+const vGancho = new THREE.Vector3();
+const dirGancho = new THREE.Vector3();
+const origenCable = new THREE.Vector3();
 
 function crearGanchoVisual3D() {
-    if (!scene || gancho3D.mesh) return;
-    const hookGeo = new THREE.SphereGeometry(0.12, 10, 10);
-    const hookMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, emissive: 0x6d4500, metalness: 0.2, roughness: 0.5 });
-    gancho3D.mesh = new THREE.Mesh(hookGeo, hookMat);
+    if (gancho3D.mesh) return;
+    // Viven en scene, no en grupoNivel: se crean una vez y sobreviven a los niveles.
+    gancho3D.mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 10, 10),
+        new THREE.MeshLambertMaterial({ color: 0xf1c40f, emissive: 0x6d4500 }));
     gancho3D.mesh.visible = false;
     scene.add(gancho3D.mesh);
 
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0, 0, 1)
-    ]);
-    gancho3D.linea = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xf1c40f, transparent: true, opacity: 0.9 }));
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+    gancho3D.linea = new THREE.Line(geo,
+        new THREE.LineBasicMaterial({ color: 0xf1c40f, transparent: true, opacity: 0.9 }));
+    // Los dos extremos se mueven cada frame: con el bounding sphere del primer
+    // frame la línea podría recortarse aunque esté a la vista.
+    gancho3D.linea.frustumCulled = false;
     gancho3D.linea.visible = false;
     scene.add(gancho3D.linea);
 }
 
 function limpiarGancho3D() {
     gancho3D.activo = false;
-    gancho3D.destino = null;
     gancho3D.objetivo = null;
-    gancho3D.tipo = null;
-    gancho3D.t = 0;
-    gancho3D.disparado = false;
-    gancho3D.cooldown = 0.15;
     if (gancho3D.mesh) gancho3D.mesh.visible = false;
     if (gancho3D.linea) gancho3D.linea.visible = false;
 }
 
 function iniciarGancho3D() {
-    if (!camera3D || jugador.muerto || estado !== estados.J3D || gancho3D.cooldown > 0 || gancho3D.disparado) return;
-    crearGanchoVisual3D();
+    if (!puedeActuar() || gancho3D.cd > 0) return;
     const cam = camera3D;
-    const origen = cam.position.clone();
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion).normalize();
-    const maxDist = 18;
+    const alcance = CFG.ganchoAlcance;
+    dirGancho.set(0, 0, -1).applyQuaternion(cam.quaternion);
 
-    let mejorEnemigo = null, mejorEnemigoDist = maxDist + 1;
-    let mejorPunto = null, mejorPuntoDist = maxDist + 1;
-
+    // El mosquito más cercano dentro de un cilindro de 1.25 u alrededor de la mira.
+    let objetivo = null, distObj = Infinity;
     for (const e of mosquitos3D) {
         if (!e.vivo) continue;
-        const to = e.malla.position.clone().sub(origen);
-        const along = to.dot(dir);
-        if (along <= 0 || along > maxDist) continue;
-        const lateral = to.clone().sub(dir.clone().multiplyScalar(along));
-        if (lateral.length() > 1.25) continue;
-        const d = to.length();
-        if (d < mejorEnemigoDist) { mejorEnemigo = e; mejorEnemigoDist = d; }
+        vGancho.copy(e.malla.position).sub(cam.position);
+        const along = vGancho.dot(dirGancho);
+        if (along <= 0 || along > alcance) continue;
+        const d = vGancho.length();
+        if (d * d - along * along > 1.25 * 1.25) continue;     // distancia lateral al rayo
+        if (d < distObj) { objetivo = e; distObj = d; }
     }
 
+    // La primera pared en la mira, muestreada sobre el plano XZ.
+    let distPared = Infinity;
     for (let i = 1; i <= 64; i++) {
-        const t = i / 64;
-        const px = origen.x + dir.x * t * maxDist;
-        const pz = origen.z + dir.z * t * maxDist;
+        const t = (i / 64) * alcance;
+        const px = cam.position.x + dirGancho.x * t, pz = cam.position.z + dirGancho.z * t;
         if (solidoMundo(px, pz) || chocaCirculo(px, pz, 0.35)) {
-            const p = new THREE.Vector3(px, origen.y, pz);
-            const d = p.distanceTo(origen);
-            if (d < mejorPuntoDist) { mejorPunto = p; mejorPuntoDist = d; }
+            destinoGancho.set(px, cam.position.y, pz);
+            distPared = destinoGancho.distanceTo(cam.position);
+            break;
         }
     }
 
-    if (mejorEnemigo && (!mejorPunto || mejorEnemigoDist <= mejorPuntoDist)) {
-        gancho3D.activo = true;
-        gancho3D.destino = mejorEnemigo.malla.position.clone();
-        gancho3D.objetivo = mejorEnemigo;
-        gancho3D.tipo = 'enemigo';
-        gancho3D.t = 0;
-        gancho3D.disparado = true;
-        gancho3D.cooldown = 0.18;
-        return;
-    }
-    if (mejorPunto) {
-        gancho3D.activo = true;
-        gancho3D.destino = mejorPunto.clone();
-        gancho3D.objetivo = null;
-        gancho3D.tipo = 'pared';
-        gancho3D.t = 0;
-        gancho3D.disparado = true;
-        gancho3D.cooldown = 0.18;
-    }
+    const aMosquito = objetivo !== null && distObj <= distPared;
+    if (!aMosquito && distPared === Infinity) return;   // nada al alcance: no cobra
+    if (!gastarEstamina(CFG.ganchoCoste)) { sfx.parryFail(); return; }
+
+    crearGanchoVisual3D();
+    gancho3D.activo = true;
+    gancho3D.objetivo = aMosquito ? objetivo : null;
+    gancho3D.cd = CFG.ganchoCd;
+    tono(520, 0.10, 'square', 0.04, 1400);
 }
 
 function actualizarGancho3D(dt) {
-    if (!gancho3D.activo || !camera3D) return;
+    if (!gancho3D.activo) return;
+    const obj = gancho3D.objetivo;
+    if (jugador.muerto || (obj && !obj.vivo)) { limpiarGancho3D(); return; }
     const cam = camera3D;
-    const target = gancho3D.objetivo ? gancho3D.objetivo.malla.position.clone() : gancho3D.destino.clone();
-    const v = target.clone().sub(cam.position);
-    const d = v.length();
-    if (d <= 0.2) {
-        if (gancho3D.objetivo && gancho3D.objetivo.vivo) {
-            matarMosquito3D(gancho3D.objetivo);
-        }
-        gancho3D.activo = false;
-        gancho3D.destino = null;
-        gancho3D.objetivo = null;
-        gancho3D.tipo = null;
-        gancho3D.t = 0;
-        gancho3D.disparado = true;
-        return;
-    }
+    if (obj) destinoGancho.copy(obj.malla.position);       // el mosquito se mueve
+    vGancho.copy(destinoGancho).sub(cam.position);
+    const d = vGancho.length();
 
-    const step = Math.min(d, 0.85 + dt * 0.28);
-    const next = cam.position.clone().add(v.clone().normalize().multiplyScalar(step));
-    if (solidoMundo(next.x, next.z) || chocaCirculo(next.x, next.z, RADIO_JUG)) {
-        gancho3D.activo = false;
-        gancho3D.destino = null;
-        gancho3D.objetivo = null;
-        gancho3D.tipo = null;
-        gancho3D.t = 0;
-        gancho3D.disparado = true;
-        return;
-    }
-
-    cam.position.copy(next);
-    gancho3D.t += dt;
-    if (gancho3D.mesh) {
-        gancho3D.mesh.visible = true;
-        gancho3D.mesh.position.copy(target);
-        if (gancho3D.linea) {
-            const pts = [cam.position.clone(), target.clone()];
-            gancho3D.linea.geometry.setFromPoints(pts);
-            gancho3D.linea.visible = true;
-        }
-    }
-
+    // Llegada: al mosquito le pega y lo aturde, como un golpe de raqueta.
     if (d < 1.2) {
-        if (gancho3D.objetivo && gancho3D.objetivo.vivo) {
-            matarMosquito3D(gancho3D.objetivo);
+        if (obj) {
+            obj.aturdido = Math.max(obj.aturdido, CFG.raquetaAturde);
+            obj.est = 'aturdido';
+            dañarMosquito3D(obj, CFG.ganchoGolpe);
         }
-        gancho3D.activo = false;
-        gancho3D.destino = null;
-        gancho3D.objetivo = null;
-        gancho3D.tipo = null;
-        gancho3D.t = 0;
-        gancho3D.disparado = true;
+        limpiarGancho3D();
+        return;
     }
+
+    // El paso escala con dt: a 144 Hz no puede jalar al doble que a 60.
+    vGancho.multiplyScalar(Math.min(d, CFG.ganchoVel * dt) / d);
+    const nx = cam.position.x + vGancho.x, nz = cam.position.z + vGancho.z;
+    if (solidoMundo(nx, nz) || chocaCirculo(nx, nz, RADIO_JUG)) { limpiarGancho3D(); return; }
+    cam.position.add(vGancho);
+    jugador.vy3 = 0;                 // mientras jala no se acumula velocidad de caída
+
+    // El cable sale de abajo a la derecha de la vista: desde el ojo mismo se
+    // vería como un punto.
+    gancho3D.mesh.position.copy(destinoGancho);
+    gancho3D.mesh.visible = true;
+    origenCable.set(0.35, -0.3, -0.6).applyQuaternion(cam.quaternion).add(cam.position);
+    const pos = gancho3D.linea.geometry.attributes.position;
+    pos.setXYZ(0, origenCable.x, origenCable.y, origenCable.z);
+    pos.setXYZ(1, destinoGancho.x, destinoGancho.y, destinoGancho.z);
+    pos.needsUpdate = true;
+    gancho3D.linea.visible = true;
 }
 
 function actualizarJugador3D(dt) {
@@ -165,16 +143,11 @@ function actualizarJugador3D(dt) {
     const fx = -Math.sin(jugador.yaw), fz = -Math.cos(jugador.yaw);
     const rx =  Math.cos(jugador.yaw), rz = -Math.sin(jugador.yaw);
 
-    if (gancho3D.cooldown > 0) gancho3D.cooldown = Math.max(0, gancho3D.cooldown - dt / 60);
-    if (pulsada('KeyQ')) {
-        if (!gancho3D.disparado && !gancho3D.activo) iniciarGancho3D();
-    }
-    if (gancho3D.activo) {
-        actualizarGancho3D(dt);
-    }
-    if (!cualqAbajo('KeyQ') && (gancho3D.activo || gancho3D.disparado)) {
-        limpiarGancho3D();
-    }
+    // Gancho: Q lo lanza, mantenerla jala, soltarla lo recoge.
+    if (gancho3D.cd > 0) gancho3D.cd -= dt;
+    if (pulsada('KeyQ') && !gancho3D.activo) iniciarGancho3D();
+    if (gancho3D.activo && !cualqAbajo('KeyQ')) limpiarGancho3D();
+    actualizarGancho3D(dt);
 
     let av = 0, lat = 0;
     if (!jugador.muerto) {

@@ -108,50 +108,51 @@ const entradaDash   = () => cualqPulsada('ShiftLeft', 'ShiftRight', 'KeyL');
 const entradaParry  = () => cualqPulsada('KeyF', 'KeyK') || ratonNuevo[2];
 const entradaAtaque = () => cualqPulsada('KeyJ') || ratonNuevo[0];
 
+/** Dirección del ratón medida desde el jugador EN PANTALLA. La cámara no lo
+ *  centra: lo lleva al 42 % del ancho, con adelanto según la velocidad. */
 function direccionRaton2D() {
-    const dx = ratonX - ANCHO / 2;
-    const dy = ratonY - ALTO / 2;
-    const largo = Math.hypot(dx, dy) || 1;
+    const dx = ratonX - (jugador.x + jugador.ancho / 2 - camX);
+    const dy = ratonY - (jugador.y + jugador.alto / 2 - camY);
     if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return { x: jugador.dir, y: 0 };
+    const largo = Math.hypot(dx, dy);
     return { x: dx / largo, y: dy / largo };
+}
+
+/** Mata lo que quede en el arco a ± `arco` a menos de `radio`. Al jefe lo daña
+ *  solo si no tiene el escudo arriba: eso lo decide dañarJefe. */
+function barridoDebug(cx, cy, a, radio, arco) {
+    let matado = false;
+    for (const e of enemigos) {
+        if (!e.vivo) continue;
+        const dx = e.x + e.ancho / 2 - cx, dy = e.y + e.alto / 2 - cy;
+        if (Math.hypot(dx, dy) > radio) continue;
+        if (Math.abs(difAngulo(Math.atan2(dy, dx), a)) < arco) { matarEnemigo(e); matado = true; }
+    }
+    if (jefe && !jefe.muerto &&
+        Math.hypot(jefe.x + jefe.ancho / 2 - cx, jefe.y + jefe.alto / 2 - cy) < radio + 20) {
+        dañarJefe(999); matado = true;
+    }
+    return matado;
+}
+
+/** Dash del Modo Coco. El movimiento lo aplica actualizarJugador2D a partir de
+ *  dashDirX/Y: un vx/vy asignado aquí se sobrescribiría en el mismo frame. */
+function dashDebugHacia(dirX, dirY, frames) {
+    jugador.esRoll = false;
+    jugador.dashT = frames;
+    jugador.dashDirX = dirX;
+    jugador.dashDirY = clamp(dirY * 0.9, -0.6, 0.6);
+    jugador.dir = dirX >= 0 ? 1 : -1;
 }
 
 function debugDash2D() {
     if (!debugMode || jugador.muerto || jugador.dashT > 0) return;
     const aim = direccionRaton2D();
-    const dir = aim.x !== 0 ? aim.x : jugador.dir;
+    const dirX = aim.x !== 0 ? aim.x : jugador.dir;
     const cx = jugador.x + jugador.ancho / 2;
     const cy = jugador.y + jugador.alto / 2;
-    const radio = 120;
-    let matado = false;
-
-    for (const e of enemigos) {
-        if (!e.vivo) continue;
-        const ex = e.x + e.ancho / 2, ey = e.y + e.alto / 2;
-        const dx = ex - cx, dy = ey - cy;
-        const d = Math.hypot(dx, dy);
-        if (d > radio) continue;
-        const ang = Math.atan2(dy, dx) - Math.atan2(aim.y || 0, dir);
-        if (Math.abs(((ang + Math.PI) % (Math.PI * 2)) - Math.PI) < 1.15) {
-            matarEnemigo(e);
-            matado = true;
-        }
-    }
-
-    if (jefe && !jefe.muerto) {
-        const jx = jefe.x + jefe.ancho / 2, jy = jefe.y + jefe.alto / 2;
-        const d = Math.hypot(jx - cx, jy - cy);
-        if (d < radio + 18) {
-            dañarJefe(999); matado = true;
-        }
-    }
-
-    jugador.dashT = 12;
-    jugador.dashDirX = dir;
-    jugador.dashDirY = clamp(aim.y * 0.9, -0.6, 0.6);
-    jugador.vx = dir * CFG.dashVel * 1.3;
-    jugador.vy = clamp(aim.y * 10, -7, 4);
-    jugador.dir = dir >= 0 ? 1 : -1;
+    const matado = barridoDebug(cx, cy, Math.atan2(aim.y, dirX), 120, 1.15);
+    dashDebugHacia(dirX, aim.y, 12);
     if (matado) {
         fxEstela(cx, cy, COL.ORO, 18);
         emitirOnda(cx, cy, 82, 8, COL.AMBAR);
@@ -164,40 +165,13 @@ function debugEspadazo2D() {
     if (!debugMode || jugador.ataqueCd > 0 || jugador.muerto) return;
     jugador.ataqueCd = 8;
     const aim = direccionRaton2D();
-    const dir = aim.x !== 0 ? aim.x : jugador.dir;
+    const dirX = aim.x !== 0 ? aim.x : jugador.dir;
     const cx = jugador.x + jugador.ancho / 2;
     const cy = jugador.y + jugador.alto / 2;
     const radio = 120;
-    const a = Math.atan2(aim.y * radio, dir * radio);
-    let matado = false;
-
-    for (const e of enemigos) {
-        if (!e.vivo) continue;
-        const ex = e.x + e.ancho / 2;
-        const ey = e.y + e.alto / 2;
-        const dx = ex - cx, dy = ey - cy;
-        const d = Math.hypot(dx, dy);
-        if (d > radio) continue;
-        const ang = Math.atan2(dy, dx);
-        const dif = Math.abs(((ang - a + Math.PI) % (Math.PI * 2)) - Math.PI);
-        if (dif < 1.1) {
-            matarEnemigo(e);
-            matado = true;
-        }
-    }
-    if (jefe && !jefe.muerto) {
-        const jx = jefe.x + jefe.ancho / 2;
-        const jy = jefe.y + jefe.alto / 2;
-        const d = Math.hypot(jx - cx, jy - cy);
-        if (d < radio + 20) {
-            dañarJefe(999);
-            matado = true;
-        }
-    }
-    if (matado) {
-        jugador.dashT = 9;
-        jugador.vx = dir * 22;
-        jugador.vy = clamp(aim.y * 12, -7, 2);
+    const a = Math.atan2(aim.y, dirX);
+    if (barridoDebug(cx, cy, a, radio, 1.1)) {
+        dashDebugHacia(dirX, aim.y, 9);           // embestida tras el corte
         fxRaqueta(cx, cy, a, radio);
         emitirOnda(cx, cy, radio, 6, COL.ORO);
         destellar('#f1c40f', 0.3, 120);
@@ -208,7 +182,7 @@ function debugEspadazo2D() {
     jugador.estamina = CFG.estaminaMax;
     jugador.vida = CFG.vidaMax;
     jugador.iframes = Math.max(jugador.iframes, 12);
-    debugDash2D();
+    debugDash2D();                                // sin embestida, el espadazo también te mueve
 }
 
 function actualizarJugador2D(dt) {
@@ -417,11 +391,7 @@ function golpeRaqueta2D() {
     const enArco = (ox, oy) => {
         const dx = ox - cx, dy = oy - cy;
         if (Math.hypot(dx, dy) > CFG.raquetaAlcance) return false;
-        // Diferencia angular normalizada a [-pi, pi]
-        let da = Math.atan2(dy, dx) - centro;
-        while (da >  Math.PI) da -= 6.283185;
-        while (da < -Math.PI) da += 6.283185;
-        return Math.abs(da) <= CFG.raquetaArco;
+        return Math.abs(difAngulo(Math.atan2(dy, dx), centro)) <= CFG.raquetaArco;
     };
 
     for (const e of enemigos) {

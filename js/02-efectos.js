@@ -291,12 +291,27 @@ function aviso(texto, ms) {
 }
 
 // ---------------------------------------------------------------------------
-//  6. AUDIO PROCEDURAL — osciladores WebAudio, sin archivos externos
+//  6. AUDIO — SFX procedurales con osciladores WebAudio; la música de fondo y
+//     los diálogos sí son archivos (assets/sounds/).
 // ---------------------------------------------------------------------------
 let ctxAudio = null;
 let musicaFondo = null;
 let musicaActiva = true;
 let sfxActivo = true;
+
+// Las preferencias de audio sobreviven a la recarga. localStorage puede no
+// existir o lanzar (modo privado, file:// en algunos navegadores): sin él
+// simplemente se arranca con todo encendido.
+const CLAVE_AUDIO = 'dengue.audio';
+try {
+    const p = JSON.parse(localStorage.getItem(CLAVE_AUDIO) || 'null');
+    if (p) { musicaActiva = p.musica !== false; sfxActivo = p.sfx !== false; }
+} catch (e) { /* sin preferencias guardadas */ }
+
+function guardarPrefsAudio() {
+    try { localStorage.setItem(CLAVE_AUDIO, JSON.stringify({ musica: musicaActiva, sfx: sfxActivo })); }
+    catch (e) { /* no se pudo guardar: no pasa nada */ }
+}
 
 function audio() {
     if (!ctxAudio) { try { ctxAudio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
@@ -306,7 +321,7 @@ function audio() {
 
 function actualizarMusicaFondo() {
     if (!musicaFondo) return;
-    const habilitada = audioActivo && musicaActiva;
+    const habilitada = musicaActiva;
     musicaFondo.muted = !habilitada;
     if (!habilitada) {
         if (!musicaFondo.paused) musicaFondo.pause();
@@ -327,19 +342,15 @@ function inicializarMusicaFondo() {
     sonido.loop = true;
     sonido.preload = 'auto';
     sonido.volume = 0.45;
-    sonido.muted = !audioActivo || !musicaActiva;
+    sonido.muted = !musicaActiva;
     musicaFondo = sonido;
 
-    const reintentar = () => {
-        if (!audioActivo) return;
-        if (document.visibilityState === 'hidden') return;
-        musicaFondo.muted = false;
-        musicaFondo.play().catch(() => {});
-    };
-
-    window.addEventListener('pointerdown', reintentar, { once: true });
-    window.addEventListener('keydown', reintentar, { once: true });
-    window.addEventListener('touchstart', reintentar, { once: true });
+    // El navegador bloquea el autoplay hasta el primer gesto del usuario. Cada
+    // reintento pasa por actualizarMusicaFondo, que respeta las preferencias: si
+    // ya apagaste la música, una tecla posterior no debe volver a encenderla.
+    window.addEventListener('pointerdown', actualizarMusicaFondo, { once: true });
+    window.addEventListener('keydown', actualizarMusicaFondo, { once: true });
+    window.addEventListener('touchstart', actualizarMusicaFondo, { once: true });
     document.addEventListener('visibilitychange', actualizarMusicaFondo);
     window.addEventListener('load', actualizarMusicaFondo, { once: true });
     setTimeout(actualizarMusicaFondo, 200);
@@ -350,7 +361,7 @@ function inicializarMusicaFondo() {
 inicializarMusicaFondo();
 /** Un tono simple con envolvente exponencial. Barato y suficiente para SFX. */
 function tono(freq, dur, tipoOsc, vol, barridoA) {
-    if (!audioActivo || !sfxActivo) return;
+    if (!sfxActivo) return;
     const ac = audio(); if (!ac) return;
     const t = ac.currentTime;
     const osc = ac.createOscillator(), g = ac.createGain();
@@ -365,7 +376,7 @@ function tono(freq, dur, tipoOsc, vol, barridoA) {
 }
 /** Ruido blanco filtrado: la base de explosiones e impactos. */
 function ruido(dur, vol, freqFiltro) {
-    if (!audioActivo || !sfxActivo) return;
+    if (!sfxActivo) return;
     const ac = audio(); if (!ac) return;
     const n = Math.floor(ac.sampleRate * dur);
     const buf = ac.createBuffer(1, n, ac.sampleRate);

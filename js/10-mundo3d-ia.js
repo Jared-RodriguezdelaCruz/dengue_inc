@@ -29,8 +29,14 @@ function actualizarMosquitos3D(dt) {
         // Aleteo: escala vertical de los planos de las alas.
         const al = Math.abs(Math.sin(e.fase * 9)) * 0.9 + 0.25;
         e.alaI.scale.y = al; e.alaD.scale.y = al;
-        e.malla.material.color.setHex(e.flash > 0 ? 0xffffff :
-            (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0 ? 0xffffff : parseInt(a.color.slice(1), 16)));
+        // Destello de golpe y parpadeo de telegrafía por emissive: con textura,
+        // poner el color en blanco solo dejaba ver la textura sin teñir. Solo se
+        // toca el material cuando el estado cambia, no en cada frame.
+        const blanco = e.flash > 0 || (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0);
+        if (blanco !== e.blanco) {
+            e.blanco = blanco;
+            e.malla.material.emissive.setHex(blanco ? 0xffffff : 0x000000);
+        }
 
         if (e.aturdido > 0) {
             e.aturdido -= dt;

@@ -89,8 +89,12 @@ http://localhost:8000
 - `T` — tienda
 - `C` — fichero
 - `Esc` — pausa
-- `M` — silenciar/activar audio
+- `M` — silenciar/activar audio (en el menú hay botones para música y sonidos por separado; se recuerdan al recargar)
 - `F3` — mostrar debug
+
+### Solo en 3D
+- `Q` (mantener) — gancho: te jala hacia la pared o el mosquito que tengas en la mira. Cuesta estamina y tiene cooldown; al mosquito lo aturde y le quita 1 de vida, no lo mata de un golpe.
+- `Ctrl + Shift` — rodar
 
 ### Medidas para criaderos
 - `1` — lava
@@ -112,6 +116,7 @@ Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. 
 - `Menu` / `Options` / `+` — pausa
 - `View` / `Share` / `−` — silenciar
 - `L3` — rodar (3D)
+- `R3` (clic del stick derecho, mantener) — gancho (3D)
 - Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección)
 
 El código está en `js/01c-mando.js`.
@@ -133,7 +138,9 @@ El juego usa una semilla para generar niveles reproducibles. Si ingresas una sem
 ## Recomendaciones
 
 - Si modificas archivos JavaScript, recuerda mantener el orden de carga definido en `index.html`.
-- El proyecto usa caché-busting mediante parámetros como `?v=b5` en los scripts para evitar que el navegador use versiones antiguas.
+- El proyecto usa caché-busting mediante parámetros como `?v=b6` en los scripts para evitar que el navegador use versiones antiguas. Al subir `BUILD` en `js/01-nucleo.js`, sube también el `?v=` de `index.html` (el CI revisa que coincidan).
+- **Modo Coco (para probar):** `P` activa modo dios, espadazo y dash apuntados con el ratón (2D). Solo funciona en local (`file://`, `localhost`) o si la URL lleva `?coco`; en la versión publicada no se puede activar por accidente.
+- Las texturas de `assets/textures/` deben ser PNG con transparencia y con el personaje mirando a la derecha (el juego las voltea según la dirección). Abriendo con doble clic (`file://`), el 3D no puede usar texturas y se queda con colores: para verlas, usa el servidor local.
 - Si quieres probar cambios visuales o gameplay, puedes abrir el juego y generar una nueva semilla para observar distintos recorridos.
 
 ## Créditos y propósito

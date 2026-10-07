@@ -149,6 +149,7 @@ function actualizarMando(dtReal) {
         KeyJ:        bt(BOTON.X) || bt(BOTON.RT),
         KeyF:        bt(BOTON.Y) || bt(BOTON.LT),
         ControlLeft: bt(BOTON.L3),
+        KeyQ:        bt(BOTON.R3),        // gancho 3D: clic del stick de la cámara
         KeyT:        bt(BOTON.LB),
         KeyC:        bt(BOTON.RB),
         KeyM:        bt(BOTON.BACK),
