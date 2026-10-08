@@ -22,6 +22,7 @@ function abrirTienda() {
 function cerrarTienda() {
     elTienda.classList.add('oculto');
     if (estado === estados.PAUSA) estado = estadoPrevio;
+    capturarRaton3D();
 }
 
 const PRECIOS = { repelente: 5, abate: 10, suero: 8, paracetamol: 4, aine: 3, vacuna: 20 };
@@ -91,14 +92,20 @@ const elHabParry  = document.getElementById('hab-parry');
 const elObjetivo  = document.getElementById('ui-objetivo');
 let vidaDibujada = -1;
 
+/** Solo reescribe los corazones si la vida cambió: se puede llamar a menudo.
+ *  Antes vivía solo en actualizarHUD, que nadie llamaba al recibir daño, y los
+ *  corazones seguían llenos hasta recoger una moneda. */
+function pintarCorazones() {
+    if (jugador.vida === vidaDibujada) return;
+    vidaDibujada = jugador.vida;
+    let html = '';
+    for (let i = 0; i < CFG.vidaMax; i++)
+        html += '<span class="corazon' + (i < jugador.vida ? '' : ' vacio') + '">❤️</span>';
+    elCorazones.innerHTML = html;
+}
+
 function actualizarHUD() {
-    if (jugador.vida !== vidaDibujada) {
-        vidaDibujada = jugador.vida;
-        let html = '';
-        for (let i = 0; i < CFG.vidaMax; i++)
-            html += '<span class="corazon' + (i < jugador.vida ? '' : ' vacio') + '">❤️</span>';
-        elCorazones.innerHTML = html;
-    }
+    pintarCorazones();
     document.getElementById('ui-fichas').textContent = fichas;
     document.getElementById('ui-arma').textContent =
         armaActiva === 'botas' ? 'Botas' : (armaActiva === 'abate' ? 'Abate' : 'Repelente');
@@ -147,6 +154,7 @@ function pintarPromptVerbos() {
 }
 
 function latirCorazones() {
+    pintarCorazones();          // primero el valor nuevo; luego el pulso sobre él
     const cs = elCorazones.children;
     for (let i = 0; i < cs.length; i++) {
         cs[i].classList.add('pulso');
@@ -155,6 +163,9 @@ function latirCorazones() {
 }
 
 function actualizarHUDContinuo() {
+    // Red de seguridad para cualquier camino que cambie la vida sin avisar.
+    pintarCorazones();
+
     // --- Enfermedad -------------------------------------------------------
     const inf = jugador.infeccion;
     const bloque = document.getElementById('bloque-fiebre');
@@ -212,7 +223,7 @@ function actualizarHUDContinuo() {
         brujula3D(null);
     } else {
         if (!document.pointerLockElement && !mandoActivo && estado === estados.J3D) {
-            objetivo('🖱️ Haz clic para capturar el ratón', '');
+            objetivo('🖱️ Haz clic o pulsa una tecla para capturar el ratón', '');
         } else if (guero && guero.encontrado && !guero.resuelto) {
             objetivo('Decide qué hacer con Güero',
                      'Está en fase crítica. El panel de la derecha tiene las opciones.');
@@ -313,7 +324,8 @@ function tablaControles() {
         ['Medidas', '1 lava · 2 tapa · 3 voltea · 4 tira'],
         ['Fichero', 'C'],
         ['Debug', 'F3'],         ['Silencio', 'M'],
-        ['Mirar (3D)', 'ratón'], ['Capturar (3D)', 'clic']
+        ['Mirar (3D)', 'ratón'], ['Capturar (3D)', 'automático · clic'],
+        ['Gancho (3D)', 'Q (mantener)']
     ];
     const tabla = f => '<div class="tabla-controles">' +
         f.map(x => '<div>' + x[0] + ' <b>' + x[1] + '</b></div>').join('') + '</div>';
@@ -326,18 +338,41 @@ function tablaControles() {
         ['Raqueta', e.Y + ' · ' + e.LT], ['Atacar', e.X + ' · ' + e.RT],
         ['Tienda', e.LB],          ['Pausa', e.START],
         ['Medidas', 'cruceta ↑ lava · → tapa · ↓ voltea · ← tira'],
-        ['Fichero', e.RB],
-        ['Mirar (3D)', 'stick der.'], ['Silencio', e.BACK]
+        ['Fichero', 'clic stick der.'],
+        ['Mirar (3D) · desplazar menús', 'stick der.'], ['Silencio', e.BACK],
+        ['Gancho (3D)', e.RB + ' (mantener)']
     ];
     return tabla(filas) +
         '<div style="margin-top:8px;font-size:12px;color:#4dd0e1">🎮 ' + e.nombre + '</div>' +
         tabla(filasMando);
 }
 
+function actualizarBotonesAudioMenu() {
+    const m = document.getElementById('pm-musica');
+    const s = document.getElementById('pm-sonidos');
+    if (m) { m.textContent = 'Música: ' + (musicaActiva ? 'ON' : 'OFF'); m.setAttribute('aria-pressed', musicaActiva); }
+    if (s) { s.textContent = 'Sonidos: ' + (sfxActivo ? 'ON' : 'OFF'); s.setAttribute('aria-pressed', sfxActivo); }
+}
+
+function alternarMusicaMenu() {
+    musicaActiva = !musicaActiva;
+    guardarPrefsAudio();
+    actualizarMusicaFondo();
+    actualizarBotonesAudioMenu();
+}
+
+function alternarSonidosMenu() {
+    sfxActivo = !sfxActivo;
+    guardarPrefsAudio();
+    if (!sfxActivo) detenerDialogoGuero();
+    actualizarBotonesAudioMenu();
+}
+
 function mostrarMenu(o) {
     document.getElementById('pm-titulo').innerHTML = o.titulo;
     document.getElementById('pm-desc').innerHTML = o.desc || '';
     document.getElementById('pm-controles').innerHTML = o.controles ? tablaControles() : '';
+    actualizarBotonesAudioMenu();
     document.getElementById('pm-semilla').innerHTML = o.semilla
         ? 'Semilla (deja vacío para una nueva): <input id="in-semilla" value="' + semillaRun + '">'
         : '';
@@ -426,6 +461,7 @@ function pausar() {
     if (estado !== estados.J2D && estado !== estados.J3D) return;
     estadoPrevio = estado;
     estado = estados.PAUSA;
+    detenerDialogoGuero();
     mostrarMenu({
         titulo: 'Pausa',
         desc: 'Nivel ' + nivelActual + ' · semilla ' + semillaRun + ' · ' + fichas + ' 💰',
@@ -434,7 +470,7 @@ function pausar() {
         boton2: 'Menú principal', accion2: menuPrincipal
     });
 }
-function reanudar() { ocultarMenu(); estado = estadoPrevio; }
+function reanudar() { ocultarMenu(); estado = estadoPrevio; capturarRaton3D(); }
 
 // --- Control de niveles ----------------------------------------------------
 function iniciarNivel(n) {
@@ -472,6 +508,7 @@ function iniciarNivel(n) {
     actualizarHUD();
     sfx.nivel();
     aviso('NIVEL ' + n, 1100);
+    capturarRaton3D();       // si se llegó con un clic («Nivel 2», «Reintentar»), ya no hace falta otro
 }
 
 /** Cierre de nivel: qué hiciste y un mito derribado. Es la pausa donde el

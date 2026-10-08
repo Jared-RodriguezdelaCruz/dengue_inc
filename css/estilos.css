@@ -110,6 +110,7 @@ canvas { display: block; }
     margin: 18px 0 4px 0; font-size: 13px; color: #cfd8dc;
 }
 .tabla-controles b { color: #f1c40f; }
+.fila-audio { margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .fila-semilla { margin-top: 16px; font-size: 13px; color: #90a4ae; }
 .fila-semilla input {
     background: #16202b; border: 2px solid #37474f; color: #f1c40f; border-radius: 5px;

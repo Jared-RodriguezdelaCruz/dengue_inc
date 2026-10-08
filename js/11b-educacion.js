@@ -106,7 +106,7 @@ function aplicarVerbo(c, verbo) {
         aviso('EL AGUA SE FUE… ESO PARECE', 1700);
         sfx.moneda();
         if (esc2D) fxHumo(cx, cy, 10, COL.GRIS_CL, 20);
-        else if (c.malla) fxChispas3D(c.x, 2.4, c.z, 10, 0.75, 0.78, 0.8, 0.05);
+        else if (c.malla) fxChispas3D(c.x, c.aguaY + 0.2, c.z, 10, 0.75, 0.78, 0.8, 0.05);
         return 'trampa';
     }
 
@@ -224,6 +224,7 @@ function abrirFichero() {
 function cerrarFichero() {
     elFichero().classList.add('oculto');
     if (estado === estados.PAUSA) estado = estadoPrevio;
+    capturarRaton3D();
 }
 
 // --- Mitos entre niveles ---------------------------------------------------

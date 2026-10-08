@@ -112,6 +112,7 @@ function parryExitoso(x, y) {
 }
 
 function dañarJugador(n, fx, fy) {
+    if (debugGodMode) return false;
     if (invulnerable() || jugador.muerto || estado === estados.TRANSICION) return false;
     // En fase crítica se escapa plasma de los vasos: cualquier golpe pega el doble.
     // El paracetamol amortigua, pero no vuelve segura la fase crítica.
@@ -149,6 +150,7 @@ function serotipoDeNivel(n) {
 
 /** Picadura de mosquito. A diferencia de dañarJugador, esta puede contagiar. */
 function picar(serotipo, fx, fy) {
+    if (debugGodMode) return false;
     if (invulnerable() || jugador.muerto || estado === estados.TRANSICION) return false;
     serotipo = serotipo || 1;
 
@@ -221,7 +223,8 @@ function actualizarInfeccion(dt) {
 
     // Fase crítica: se escapa plasma. El sangrado por AINE y el dengue grave
     // hacen daño sostenido; ambos son consecuencia, no azar.
-    const sangra = jugador.sangrado > 0 || inf.grave;
+    // El modo dios del Modo Coco también cubre este daño: no pasa por dañarJugador.
+    const sangra = (jugador.sangrado > 0 || inf.grave) && !debugGodMode;
     if (sangra) {
         inf.dot += dt;
         const cada = jugador.sangrado > 0 ? 96 : 150;

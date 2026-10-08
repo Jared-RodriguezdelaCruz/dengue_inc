@@ -35,7 +35,7 @@ const ANCHO = 960, ALTO = 540;
 // Sello de compilación. Se ve en el menú y en el overlay F3 para poder saber de
 // un vistazo qué código se está ejecutando: el navegador cachea los .js y una
 // recarga normal puede seguir sirviendo los viejos.
-const BUILD = '2026-09-08 · b5';
+const BUILD = '2026-10-07 · b6';
 
 // Todos los tiempos están en "frames a 60 fps" y se decrementan con dt,
 // que está normalizado a 1.0 = un frame de 60 fps. Así las constantes de
@@ -66,6 +66,9 @@ const CFG = {
     velCam: 0.115, dashVel3D: 0.42, gravedad3D: 0.021, salto3D: 0.34,
     sensibilidad: 0.0022, altoOjos: 1.65,
     velCamaraMando: 14,   // stick derecho a tope = 14 px de ratón por frame
+    // Gancho 3D (Q): acerca al jugador, no mata. Cuesta más que un dash porque
+    // recorre más distancia, y el golpe al llegar solo aturde como la raqueta.
+    ganchoAlcance: 16, ganchoVel: 0.9, ganchoCoste: 30, ganchoCd: 75, ganchoGolpe: 1,
 };
 
 const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa' };
@@ -78,7 +81,14 @@ let inventario = ['botas'];
 let armaActiva = 'botas';
 let semillaRun = 0;
 let mostrarDebug = false;
-let audioActivo = true;
+let debugMode = false;
+let debugGodMode = false;
+
+// El Modo Coco (P) es para probar, no para el juego publicado: solo se activa
+// en local o si la URL trae ?coco.
+const MODO_COCO_PERMITIDO = location.protocol === 'file:' ||
+    /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ||
+    new URLSearchParams(location.search).has('coco');
 
 // Los niveles impares (1, 3) y el 4 son 2D; el 2 y el post-transición son 3D.
 const NIVEL_ES_2D = n => n === 1 || n === 3 || n === 4;
@@ -89,6 +99,14 @@ const NIVEL_ES_2D = n => n === 1 || n === 3 || n === 4;
 const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 const lerp  = (a, b, t) => a + (b - a) * t;
 const aprox = (a, b, paso) => Math.abs(b - a) <= paso ? b : a + Math.sign(b - a) * paso;
+/** Diferencia angular a - b normalizada a [-π, π]. Con `%` no basta: en JS
+ *  conserva el signo, y los ángulos al otro lado del corte ±π fallarían. */
+function difAngulo(a, b) {
+    let d = a - b;
+    while (d >  Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    return d;
+}
 
 /** mulberry32: PRNG de 32 bits, rápido y con estado explícito.
  *  Necesario para que una misma semilla produzca siempre el mismo nivel. */
@@ -134,6 +152,7 @@ const teclas = {};          // estado sostenido
 const teclasNuevas = {};    // flanco de bajada: true solo el frame en que se pulsó
 let ratonNuevo = [false, false, false];
 let ratonAbajo = [false, false, false];
+let ratonX = ANCHO / 2, ratonY = ALTO / 2;
 let ratonDX = 0, ratonDY = 0;
 // El mando escribe en sus propios mapas (ver 01c-mando.js): así un keyup del
 // teclado no suelta un botón que el mando sigue manteniendo, ni al revés.
@@ -152,10 +171,40 @@ function limpiarFlancos() {
     ratonDX = ratonDY = 0;
 }
 
+function activarModoDebug() {
+    debugMode = !debugMode;
+    debugGodMode = debugMode;
+    jugador.vida = debugMode ? CFG.vidaMax : Math.min(jugador.vida, CFG.vidaMax);
+    jugador.estamina = debugMode ? CFG.estaminaMax : Math.min(jugador.estamina, CFG.estaminaMax);
+    if (debugMode) {
+        aviso('DEBUG MODE ON', 900);
+        if (estado === estados.J2D || estado === estados.J3D) {
+            sfx.nivel();
+        }
+    } else {
+        aviso('DEBUG MODE OFF', 900);
+    }
+    return debugMode;
+}
+
 /** Acciones que no dependen del bucle: se disparan en el mismo instante de la
  *  pulsación. Las comparten teclado y mando. */
 function accionGlobal(code) {
-    if (code === 'KeyM') { audioActivo = !audioActivo; aviso(audioActivo ? '🔊' : '🔇', 400); }
+    if (code === 'KeyP' && MODO_COCO_PERMITIDO) {
+        activarModoDebug();
+        return;
+    }
+
+    if (code === 'KeyM') {
+        // Si suena algo, M lo apaga todo; si todo está apagado, lo enciende todo.
+        const on = !(musicaActiva || sfxActivo);
+        musicaActiva = sfxActivo = on;
+        guardarPrefsAudio();
+        actualizarMusicaFondo();
+        actualizarBotonesAudioMenu();
+        if (!on) detenerDialogoGuero();
+        aviso(on ? '🔊' : '🔇', 400);
+    }
 
     if (code === 'KeyC' && (estado === estados.J2D || estado === estados.J3D)) alternarFichero();
     else if (code === 'KeyC' && estado === estados.PAUSA && ficheroAbierto()) cerrarFichero();
@@ -181,17 +230,26 @@ window.addEventListener('keydown', e => {
     if (e.code === 'F3') { e.preventDefault(); mostrarDebug = !mostrarDebug;
                            document.getElementById('debug').style.display = mostrarDebug ? 'block' : 'none'; }
     accionGlobal(e.code);
+    // Una tecla también es un gesto: en 3D captura el ratón sin pedir clic.
+    if (estado === estados.J3D) capturarRaton3D();
 });
 window.addEventListener('keyup', e => { teclas[e.code] = false; });
 window.addEventListener('blur', () => { for (const k in teclas) teclas[k] = false; });
 
 const contenedor = document.getElementById('game-container');
 contenedor.addEventListener('mousedown', e => {
+    // En 3D sin capturar, ese clic es para capturar el ratón: no dispara ni pega.
+    if (estado === estados.J3D && !document.pointerLockElement) return;
     if (e.button < 3) { ratonAbajo[e.button] = true; ratonNuevo[e.button] = true; }
 });
 window.addEventListener('mouseup',  e => { if (e.button < 3) ratonAbajo[e.button] = false; });
 contenedor.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('mousemove', e => {
+    const rect = contenedor.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / Math.max(rect.width, 1);
+    const py = (e.clientY - rect.top) / Math.max(rect.height, 1);
+    ratonX = clamp(px * ANCHO, 0, ANCHO);
+    ratonY = clamp(py * ALTO, 0, ALTO);
     if (document.pointerLockElement) { ratonDX += e.movementX; ratonDY += e.movementY; }
 });
 

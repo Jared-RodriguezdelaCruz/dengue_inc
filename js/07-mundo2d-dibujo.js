@@ -5,6 +5,73 @@
 // ---------------------------------------------------------------------------
 const canvas = document.getElementById('canvas2d');
 const ctx = canvas.getContext('2d', { alpha: false });
+const texturaJugador = new Image();
+texturaJugador.src = 'assets/textures/player.png';
+const texturasEnemigos = {
+    base: new Image(),
+    mini: new Image(),
+    giant: new Image()
+};
+texturasEnemigos.base.src = 'assets/textures/enemy_base.png';
+texturasEnemigos.mini.src = 'assets/textures/enemy_mini.png';
+texturasEnemigos.giant.src = 'assets/textures/enemy_giant.png';
+
+function texturaEnemigo2D(tipo) {
+    if (tipo === 'enjambre') return texturasEnemigos.mini;
+    if (tipo === 'mutante') return texturasEnemigos.giant;
+    return texturasEnemigos.base;
+}
+
+/**
+ * Sprites horneados: cada imagen se escala (y se tiñe) UNA sola vez en un canvas
+ * offscreen al doble de su tamaño en pantalla. Reducir en cada frame una foto
+ * de 635×483 a 25 px salía caro y producía aliasing. El destello usaba
+ * ctx.filter, que es una ruta lenta y no existe en todos los navegadores.
+ * Funciona también desde file://: el canvas queda "tainted", pero nunca se leen
+ * sus píxeles.
+ */
+const cacheSprites = new Map();
+
+function spriteHorneado(clave, img, w, h, tinte, alfaTinte) {
+    const hecho = cacheSprites.get(clave);
+    if (hecho) return hecho;
+    if (!img.complete || img.naturalWidth === 0) return null;   // cargando, o falló
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(w * 2); c.height = Math.ceil(h * 2);
+    c.anchoVis = w; c.altoVis = h;
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(img, 0, 0, c.width, c.height);
+    if (tinte) {
+        // source-atop solo pinta donde ya hay píxeles: con un PNG con alfa tiñe
+        // la silueta; con los PNG actuales, que no tienen alfa, todo el rectángulo.
+        g.globalCompositeOperation = 'source-atop';
+        g.globalAlpha = alfaTinte;
+        g.fillStyle = tinte;
+        g.fillRect(0, 0, c.width, c.height);
+    }
+    cacheSprites.set(clave, c);
+    return c;
+}
+
+/** El tinte del arquetipo mantiene legible el tipo de mosquito (antes lo decía
+ *  el color del cuerpo); el destello es blanco puro, como la telegrafía de antes. */
+function spriteEnemigo(e, flash) {
+    return spriteHorneado(e.tipo + (flash ? ':flash' : ''), texturaEnemigo2D(e.tipo),
+                          e.ancho, e.alto, flash ? '#ffffff' : e.arq.color, flash ? 1 : 0.35);
+}
+
+/** Ajusta la imagen a la caja del jugador sin deformarla; el tinte cian del
+ *  dash sustituye al cambio de color del cuerpo procedural. */
+function spriteJugador(dash) {
+    const img = texturaJugador;
+    if (!img.complete || img.naturalWidth === 0) return null;
+    const esc = Math.min(jugador.ancho / img.naturalWidth, jugador.alto / img.naturalHeight);
+    return spriteHorneado(dash ? 'jugador:dash' : 'jugador', img,
+                          img.naturalWidth * esc, img.naturalHeight * esc,
+                          dash ? '#7fdbff' : null, 0.45);
+}
+
 let gradCielo = null;
 
 function actualizarCamara2D(dt) {
@@ -518,8 +585,16 @@ function dibujarEnemigos() {
         }
         // Cuerpo
         const flash = e.flash > 0 || (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0);
-        ctx.fillStyle = flash ? '#ffffff' : e.arq.color;
-        ctx.fillRect(-e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+        const spr = spriteEnemigo(e, flash);
+        if (spr) {
+            // Los sprites miran a la derecha: se voltean hacia donde va el mosquito.
+            if (e.dirX < 0) ctx.scale(-1, 1);
+            ctx.drawImage(spr, -e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+            if (e.dirX < 0) ctx.scale(-1, 1);
+        } else {
+            ctx.fillStyle = flash ? '#ffffff' : e.arq.color;
+            ctx.fillRect(-e.ancho / 2, -e.alto / 2, e.ancho, e.alto);
+        }
         {
             // Trompa (el aparato picador del Aedes)
             ctx.fillStyle = flash ? '#fff' : '#2c1810';
@@ -589,20 +664,26 @@ function dibujarJugador() {
     ctx.scale(jugador.escX, jugador.escY);
 
     const w = jugador.ancho, h = jugador.alto;
-    // Cuerpo
-    ctx.fillStyle = jugador.dashT > 0 ? '#7fdbff' : '#2e86de';
-    ctx.fillRect(-w / 2, -h / 2, w, h);
-    ctx.fillStyle = '#54a0ff';
-    ctx.fillRect(-w / 2, -h / 2, w, 8);
-    // Gorra
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(-w / 2 - 2, -h / 2 - 6, w + 4, 7);
-    ctx.fillRect(jugador.dir > 0 ? 0 : -w / 2 - 8, -h / 2 - 5, w / 2 + 8, 4);
-    // Ojo
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(jugador.dir > 0 ? 2 : -8, -h / 2 + 12, 6, 6);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(jugador.dir > 0 ? 4 : -6, -h / 2 + 14, 3, 3);
+    const spr = spriteJugador(jugador.dashT > 0);
+    if (spr) {
+        if (jugador.dir < 0) ctx.scale(-1, 1);     // mira hacia donde camina
+        ctx.drawImage(spr, -spr.anchoVis / 2, -spr.altoVis / 2, spr.anchoVis, spr.altoVis);
+    } else {
+        // Cuerpo
+        ctx.fillStyle = jugador.dashT > 0 ? '#7fdbff' : '#2e86de';
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        ctx.fillStyle = '#54a0ff';
+        ctx.fillRect(-w / 2, -h / 2, w, 8);
+        // Gorra
+        ctx.fillStyle = '#c0392b';
+        ctx.fillRect(-w / 2 - 2, -h / 2 - 6, w + 4, 7);
+        ctx.fillRect(jugador.dir > 0 ? 0 : -w / 2 - 8, -h / 2 - 5, w / 2 + 8, 4);
+        // Ojo
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(jugador.dir > 0 ? 2 : -8, -h / 2 + 12, 6, 6);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(jugador.dir > 0 ? 4 : -6, -h / 2 + 14, 3, 3);
+    }
     ctx.restore();
 
     if (jugador.raquetaT > 0) dibujarRaqueta2D(cx, cy);

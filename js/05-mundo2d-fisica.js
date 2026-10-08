@@ -108,6 +108,83 @@ const entradaDash   = () => cualqPulsada('ShiftLeft', 'ShiftRight', 'KeyL');
 const entradaParry  = () => cualqPulsada('KeyF', 'KeyK') || ratonNuevo[2];
 const entradaAtaque = () => cualqPulsada('KeyJ') || ratonNuevo[0];
 
+/** Dirección del ratón medida desde el jugador EN PANTALLA. La cámara no lo
+ *  centra: lo lleva al 42 % del ancho, con adelanto según la velocidad. */
+function direccionRaton2D() {
+    const dx = ratonX - (jugador.x + jugador.ancho / 2 - camX);
+    const dy = ratonY - (jugador.y + jugador.alto / 2 - camY);
+    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return { x: jugador.dir, y: 0 };
+    const largo = Math.hypot(dx, dy);
+    return { x: dx / largo, y: dy / largo };
+}
+
+/** Mata lo que quede en el arco a ± `arco` a menos de `radio`. Al jefe lo daña
+ *  solo si no tiene el escudo arriba: eso lo decide dañarJefe. */
+function barridoDebug(cx, cy, a, radio, arco) {
+    let matado = false;
+    for (const e of enemigos) {
+        if (!e.vivo) continue;
+        const dx = e.x + e.ancho / 2 - cx, dy = e.y + e.alto / 2 - cy;
+        if (Math.hypot(dx, dy) > radio) continue;
+        if (Math.abs(difAngulo(Math.atan2(dy, dx), a)) < arco) { matarEnemigo(e); matado = true; }
+    }
+    if (jefe && !jefe.muerto &&
+        Math.hypot(jefe.x + jefe.ancho / 2 - cx, jefe.y + jefe.alto / 2 - cy) < radio + 20) {
+        dañarJefe(999); matado = true;
+    }
+    return matado;
+}
+
+/** Dash del Modo Coco. El movimiento lo aplica actualizarJugador2D a partir de
+ *  dashDirX/Y: un vx/vy asignado aquí se sobrescribiría en el mismo frame. */
+function dashDebugHacia(dirX, dirY, frames) {
+    jugador.esRoll = false;
+    jugador.dashT = frames;
+    jugador.dashDirX = dirX;
+    jugador.dashDirY = clamp(dirY * 0.9, -0.6, 0.6);
+    jugador.dir = dirX >= 0 ? 1 : -1;
+}
+
+function debugDash2D() {
+    if (!debugMode || jugador.muerto || jugador.dashT > 0) return;
+    const aim = direccionRaton2D();
+    const dirX = aim.x !== 0 ? aim.x : jugador.dir;
+    const cx = jugador.x + jugador.ancho / 2;
+    const cy = jugador.y + jugador.alto / 2;
+    const matado = barridoDebug(cx, cy, Math.atan2(aim.y, dirX), 120, 1.15);
+    dashDebugHacia(dirX, aim.y, 12);
+    if (matado) {
+        fxEstela(cx, cy, COL.ORO, 18);
+        emitirOnda(cx, cy, 82, 8, COL.AMBAR);
+        destellar('#ffd966', 0.18, 120);
+        sfx.explosion();
+    }
+}
+
+function debugEspadazo2D() {
+    if (!debugMode || jugador.ataqueCd > 0 || jugador.muerto) return;
+    jugador.ataqueCd = 8;
+    const aim = direccionRaton2D();
+    const dirX = aim.x !== 0 ? aim.x : jugador.dir;
+    const cx = jugador.x + jugador.ancho / 2;
+    const cy = jugador.y + jugador.alto / 2;
+    const radio = 120;
+    const a = Math.atan2(aim.y, dirX);
+    if (barridoDebug(cx, cy, a, radio, 1.1)) {
+        dashDebugHacia(dirX, aim.y, 9);           // embestida tras el corte
+        fxRaqueta(cx, cy, a, radio);
+        emitirOnda(cx, cy, radio, 6, COL.ORO);
+        destellar('#f1c40f', 0.3, 120);
+        sacudir(16);
+        congelar(6);
+        sfx.explosion();
+    }
+    jugador.estamina = CFG.estaminaMax;
+    jugador.vida = CFG.vidaMax;
+    jugador.iframes = Math.max(jugador.iframes, 12);
+    debugDash2D();                                // sin embestida, el espadazo también te mueve
+}
+
 function actualizarJugador2D(dt) {
     const izq = cualqAbajo('ArrowLeft', 'KeyA');
     const der = cualqAbajo('ArrowRight', 'KeyD');
@@ -116,22 +193,26 @@ function actualizarJugador2D(dt) {
     if (!jugador.muerto) {
         // --- Dash / esquive -------------------------------------------------
         if (entradaDash()) {
-            let dx = der ? 1 : (izq ? -1 : jugador.dir);
-            if (agachado && jugador.enSuelo) {
-                intentarDash(dx, 0, true);                     // esquive rodando
-            } else if (jugador.enSuelo || jugador.dashAereo) {
-                let dy = 0;
-                if (agachado) dy = 0.55;
-                if (entradaSaltoM()) dy = -0.5;
-                if (!jugador.enSuelo && intentarDash(dx, dy, false)) jugador.dashAereo = false;
-                else if (jugador.enSuelo) intentarDash(dx, dy, false);
+            if (debugMode) debugDash2D();
+            else {
+                let dx = der ? 1 : (izq ? -1 : jugador.dir);
+                if (agachado && jugador.enSuelo) {
+                    intentarDash(dx, 0, true);                     // esquive rodando
+                } else if (jugador.enSuelo || jugador.dashAereo) {
+                    let dy = 0;
+                    if (agachado) dy = 0.55;
+                    if (entradaSaltoM()) dy = -0.5;
+                    if (!jugador.enSuelo && intentarDash(dx, dy, false)) jugador.dashAereo = false;
+                    else if (jugador.enSuelo) intentarDash(dx, dy, false);
+                }
             }
         }
         // --- Parry con raqueta ----------------------------------------------
         if (entradaParry()) intentarParry();
         if (jugador.parryT > 0) golpeRaqueta2D();
+        if (debugMode && entradaAtaque()) debugEspadazo2D();
         // --- Ataque ---------------------------------------------------------
-        if (entradaAtaque()) dispararArma();
+        else if (entradaAtaque()) dispararArma();
         // --- Lava / Tapa / Voltea / Tira sobre el envase que tengas enfrente --
         leerVerbos(criaderoCercano2D());
     }
@@ -310,11 +391,7 @@ function golpeRaqueta2D() {
     const enArco = (ox, oy) => {
         const dx = ox - cx, dy = oy - cy;
         if (Math.hypot(dx, dy) > CFG.raquetaAlcance) return false;
-        // Diferencia angular normalizada a [-pi, pi]
-        let da = Math.atan2(dy, dx) - centro;
-        while (da >  Math.PI) da -= 6.283185;
-        while (da < -Math.PI) da += 6.283185;
-        return Math.abs(da) <= CFG.raquetaArco;
+        return Math.abs(difAngulo(Math.atan2(dy, dx), centro)) <= CFG.raquetaArco;
     };
 
     for (const e of enemigos) {
