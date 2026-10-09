@@ -379,6 +379,8 @@ const GUERO = {
     reloj: 1500,
 
     hallado: 'GÜERO ESTÁ AQUÍ · TIENE DENGUE',
+    // Como Ivan: con criaderos vivos alrededor, curarlo solo compra tiempo.
+    esperar: 'GÜERO TIENE DENGUE · PRIMERO CIERRA LOS CRIADEROS',
     intro: 'Le bajó la fiebre hace rato y dice que ya se siente mejor. ' +
            'Está pálido, le duele el abdomen y le sangran las encías.',
 

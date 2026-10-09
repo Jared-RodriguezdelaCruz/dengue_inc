@@ -25,7 +25,7 @@ function cerrarTienda() {
     capturarRaton3D();
 }
 
-const PRECIOS = { insecticida: 5, abate: 10, repelente: 4, suero: 8, paracetamol: 4, aine: 3, vacuna: 20 };
+const PRECIOS = { insecticida: 5, abate: 10, repelente: 4, suero: 8, paracetamol: 4, aine: 3, vacuna: 20, gata: 15 };
 
 function comprar(id) {
     const costo = PRECIOS[id];
@@ -50,6 +50,14 @@ function comprar(id) {
     if (id === 'repelente') {
         if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
         fichas -= costo; aplicarRepelente();
+        actualizarHUD(); refrescarTienda();
+        return;
+    }
+    // La Gorda (11h): se compra una vez y te acompaña el resto de la partida.
+    if (id === 'gata') {
+        if (gataComprada) { aviso('LA GORDA YA VIENE CONTIGO', 900); return; }
+        if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
+        fichas -= costo; comprarGata();
         actualizarHUD(); refrescarTienda();
         return;
     }
@@ -91,6 +99,9 @@ function refrescarTienda() {
     const bv = document.getElementById('btn-vacuna');
     bv.textContent = jugador.vacunado ? 'Aplicada' : 'Comprar (' + PRECIOS.vacuna + ')';
     bv.className = jugador.vacunado ? 'equipado' : (fichas >= PRECIOS.vacuna ? '' : 'caro');
+    const bg = document.getElementById('btn-gata');
+    bg.textContent = gataComprada ? 'Contigo' : 'Comprar (' + PRECIOS.gata + ')';
+    bg.className = gataComprada ? 'equipado' : (fichas >= PRECIOS.gata ? '' : 'caro');
     const bs = document.getElementById('btn-suero');
     bs.textContent = jugador.vida >= CFG.vidaMax ? 'Vida llena' : 'Comprar (' + PRECIOS.suero + ')';
     bs.className = (jugador.vida < CFG.vidaMax && fichas >= PRECIOS.suero) ? '' : 'caro';
@@ -235,7 +246,7 @@ function actualizarHUDContinuo() {
             const quedan = criaderosVivos();
             if (quedan > 0) {
                 objetivo('Cierra los criaderos — quedan ' + quedan,
-                         'Acércate a un envase y pulsa 1-4. Cada uno pide su medida.');
+                         'Acércate a un envase y ' + txtMedidas() + '. Cada uno pide su medida.');
             } else {
                 const d = Math.max(0, Math.round((meta.x - jugador.x) / 10));
                 objetivo('Alcanza la salida — ' + d + ' m',
@@ -244,18 +255,30 @@ function actualizarHUDContinuo() {
         } else objetivo('', '');
         brujula3D(null);
     } else {
-        if (!document.pointerLockElement && !mandoActivo && estado === estados.J3D) {
+        if (!document.pointerLockElement && !mandoActivo && !modoTactil && estado === estados.J3D) {
             objetivo('🖱️ Haz clic o pulsa una tecla para capturar el ratón', '');
         } else if (guero && guero.encontrado && !guero.resuelto) {
             objetivo('Decide qué hacer con Güero',
                      'Está en fase crítica. El panel de la derecha tiene las opciones.');
+        } else if (jefe3D && jefe3D.despierta && !jefe3D.muerto) {
+            const quedan = envasesJefe3D();
+            if (quedan > 0)
+                objetivo('La Hembra: cierra sus envases — quedan ' + quedan,
+                         'Mientras tengan agua tiene escudo y pone huevos. El aro rojo marca ' +
+                         'dónde cae la picada: esquívala con el dash.');
+            else
+                objetivo('Vence a la Hembra',
+                         'Cuando falla la picada se queda en el suelo: pégale. El anillo se salta, ' +
+                         'se esquiva con el dash o se devuelve con la raqueta.');
         } else if (criaderosVivos() > 0) {
             objetivo('Cierra los criaderos — quedan ' + criaderosVivos(),
-                     'Acércate a un envase y pulsa 1-4. La flecha te lleva al más cercano.');
+                     'Acércate a un envase y ' + txtMedidas() + '. La flecha te lleva al más cercano.');
         } else if (!ivanListo()) {
             objetivo('Atiende a Ivan', 'Tiene fiebre. La flecha te lleva con él.');
         } else if (!gueroListo()) {
             objetivo('Encuentra a Güero', 'La columna naranja marca dónde está.');
+        } else if (!jefe3DListo()) {
+            objetivo('Vence a la Hembra', 'Está en la sala del portal. La flecha te lleva.');
         } else {
             objetivo('Llega al portal morado', 'Ya cerraste todo. La flecha apunta a la salida.');
         }
@@ -282,16 +305,21 @@ function objetivo(txt, detalle) {
 function objetivo3D() {
     if (!camera3D) return null;
     const cam = camera3D.position;
+    // Peleando con la Hembra: primero sus envases y luego ella.
+    const J = jefe3D && jefe3D.despierta && !jefe3D.muerto ? jefe3D : null;
     let mejor = null, mejorD = 1e9;
     for (const c of criaderos3D) {
-        if (c.neutralizado) continue;
+        if (c.neutralizado || (J && !c.deJefe)) continue;
         const d = Math.hypot(c.x - cam.x, c.z - cam.z);
         if (d < mejorD) { mejorD = d; mejor = c; }
     }
     if (mejor) return { x: mejor.x, z: mejor.z, txt: CRIADEROS[mejor.tipo].nombre, meta: false };
+    if (J) return { x: J.x, z: J.z, txt: 'La Hembra', meta: false };
     if (ivan && !ivan.resuelto) return { x: ivan.x, z: ivan.z, txt: IVAN.nombre, meta: false };
     if (guero && !guero.resuelto)
         return { x: guero.x, z: guero.z, txt: GUERO.nombre, meta: false };
+    if (jefe3D && !jefe3D.muerto)
+        return { x: jefe3D.x, z: jefe3D.z, txt: 'La Hembra', meta: false };
     if (meta3D && metaAbierta)
         return { x: meta3D.position.x, z: meta3D.position.z, txt: 'Portal', meta: true };
     return null;
@@ -355,6 +383,21 @@ function tablaControles() {
     ];
     const tabla = f => '<div class="tabla-controles">' +
         f.map(x => '<div>' + x[0] + ' <b>' + x[1] + '</b></div>').join('') + '</div>';
+    if (tactilVisible()) {
+        // En el celular la tabla de teclado no le sirve a nadie (01d-tactil.js).
+        const filasTactil = [
+            ['Mover', 'joystick: apoya el pulgar izq.'], ['Saltar', 'Saltar'],
+            ['Dash', 'Dash'],                ['Esquive', 'joystick ↓ + Dash'],
+            ['Raqueta', 'Raqueta'],          ['Atacar', 'Atacar (en 3D, mantener)'],
+            ['Medidas', 'aparecen junto al envase'], ['Pausa · tienda · fichero', '⏸ 🛒 📖'],
+            ['Mirar (3D)', 'arrastra a la derecha'], ['Gancho (3D)', 'Gancho (mantener)']
+        ];
+        return '<div style="margin-top:8px;font-size:12px;color:#4dd0e1">📱 Pantalla táctil</div>' +
+            tabla(filasTactil) +
+            '<div style="font-size:11px;color:#90a4ae;margin-top:4px">En 3D la mira se acerca sola un poco ' +
+            'a lo que tengas casi enfrente mientras disparas. En iPhone, para jugar a pantalla completa: ' +
+            'Compartir → «Agregar a inicio».</div>';
+    }
     if (!mandoActivo) return tabla(filas);
 
     const e = etiquetasMando();
@@ -451,11 +494,13 @@ function empezarJuego() {
     const txt = inp ? inp.value.trim() : '';
     semillaRun = txt !== '' ? hashSemilla(txt) : ((Math.random() * 2147483647) | 0);
     fichas = 0; inventario = ['botas']; armaActiva = 'botas';
+    reiniciarGata();                            // la Gorda se compra en cada partida
     reiniciarJugador(true);
     reiniciarMarcador();
     jugador.vida = CFG.vidaMax; jugador.estamina = CFG.estaminaMax;
     vidaDibujada = -1;
     audio();                                    // desbloquea WebAudio con un gesto
+    pantallaCompletaAlJugar();                  // en el celular, dentro del mismo toque
     // Primero las cinco preguntas (se pueden saltar): al final se repiten y la
     // diferencia es lo que el juego enseñó.
     quizInicio(() => { ocultarMenu(); iniciarNivel(1); });
@@ -468,7 +513,7 @@ function mostrarDerrota() {
         desc: 'Caíste en el nivel ' + nivelActual + '.' + reporteFinal() +
               '<div style="color:#90a4ae;font-size:11px;margin-top:8px">El nivel se regenera con la ' +
               'misma semilla, así que el trazado será idéntico.</div>',
-        boton: 'Reintentar nivel', accion: () => { ocultarMenu(); reiniciarJugador(true); vidaDibujada = -1; iniciarNivel(nivelActual); },
+        boton: 'Reintentar nivel', accion: () => { pantallaCompletaAlJugar(); ocultarMenu(); reiniciarJugador(true); vidaDibujada = -1; iniciarNivel(nivelActual); },
         boton2: 'Menú principal', accion2: menuPrincipal
     });
 }
@@ -548,6 +593,7 @@ function iniciarNivel(n) {
     if (ficheroAbierto()) cerrarFichero();
     if (tiendaAbierta()) cerrarTienda();
     tokensAtaque = 0;
+    reiniciarJefe3D();       // la Hembra solo existe en el nivel 4
     limpiarParticulas();
     programarLluvia();
 
@@ -569,8 +615,10 @@ function iniciarNivel(n) {
         document.getElementById('crosshair').style.display = 'block';
         if (!scene) iniciarMotor3D();
         const muros = generarNivel3D(n);
-        statsGen = salas.length + ' salas · ' + muros + ' muros(1 draw) · ' + mosquitos3D.length + ' enem';
+        statsGen = salas.length + ' salas · ' + muros + ' muros(1 draw) · ' + mosquitos3D.length + ' enem · ' +
+                   infoPlataformas3D;
     }
+    aparecerGata();          // si ya la compraste, la Gorda llega contigo (11h)
     vidaDibujada = -1;
     actualizarHUD();
     sfx.nivel();
@@ -610,7 +658,7 @@ function completarNivel() {
     if (cambiandoNivel || jugador.muerto || estado === estados.TRANSICION) return;
     cambiandoNivel = true;
     // Morado, el color del portal que acabas de cruzar, y corto. El velo BLANCO
-    // es de la grieta dimensional del nivel 4 y de nada más: si cada cambio de
+    // es de la grieta dimensional del nivel 3 y de nada más: si cada cambio de
     // nivel lo usa, el salto entre dimensiones deja de significar algo.
     destellar('#8e44ad', 0.34, 300);
     sfx.nivel();
@@ -622,7 +670,7 @@ function completarNivel() {
 }
 
 // ---------------------------------------------------------------------------
-//  TRANSICIÓN DIMENSIONAL 2D → 3D (final del nivel 4)
+//  TRANSICIÓN DIMENSIONAL 2D → 3D (al caer el jefe del nivel 3)
 //
 //  Esto eran nueve setTimeout anidados escribiendo sobre la misma propiedad CSS
 //  que destellar(). Dos dueños peleándose: el fogonazo del salto se lo comía
@@ -635,7 +683,7 @@ let transicion = null;
 // ---------------------------------------------------------------------------
 //  Reparto de responsabilidades, aprendido a base de romperlo dos veces:
 //
-//    · Lo CRÍTICO —abrir la grieta, cargar el mundo nuevo, quitar la cortina—
+//    · Lo CRÍTICO —abrir la grieta, montar la pausa, quitar la cortina—
 //      va por setTimeout, agendado entero en cuanto cae el jefe. setTimeout
 //      sigue disparando aunque la pestaña pierda el foco; requestAnimationFrame
 //      no. Atar esto al bucle es lo que dejaba la pantalla en blanco.
@@ -644,9 +692,9 @@ let transicion = null;
 //    · El DUEÑO de la cortina impide que un destello de explosión se coma el
 //      fogonazo. Eso sí era el arreglo bueno y se queda.
 // ---------------------------------------------------------------------------
-const T_GUERO  = 1230;   // ms desde que cae el jefe: aparece Güero en la grieta
+const T_GUERO  = 1230;   // ms desde que cae el jefe: se ve a Güero en la grieta
 const T_GRIETA = 1850;   // ms: se abre la grieta y arranca la animación CSS
-const T_CARGA  = 2320;   // ms: la cortina está arriba, se carga el mundo detrás
+const T_CARGA  = 2320;   // ms: la cortina está arriba, se monta la pausa detrás
 const T_FIN    = 3900;   // ms: la animación ya bajó del todo
 
 /** La llama matarJefe(). Aquí se agenda TODA la secuencia crítica. */
@@ -666,7 +714,8 @@ function iniciarTransicionFinal(cx, cy) {
 function gueroEnLaGrieta() {
     if (!transicion || transicion.hito >= 1) return;
     transicion.hito = 1;
-    aviso('¡GÜERO!', 1600);
+    // Un anticipo: Güero está del otro lado, en el nivel 5.
+    aviso('¡GÜERO ESTÁ DEL OTRO LADO!', 1800);
     emitirTexto(transicion.cx, transicion.cy - 70, '¡GÜERO!', COL.ORO, 26);
     tono(60, 1.4, 'sawtooth', 0.14, 900);
     sacudir(26);
@@ -681,13 +730,16 @@ function abrirGrieta() {
     cortinaGrieta('#ffffff');
 }
 
-/** Carga el mundo nuevo detrás de la cortina. Idempotente. */
+/** Detrás de la cortina se monta la pausa del nivel que termina. Antes se
+ *  cargaba el nivel siguiente directo y ese nivel se quedaba sin su repaso ni
+ *  sus retos; además, «Nivel 4» es un clic, y con él se captura el ratón.
+ *  Idempotente. */
 function cargarMundoTrasGrieta() {
     if (!transicion || transicion.hito >= 3) return;
     transicion.hito = 3;
     contenedor.classList.remove('temblor');
-    try { iniciarNivel(5); }
-    catch (e) { anotarErrorBucle('iniciarNivel(5)', e); }
+    try { pantallaEntreNiveles(nivelActual + 1); }
+    catch (e) { anotarErrorBucle('pantallaEntreNiveles', e); }
 }
 
 function cerrarTransicion() {

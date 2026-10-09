@@ -746,3 +746,170 @@ body.menos-destellos .t-logo::before, body.menos-destellos .t-logo::after { disp
     background: #f5e9ff; color: #12031f; font: 700 11px Consolas, monospace;
     box-shadow: 0 2px 0 #8e7aa8;
 }
+/* ==========================================================================
+   LA HEMBRA (jefe 3D del nivel 4): nombre, escudo o fase y vida
+   ========================================================================== */
+#jefe3d {
+    position: absolute; left: 50%; top: 60px; transform: translateX(-50%);
+    width: 340px; z-index: 27; text-align: center; pointer-events: none;
+    text-shadow: 0 2px 6px rgba(0,0,0,.9);
+}
+#jefe3d .j3-nombre { font-size: 13px; font-weight: 800; letter-spacing: 3px; color: #ff6b6b; }
+#jefe3d .j3-barra {
+    height: 12px; margin: 4px 0 3px; background: rgba(0,0,0,.6);
+    border: 2px solid rgba(255,255,255,.4); border-radius: 6px; overflow: hidden;
+}
+#jefe3d .j3-barra > div { height: 100%; background: linear-gradient(90deg, #c0392b, #ff5252); transition: width .15s; }
+#jefe3d .j3-barra.escudo { border-color: #1abc9c; box-shadow: 0 0 10px rgba(26,188,156,.6); }
+#jefe3d .j3-barra.escudo > div { background: linear-gradient(90deg, #16a085, #48e5c2); }
+#jefe3d .j3-sub { font-size: 11px; color: #cfd8dc; letter-spacing: .5px; }
+
+/* ==========================================================================
+   CELULAR (01d-tactil.js): escala, controles táctiles y aviso de girar
+   ========================================================================== */
+/* Sin zoom con dos dedos ni con doble toque; los paneles se siguen
+   desplazando. El marco se escala desde su centro (ajustarEscala). */
+html, body { touch-action: pan-x pan-y; -webkit-tap-highlight-color: transparent; }
+#marco { transform-origin: 50% 50%; }
+
+#tactil {
+    position: fixed; inset: 0; z-index: 70; pointer-events: none;
+    touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+}
+#tactil .tc-zona { position: absolute; inset: 0; pointer-events: auto; touch-action: none; }
+#tactil[data-modo="patio"] .tc-zona,
+#tactil[data-modo="patio"] .tc-fantasma,
+#tactil[data-modo="patio"] .tc-acciones,
+#tactil[data-modo="patio"] .tc-medidas,
+#tactil[data-modo="patio"] .tc-sis:not(:first-child) { display: none; }
+
+/* Joystick: nace donde se apoya el pulgar. El fantasma enseña dónde va. */
+.tc-joy, .tc-fantasma {
+    position: absolute; width: 120px; height: 120px; border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .07);
+}
+.tc-joy { margin: -60px 0 0 -60px; display: none; }
+.tc-joy.on { display: block; }
+#tactil.joy-on .tc-fantasma { display: none; }
+.tc-fantasma {
+    left: calc(26px + env(safe-area-inset-left)); bottom: calc(26px + env(safe-area-inset-bottom));
+    opacity: .5; display: flex; align-items: center; justify-content: center;
+}
+.tc-fantasma span { font: 800 11px 'Segoe UI', Tahoma, sans-serif; letter-spacing: 2px; color: rgba(255, 255, 255, .6); }
+.tc-perilla {
+    position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px;
+    border-radius: 50%; background: rgba(41, 240, 255, .4); border: 2px solid #29f0ff;
+    box-shadow: 0 0 14px rgba(41, 240, 255, .5);
+}
+
+#tactil button {
+    pointer-events: auto; touch-action: none; position: absolute;
+    font: 800 12px 'Segoe UI', Tahoma, sans-serif; letter-spacing: .5px; color: #fff;
+    background: rgba(14, 6, 28, .45); border: 2px solid rgba(255, 255, 255, .55);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .9); padding: 0; cursor: pointer;
+}
+#tactil button.on { background: rgba(41, 240, 255, .42); border-color: #29f0ff; }
+
+/* Botones de acción, en arco alrededor del pulgar derecho. */
+.tc-acciones {
+    position: absolute; width: 214px; height: 164px;
+    right: calc(14px + env(safe-area-inset-right)); bottom: calc(14px + env(safe-area-inset-bottom));
+}
+.tc-btn { border-radius: 50%; overflow: hidden; }
+.tc-btn span { position: relative; z-index: 1; }
+/* Enfriamiento de Dash y Raqueta: se vacía como el HUD. */
+.tc-btn::after {
+    content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+    background: conic-gradient(rgba(0, 0, 0, .6) calc(var(--cd, 0) * 1turn), transparent 0);
+}
+.tc-saltar  { right: 0;     bottom: 0;   width: 80px; height: 80px; font-size: 13px !important; }
+.tc-atacar  { right: 92px;  bottom: 4px; width: 64px; height: 64px; }
+.tc-raqueta { right: 80px;  bottom: 84px; width: 60px; height: 60px; }
+.tc-dash    { right: 6px;   bottom: 94px; width: 60px; height: 60px; }
+.tc-gancho  { right: 156px; bottom: 72px; width: 54px; height: 54px; display: none; }
+#tactil[data-modo="d3"] .tc-gancho { display: block; }
+.tc-atacar  { border-color: rgba(241, 196, 15, .8) !important; }
+.tc-raqueta { border-color: rgba(26, 188, 156, .85) !important; }
+
+/* Las cuatro medidas: solo con un envase al alcance, y siempre las cuatro. */
+.tc-medidas {
+    position: absolute; left: 50%; transform: translateX(-50%); display: none; gap: 8px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+}
+.tc-medidas.on { display: flex; }
+#tactil .tc-med {
+    position: static; width: 76px; height: 46px; border-radius: 9px; font-size: 13px;
+    background: rgba(12, 20, 28, .82);
+}
+
+/* Pausa, tienda y fichero. En un teléfono caben en la franja de la derecha. */
+.tc-barra {
+    position: absolute; display: flex; flex-direction: column; gap: 8px;
+    top: calc(8px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right));
+}
+#tactil .tc-sis { position: static; width: 44px; height: 44px; border-radius: 10px; font-size: 20px; }
+/* En una tablet sobra arriba, no a los lados. */
+@media (max-aspect-ratio: 16/10) {
+    .tc-barra { flex-direction: row; }
+}
+
+/* Con controles táctiles los rieles van arriba, encima del juego, y durante la
+   partida el de la derecha (Güero) deja libre el arco de botones. */
+body.tactil .riel {
+    position: fixed; flex: 0 0 auto; width: 260px; z-index: 80; transform: none;
+    top: calc(8px + env(safe-area-inset-top));
+    max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px);
+}
+/* El riel en sí no se lleva toques: solo sus paneles. Encima del juego, su
+   caja vacía tapaba lo que hubiera debajo (las medidas del Modo Patio). */
+body.tactil .riel { pointer-events: none; }
+body.tactil .riel > .panel { pointer-events: auto; }
+body.tactil #riel-izq { left: calc(8px + env(safe-area-inset-left)); }
+body.tactil #riel-der { right: calc(8px + env(safe-area-inset-right)); }
+body.tactil.jugando #riel-der { right: calc(64px + env(safe-area-inset-right));
+    max-height: calc(100vh - 196px); max-height: calc(100dvh - 196px); }
+body.tactil #legenda, body.tactil #panel-objetivo, body.tactil .solo-teclado { display: none; }
+/* Güero en el teléfono: una franja arriba, de lado a lado, en tres columnas
+   (estado, señales y las cuatro opciones). En un riel de 190 px de alto había
+   que desplazarse para llegar a las opciones con el reloj corriendo. */
+body.tactil.jugando.guero-abierto #riel-der {
+    left: calc(8px + env(safe-area-inset-left)); width: auto;
+    max-height: calc(100vh - 186px); max-height: calc(100dvh - 186px); }
+body.tactil.guero-abierto #panel-guero {
+    display: grid; grid-template-columns: 1.1fr .9fr 1.9fr; gap: 0 14px; align-items: start; padding: 9px 12px; }
+body.tactil.guero-abierto #panel-guero h2 { font-size: 14px; }
+body.tactil.guero-abierto #g-estado { font-size: 11px; line-height: 1.35; margin-bottom: 5px; }
+body.tactil.guero-abierto .g-senal { font-size: 10.5px; padding: 1px 0; }
+body.tactil.guero-abierto .g-op { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
+body.tactil.guero-abierto .g-op button { margin: 0; padding: 6px 8px; font-size: 10.5px; line-height: 1.3; }
+body.tactil.guero-abierto .g-op button b { font-size: 11.5px; }
+body.tactil #prompt-verbos .pv-v { display: none; }
+body.tactil #prompt-verbos .pv-tit { margin-bottom: 0; }
+/* En el teléfono la ficha nueva tapaba un tercio del juego: solo el título.
+   Completa se lee en el repaso del nivel o en el fichero. */
+body.tactil #aviso-ficha { width: 220px; padding: 8px 11px; pointer-events: none; }   /* no se lleva el toque */
+body.tactil #aviso-ficha .af-txt, body.tactil #aviso-ficha .af-src { display: none; }
+body.tactil #aviso-ficha .af-tit { margin-bottom: 0; }
+/* Abajo a la derecha están los botones: los casos suben bajo las monedas. */
+body.tactil #hud-colonia { top: 96px; bottom: auto; }
+body.tactil .btn { padding: 14px 30px; font-size: 18px; }
+body.tactil .r-ops .k { display: none; }      /* las teclas 1-4 no existen en el teléfono */
+body.tactil .btn:hover { transform: none; }
+
+/* Teléfono en vertical: el juego no cabe. Una tablet en vertical sí. */
+#girar {
+    position: fixed; inset: 0; z-index: 300; display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: #12031f; color: #fff; text-align: center; padding: 24px;
+}
+@media (orientation: portrait) and (max-width: 700px) {
+    body.tactil #girar { display: flex; }
+}
+.gi-tel {
+    width: 54px; height: 92px; border: 4px solid #29f0ff; border-radius: 11px; margin-bottom: 10px;
+    box-shadow: 0 0 18px rgba(41, 240, 255, .5); animation: gi-gira 2.4s ease-in-out infinite;
+}
+.gi-txt { font: italic 800 24px 'Segoe UI', Tahoma, sans-serif; letter-spacing: 3px; text-transform: uppercase; color: #ff2e88; }
+.gi-sub { font-size: 14px; color: #b9a6d6; }
+@keyframes gi-gira { 0%, 25% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { .gi-tel { animation: none; transform: rotate(-90deg); } }

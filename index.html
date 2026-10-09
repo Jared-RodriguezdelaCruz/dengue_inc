@@ -2,7 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- «Agregar a inicio» en el celular abre el juego a pantalla completa. -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Dengue Inc · Multiverso Aguascalientes</title>
 <meta name="description" content="Videojuego educativo sobre el dengue en Aguascalientes: cierra los criaderos del mosquito con las cuatro medidas (lava, tapa, voltea y tira) en niveles 2D y 3D. Cada dato cita su fuente.">
 <meta name="theme-color" content="#2a0845">
@@ -75,7 +78,7 @@
           <span id="ui-fichas">0</span> 💰<br>
           <span style="color:#f1c40f" id="ui-arma">Botas</span><br>
           <span style="color:#7bed9f;display:block" id="ui-repelente" class="oculto"></span>
-          <span style="font-size:11px; color:#90a4ae">T tienda · C fichero · ESC pausa</span>
+          <span class="solo-teclado" style="font-size:11px; color:#90a4ae">T tienda · C fichero · ESC pausa</span>
       </div>
 
       <div class="hud" id="hud-inf-izq"><span id="ui-objetivo"></span></div>
@@ -89,6 +92,9 @@
           <div id="brujula-aguja">▲</div>
           <div id="brujula-txt"></div>
       </div>
+
+      <!-- La Hembra (10b): nombre, escudo o fase y vida, solo durante la pelea. -->
+      <div id="jefe3d" class="oculto"></div>
 
       <div id="prompt-verbos" class="oculto"></div>
       <div id="tutorial" class="oculto" aria-live="polite"></div>
@@ -211,6 +217,13 @@
             </div>
             <button id="btn-aine" onclick="comprar('aine')">Comprar</button>
         </div>
+        <div class="item">
+            <div>
+                <h3>🐈 La Gorda — 15 💰</h3>
+                <p>Te sigue y caza a los mosquitos que vuelan bajo cerca de ti. <b>En la vida real:</b> ningún gato controla el dengue; los criaderos los cierras tú.</p>
+            </div>
+            <button id="btn-gata" onclick="comprar('gata')">Comprar</button>
+        </div>
         <div class="item" id="item-vacuna">
             <div>
                 <h3>💉 Vacuna Qdenga — 20 💰</h3>
@@ -224,6 +237,17 @@
 
 </div>
 
+<!-- Controles táctiles (01d-tactil.js): fuera del marco, en px reales, para que
+     el pulgar no dependa de la escala. Solo se ven jugando en un celular. -->
+<div id="tactil" class="oculto"></div>
+
+<!-- Un teléfono en vertical no le da espacio al juego: se pide girarlo. -->
+<div id="girar" role="alert">
+  <div class="gi-tel" aria-hidden="true"></div>
+  <div class="gi-txt">Gira tu celular</div>
+  <div class="gi-sub">Dengue Inc se juega en horizontal</div>
+</div>
+
 <!-- El ?v= no es decoración: sin él, una recarga normal (F5 o doble clic)
      puede seguir sirviendo los .js viejos de la caché, y un arreglo tarda
      días en llegar. Al subir BUILD en 01-nucleo.js, subir también este v. -->
@@ -233,6 +257,7 @@
 <script src="js/01-nucleo.js?v=b6"></script>
 <script src="js/01b-datos-dengue.js?v=b6"></script>
 <script src="js/01c-mando.js?v=b6"></script>
+<script src="js/01d-tactil.js?v=b6"></script>
 <script src="js/02-efectos.js?v=b6"></script>
 <script src="js/03-jugador.js?v=b6"></script>
 <script src="js/04-mundo2d-gen.js?v=b6"></script>
@@ -242,6 +267,7 @@
 <script src="js/08-mundo3d-gen.js?v=b6"></script>
 <script src="js/09-mundo3d-jugador.js?v=b6"></script>
 <script src="js/10-mundo3d-ia.js?v=b6"></script>
+<script src="js/10b-jefe3d.js?v=b6"></script>
 <script src="js/11-flujo.js?v=b6"></script>
 <script src="js/11b-educacion.js?v=b6"></script>
 <script src="js/11c-guero.js?v=b6"></script>
@@ -249,6 +275,7 @@
 <script src="js/11e-patio.js?v=b6"></script>
 <script src="js/11f-menu.js?v=b6"></script>
 <script src="js/11g-tutorial.js?v=b6"></script>
+<script src="js/11h-gata.js?v=b6"></script>
 <script src="js/12-bucle.js?v=b6"></script>
 </body>
 </html>

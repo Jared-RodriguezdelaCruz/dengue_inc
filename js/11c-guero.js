@@ -5,7 +5,9 @@
 //
 //  Todo lo demás del juego enseña con reglas. Esto lo enseña con una persona.
 //  Güero está en la sala del portal del nivel 5, cursando la fase crítica, y el
-//  portal no es una salida hasta que decidas qué hacer con él.
+//  portal no es una salida hasta que decidas qué hacer con él. Como a Ivan, se
+//  le atiende con los criaderos ya cerrados: antes solo te pide que los cierres,
+//  y su reloj no arranca hasta que lo atiendes.
 //
 //  Su desenlace depende de las tres cosas que el juego lleva cinco niveles
 //  enseñando: el medicamento correcto, llegar a tiempo, y haber cerrado los
@@ -137,7 +139,7 @@ function crearGuero3D(x, z) {
         encontrado: false, resuelto: false, salvado: false,
         t: GUERO.reloj, tMax: GUERO.reloj,
         tratamiento: null, motivos: [],
-        cerca: false, fase: 0
+        cerca: false, fase: 0, avisoT: 0
     };
     return guero;
 }
@@ -163,6 +165,14 @@ function actualizarGuero(dt) {
     if (estado !== estados.J3D) return;
 
     const d = camera3D.position.distanceTo(guero.grupo.position);
+    if (guero.avisoT > 0) guero.avisoT -= dt;
+
+    // Con criaderos vivos no se le atiende: el panel no sale y el reloj no corre.
+    if (!guero.encontrado && criaderosVivos() > 0) {
+        guero.grupo.rotation.y = Math.atan2(camera3D.position.x - guero.x, camera3D.position.z - guero.z);
+        if (d < 3.4 && guero.avisoT <= 0) { guero.avisoT = 150; aviso(GUERO.esperar, 2200); }
+        return;
+    }
     const cerca = d < 3.4;
 
     // Te da la cara mientras siga consciente (el frente del modelo es +Z).
@@ -200,13 +210,14 @@ function senalesVisibles() {
 }
 
 function montarPanelGuero(el) {
-    let h = '<h2>' + GUERO.nombre + '</h2>';
+    // Tres bloques: en el celular se ponen lado a lado (estilos de .tactil).
+    let h = '<div class="g-info"><h2>' + GUERO.nombre + '</h2>';
     h += '<div id="g-estado">' + GUERO.intro + '</div>';
     h += '<div id="g-reloj"><div></div></div>';
-    h += '<div id="g-reloj-txt"></div>';
+    h += '<div id="g-reloj-txt"></div></div><div class="g-senales">';
     for (const s of SENALES_ALARMA)
         h += '<div class="g-senal"><span class="g-ico">·</span><span>' + s.texto + '</span></div>';
-    h += '<div class="g-op"></div>';
+    h += '</div><div class="g-op"></div>';
     el.innerHTML = h;
 
     panelG.barra = el.querySelector('#g-reloj div');

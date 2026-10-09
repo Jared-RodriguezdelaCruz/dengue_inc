@@ -28,13 +28,16 @@ let patio = null;
 /** Pantalla de entrada: qué es y cómo se juega. */
 function abrirPatio() {
     audio();                                    // desbloquea WebAudio con este clic
+    pantallaCompletaAlJugar();                  // en el celular, dentro del mismo toque
     mostrarMenu({
         titulo: 'Modo Patio',
         desc: 'Una casa de Aguascalientes, con su azotea y su patio. Hay <b>diez criaderos</b>: ' +
               'encuéntralos y ciérralos con la medida correcta. Sin mosquitos, contra reloj.<br><br>' +
-              '<b>Ratón:</b> apunta a un envase y elige la medida con clic o con <b>1-4</b>. ' +
-              '<b>Teclado o mando:</b> ← → para cambiar de envase, 1-4 (o la cruceta) para la medida. ' +
-              '<b>Esc</b> para salir.<br><br>' +
+              (tactilVisible()
+                ? '<b>Con el dedo:</b> toca un envase y luego su medida. <b>⏸</b> para salir.<br><br>'
+                : '<b>Ratón:</b> apunta a un envase y elige la medida con clic o con <b>1-4</b>. ' +
+                  '<b>Teclado o mando:</b> ← → para cambiar de envase, 1-4 (o la cruceta) para la medida. ' +
+                  '<b>Esc</b> para salir.<br><br>') +
               '<span style="color:#90a4ae;font-size:13px">Ojo: vaciar algo que había que tirar o tallar ' +
               'se ve bien… hasta que los huevos vuelven a eclosionar.</span>',
         boton: 'Empezar', accion: empezarPatio,
@@ -61,7 +64,8 @@ function empezarPatio() {
     document.getElementById('crosshair').style.display = 'none';
     contenedor.classList.add('modo-patio');
     objetivo('Encuentra y cierra los 10 criaderos',
-             'Apunta a un envase y elige su medida (1-4). Esc para salir.');
+             tactilVisible() ? 'Toca un envase y luego su medida. ⏸ para salir.'
+                             : 'Apunta a un envase y elige su medida (1-4). Esc para salir.');
 }
 
 function salirPatio() {
@@ -144,15 +148,17 @@ function actualizarPatio(dt) {
     }
     if (patio.fin) return;
 
-    // Ratón: apuntar selecciona; clic en una medida la aplica.
+    // Ratón: apuntar selecciona; clic en una medida la aplica. Sobre una medida
+    // la selección no cambia aunque haya otro envase debajo: con el dedo, el
+    // toque llega como mover + clic a la vez y podía cambiar de envase antes de aplicar.
+    const caja = patio.cajas.find(c => ratonX >= c.x && ratonX <= c.x + c.w &&
+                                       ratonY >= c.y && ratonY <= c.y + c.h);
     if (ratonX !== patio.rx || ratonY !== patio.ry) {
         patio.rx = ratonX; patio.ry = ratonY;
         const i = objetoBajo(ratonX, ratonY);
-        if (i >= 0) patio.sel = i;
+        if (i >= 0 && !caja) patio.sel = i;
     }
     if (ratonNuevo[0]) {
-        const caja = patio.cajas.find(c => ratonX >= c.x && ratonX <= c.x + c.w &&
-                                           ratonY >= c.y && ratonY <= c.y + c.h);
         if (caja) verboPatio(patio.objs[patio.sel], caja.verbo);
         else { const i = objetoBajo(ratonX, ratonY); if (i >= 0) patio.sel = i; }
     }
@@ -294,7 +300,9 @@ function dibujarSeleccionPatio() {
     ctx.strokeRect(o.px - 6, o.py - 6, o.w + 12, o.h + 12);
     ctx.setLineDash([]);
 
-    const w = 252, h = 58;
+    // Con el dedo las medidas crecen: a la escala de un teléfono medían 40x19 px.
+    const dedo = tactilVisible();
+    const w = dedo ? 300 : 252, h = dedo ? 80 : 58;
     const x = clamp(o.px + o.w / 2 - w / 2, 6, ANCHO - w - 6);
     const y = Math.max(6, o.py - h - 14);
     ctx.fillStyle = 'rgba(12,20,28,.92)'; ctx.strokeStyle = '#1abc9c';
@@ -305,12 +313,12 @@ function dibujarSeleccionPatio() {
     ctx.font = 'bold 11px Segoe UI';
     for (let i = 0; i < 4; i++) {
         const v = VERBOS[orden[i]];
-        const bx = x + 8 + i * 60, by = y + 24, bw = 56, bh = 26;
+        const bx = x + 8 + i * (dedo ? 72 : 60), by = y + 24, bw = dedo ? 68 : 56, bh = dedo ? 48 : 26;
         const encima = ratonX >= bx && ratonX <= bx + bw && ratonY >= by && ratonY <= by + bh;
         ctx.fillStyle = encima ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.06)';
         ctx.fillRect(bx, by, bw, bh);
         ctx.strokeStyle = v.color; ctx.lineWidth = 1.5; ctx.strokeRect(bx, by, bw, bh);
-        ctx.fillStyle = v.color; ctx.fillText((i + 1) + ' ' + v.nombre, bx + bw / 2, by + 17);
+        ctx.fillStyle = v.color; ctx.fillText((dedo ? '' : (i + 1) + ' ') + v.nombre, bx + bw / 2, by + bh / 2 + 4);
         patio.cajas.push({ x: bx, y: by, w: bw, h: bh, verbo: orden[i] });
     }
     ctx.restore();
@@ -327,6 +335,8 @@ function dibujarHUDPatio() {
     ctx.fillStyle = '#e74c3c'; ctx.fillText('✗ ' + patio.errores, x + 188, 33);
     ctx.fillStyle = '#bdc3c7'; ctx.fillText('↺ ' + patio.trampas, x + 240, 33);
     ctx.font = '11px Segoe UI'; ctx.fillStyle = '#ecf0f1';
-    ctx.fillText('Apunta a un envase · 1 LAVA · 2 TAPA · 3 VOLTEA · 4 TIRA · ← → cambiar · Esc salir', 10, ALTO - 12);
+    ctx.fillText(tactilVisible() ? 'Toca un envase y luego su medida · ⏸ salir'
+                                 : 'Apunta a un envase · 1 LAVA · 2 TAPA · 3 VOLTEA · 4 TIRA · ← → cambiar · Esc salir',
+                 10, ALTO - 12);
     ctx.restore();
 }

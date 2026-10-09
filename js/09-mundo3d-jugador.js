@@ -108,7 +108,7 @@ function actualizarGancho3D(dt) {
     // El paso escala con dt: a 144 Hz no puede jalar al doble que a 60.
     vGancho.multiplyScalar(Math.min(d, CFG.ganchoVel * dt) / d);
     const nx = cam.position.x + vGancho.x, nz = cam.position.z + vGancho.z;
-    if (solidoMundo(nx, nz) || chocaCirculo(nx, nz, RADIO_JUG)) { limpiarGancho3D(); return; }
+    if (solidoMundo(nx, nz) || chocaJugador3D(nx, nz, cam.position.y - CFG.altoOjos)) { limpiarGancho3D(); return; }
     cam.position.add(vGancho);
     jugador.vy3 = 0;                 // mientras jala no se acumula velocidad de caída
 
@@ -130,8 +130,9 @@ function actualizarJugador3D(dt) {
     cam.position.y -= offVisY;
     offVisX = offVisY = 0;
 
-    // Con mando, el stick derecho escribe en ratonDX/DY y no hace falta capturar el ratón.
-    if (document.pointerLockElement || mandoActivo) {
+    // Con mando, el stick derecho escribe en ratonDX/DY y no hace falta capturar el
+    // ratón; con el dedo, arrastrar en la mitad derecha (01d-tactil.js).
+    if (document.pointerLockElement || mandoActivo || tactilVisible()) {
         jugador.yaw   -= ratonDX * CFG.sensibilidad;
         jugador.pitch -= ratonDY * CFG.sensibilidad;
         jugador.pitch = clamp(jugador.pitch, -1.48, 1.48);
@@ -166,7 +167,8 @@ function actualizarJugador3D(dt) {
         }
         if (entradaParry()) intentarParry();
         if (jugador.parryT > 0) golpeRaqueta3D();
-        if (entradaAtaque() || ((ratonAbajo[0] || padDisparo) && jugador.ataqueCd <= 0)) disparar3D();
+        asistenciaMira3D(dt);          // solo táctil y disparando: imán suave hacia la mira
+        if (entradaAtaque() || ((ratonAbajo[0] || padDisparo || tactilDisparo) && jugador.ataqueCd <= 0)) disparar3D();
         // En 3D el salto es SOLO espacio: W y ↑ son avanzar.
         if (pulsada('Space') && jugador.enSuelo3) {
             jugador.vy3 = CFG.salto3D; jugador.enSuelo3 = false; sfx.salto();
@@ -189,12 +191,14 @@ function actualizarJugador3D(dt) {
         if (av === 0 && lat === 0) { dx = 0; dz = 0; }
     }
 
-    // Colisión por ejes separados contra la rejilla.
+    // Colisión por ejes separados contra la rejilla. Una losa es pared mientras
+    // los pies no la rebasen; un escalón bajo (ESCALON3D) se sube caminando.
+    const pies = cam.position.y - CFG.altoOjos;
     const nx = cam.position.x + dx * dt;
-    if (!chocaCirculo(nx, cam.position.z, RADIO_JUG)) cam.position.x = nx;
+    if (!chocaJugador3D(nx, cam.position.z, pies)) cam.position.x = nx;
     else if (jugador.dashT > 0) jugador.dashT = 0;
     const nz = cam.position.z + dz * dt;
-    if (!chocaCirculo(cam.position.x, nz, RADIO_JUG)) cam.position.z = nz;
+    if (!chocaJugador3D(cam.position.x, nz, pies)) cam.position.z = nz;
     else if (jugador.dashT > 0) jugador.dashT = 0;
 
     // Los envases son sólidos: antes se atravesaban. Se empuja hacia fuera,
@@ -204,17 +208,19 @@ function actualizarJugador3D(dt) {
         const min = c.radioCol + RADIO_JUG, d2 = ex * ex + ez * ez;
         if (d2 >= min * min || d2 < 1e-6) continue;
         const d = Math.sqrt(d2), px = c.x + ex / d * min, pz = c.z + ez / d * min;
-        if (!chocaCirculo(px, pz, RADIO_JUG)) { cam.position.x = px; cam.position.z = pz; }
+        if (!chocaJugador3D(px, pz, pies)) { cam.position.x = px; cam.position.z = pz; }
     }
 
-    // Salto y gravedad
+    // Salto y gravedad. El suelo es la losa que haya bajo los pies, si la hay:
+    // al salir del borde se cae, y al caer sobre una se aterriza en ella.
+    const suelo = sueloBajo(cam.position.x, cam.position.z, RADIO_JUG, pies);
     jugador.vy3 -= CFG.gravedad3D * dt;
     cam.position.y += jugador.vy3 * dt;
-    if (cam.position.y <= CFG.altoOjos) {
+    if (cam.position.y <= suelo + CFG.altoOjos) {
         if (!jugador.enSuelo3 && jugador.vy3 < -0.1) {
-            fxChispas3D(cam.position.x, 0.15, cam.position.z, 8, 0.85, 0.85, 0.7, 0.05);
+            fxChispas3D(cam.position.x, suelo + 0.15, cam.position.z, 8, 0.85, 0.85, 0.7, 0.05);
         }
-        cam.position.y = CFG.altoOjos; jugador.vy3 = 0; jugador.enSuelo3 = true;
+        cam.position.y = suelo + CFG.altoOjos; jugador.vy3 = 0; jugador.enSuelo3 = true;
     } else jugador.enSuelo3 = false;
 
     // Bob de cámara al caminar + retroceso al disparar + sacudida
@@ -286,6 +292,13 @@ function golpeRaqueta3D() {
         dañarMosquito3D(e, CFG.raquetaGolpe);
         tocado++;
     }
+    // La Hembra (10b): un impacto por swing, como los mosquitos.
+    if (jefe3D && !jefe3D.muerto && jefe3D.selloRaqueta !== sello &&
+        jefe3DEnCono(cam.position, dirRaq, CFG.raquetaAlcance3D, CFG.raquetaDot3D)) {
+        jefe3D.selloRaqueta = sello;
+        dañarJefe3D(CFG.raquetaGolpe);
+        tocado++;
+    }
     if (!tocado) return;
 
     // El golpe: hitstop, fogonazo, anillo y chispas en la punta de la raqueta.
@@ -309,11 +322,13 @@ function disparar3D() {
         // Manotazo: hitscan corto delante de la cámara.
         jugador.ataqueCd = 22;
         kickCam = 0.03; sfx.disparo();
+        let tocado = false;
         for (const e of mosquitos3D) {
             if (!e.vivo) continue;
             const v = e.malla.position.clone().sub(cam.position);
-            if (v.length() < 3.2 && v.normalize().dot(dir) > 0.72) { dañarMosquito3D(e, 1); break; }
+            if (v.length() < 3.2 && v.normalize().dot(dir) > 0.72) { dañarMosquito3D(e, 1); tocado = true; break; }
         }
+        if (!tocado && jefe3D && !jefe3D.muerto && jefe3DEnCono(cam.position, dir, 3.2, 0.72)) dañarJefe3D(1);
         return;
     }
     const esAbate = armaActiva === 'abate';
@@ -388,6 +403,7 @@ function explotar3D(x, y, z, radio, daño) {
         if (!e.vivo) continue;
         if (e.malla.position.distanceTo(tmpV) < radio * 1.3) dañarMosquito3D(e, daño + 1);
     }
+    if (jefe3D && !jefe3D.muerto && distanciaJefe3D(tmpV) < radio * 1.3) dañarJefe3D(daño + 1);
     if (camera3D.position.distanceTo(tmpV) < radio * 1.15) dañarJugador(1, 0, 0);
 }
 
