@@ -71,7 +71,7 @@ const CFG = {
     ganchoAlcance: 16, ganchoVel: 0.9, ganchoCoste: 30, ganchoCd: 75, ganchoGolpe: 1,
 };
 
-const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa' };
+const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa', PATIO:'patio' };
 let estado = estados.MENU;
 let estadoPrevio = estados.J2D;
 
@@ -217,10 +217,13 @@ function accionGlobal(code) {
         else if (tiendaAbierta()) cerrarTienda();
         else if (estado === estados.J2D || estado === estados.J3D) pausar();
         else if (estado === estados.PAUSA) reanudar();
+        else if (estado === estados.PATIO) salirPatio();
     }
 }
 
 window.addEventListener('keydown', e => {
+    // Escribiendo la semilla, una «m» es una letra, no el atajo de silencio.
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'text') return;
     if (!teclas[e.code]) teclasNuevas[e.code] = true;
     teclas[e.code] = true;
 

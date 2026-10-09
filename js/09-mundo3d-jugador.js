@@ -222,7 +222,7 @@ function actualizarJugador3D(dt) {
     bobCam += (moviendo ? 0.22 : 0) * dt;
     if (!moviendo) bobCam = lerp(bobCam, 0, 0.1 * dt);
     kickCam = lerp(kickCam, 0, 0.18 * dt);
-    sacudida3D *= Math.pow(0.86, dt);
+    sacudida3D = opciones.menosSacudidas ? 0 : sacudida3D * Math.pow(0.86, dt);
     offVisY = Math.sin(bobCam * 2) * 0.045 + (Math.random() - 0.5) * sacudida3D;
     offVisX = (Math.random() - 0.5) * sacudida3D;
     cam.position.x += offVisX;
@@ -367,7 +367,8 @@ function matarMosquito3D(e) {
         sfx.golpe();
     }
     if (e.origen) e.origen.vivos = Math.max(0, e.origen.vivos - 1);
-    fichas += e.arq.valor; actualizarHUD(); sfx.moneda();
+    const valor = valorMosquito(e);           // el de un criadero vivo no paga
+    if (valor > 0) { fichas += valor; actualizarHUD(); sfx.moneda(); }
     grupoNivel.remove(e.malla);
     // Las alas son hijos con recursos propios (compartidos entre las dos):
     // sin liberarlos se acumulan en la GPU tras varias oleadas.

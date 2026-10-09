@@ -1,10 +1,10 @@
-Plan del proyecto de septiembre a diciembre de 2026. Última actualización: **5 de octubre de 2026**.
+Plan del proyecto de septiembre a diciembre de 2026. Última actualización: **9 de octubre de 2026**.
 
 Las tareas, con su responsable, fecha límite y estado, viven en **✅ Tareas**. Esta página resume hacia dónde vamos.
 
 ## Dónde estamos
 
-**Avance al 5 de octubre: 55 de 114 tareas hechas (48 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
+**Avance al 9 de octubre: 57 de 131 tareas hechas (44 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
 
 El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas de JavaScript sin dependencias (salvo Three.js), **5 niveles procedurales** (1, 3 y 4 en 2D; 2 y 5 en 3D en primera persona), jefe de dos fases, transición dimensional, final con Güero y una capa educativa en la que cada dato cita su fuente.
 
@@ -13,15 +13,15 @@ El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas 
 | Motor y entrada | ✅ Listo | PRNG con semilla, dt normalizado, teclado, ratón y mando |
 | Mundo 2D | ✅ Listo | Funciona a la perfección (Jared y Gael): 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases. Solo falta acelerar la fase 2 del jefe (DI-462) |
 | Mundo 3D | ✅ Listo | Salas procedurales, muros instanciados, brújula. Vienen el nivel 4 en 3D, el jefe 3D y plataformas (DI-463 a DI-465) |
-| Capa educativa | ✅ Listo | 10 envases, 4 serotipos, 21 fichas, 5 mitos, tienda con datos reales, Güero |
+| Capa educativa | 🟡 Rediseño | La maestra pidió repensar cómo enseñamos: casi todo se leía y el juego premiaba matar mosquitos. En la rama `feature/educacion-rediseno` ya está casi todo (DI-471 a DI-484 y DI-486): cerrar criaderos paga, quiz antes y después, repaso y retos entre niveles, ciclo de vida, lluvia, Ivan en fase febril, Modo Patio, «Aprende» y «Revisa tu casa». Son 25 fichas, 5 mitos y 5 realidades, todo con fuente. Faltan la revisión de Ana (DI-484), medir en los playtests (DI-485) y los niveles en lugares reales (DI-487) |
 | Flujo de equipo | ✅ Listo | Notion, Discord, ramas protegidas, PRs con revisión, plantillas y CODEOWNERS. Falta subir `CONTRIBUTING.md` (DI-202) |
 | Automatización | ✅ Listo | *Validar* y *Título del PR* en cada PR; el bot de kudos felicita en Discord cada PR fusionado |
 | Publicación y monitoreo | ✅ Listo | GitHub Pages con cache-busting por commit, UptimeRobot cada 5 min y badges en el README |
-| Bugs del juego publicado | 🟡 En curso | 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) y 9 mejoras, repartidas en F4 por área |
+| Bugs del juego publicado | 🟡 En curso | Los 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) ya están arreglados y verificados (DI-460, DI-461); quedan 9 mejoras, repartidas en F4 por área |
 | Audio | 🟡 Parcial | 12 efectos sintetizados; **no hay música** ni control de volumen (DI-401 a DI-412 y DI-470) |
-| Interfaz y marca | 🟡 Parcial | HUD y menús completos; faltan el menú principal nuevo (DI-469), créditos, opciones, nombre único, favicon y etiquetas meta (DI-456) |
-| Accesibilidad y celular | 🔴 Falta | Los serotipos se distinguen solo por color; no se pueden reducir destellos; no se puede jugar en celular (DI-430) |
-| Guardado | 🔴 Falta | Nada persiste entre sesiones |
+| Interfaz y marca | 🟡 Casi lista | En la rama `feature/menu-tutorial`: pantalla de título estilo Katana Zero con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos (DI-469, DI-422, DI-423), nombre único «Dengue Inc» (DI-420), favicon y vista previa al compartir (DI-456) y tutorial la primera vez (DI-426). Faltan los créditos de audio (DI-412) |
+| Accesibilidad y celular | 🔴 Falta | Ya se pueden reducir destellos y sacudidas (DI-423); los serotipos se siguen distinguiendo solo por color (DI-425) y no se puede jugar en celular (DI-430) |
+| Guardado | 🟡 Parcial | Se guardan las opciones, el audio, el tutorial visto, los resultados del quiz y el mejor tiempo del Modo Patio; faltan las fichas y el progreso (DI-440) |
 
 ## Fases
 
@@ -46,12 +46,12 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | S0 | 11 – 29 sep | F0 | — | — | Prototipo `b5` (hecho) |
 | S1 | 30 sep – 6 oct | F1 | **1** | **6 oct:** link del workspace de Notion ✅ | Juego publicado en GitHub Pages ✅ |
 | S2 | 7 – 13 oct | F2 | **2** | **13 oct:** flujo de GitHub documentado y configurado ✅ | Bugs P0 (vida del HUD, ratón con Güero), dirección musical, marca, Three.js local, plan de pruebas |
-| S3 | 14 – 20 oct | F3 | **3** | **20 oct:** video de 30 s de la automatización ✅ | Mezclador de audio, favicon y etiquetas meta |
-| S4 | 21 – 27 oct | F3 | **4** | **27 oct:** link de la página de estado de UptimeRobot ✅ | Reproductor de música, tema del menú, créditos, fase 2 del jefe 2D |
-| S5 | 28 oct – 3 nov | F4 | — | — | Tema 2D, menú estilo Katana Zero, opciones, guardado, nivel 4 en 3D, aviso en celular |
-| S6 | 4 – 10 nov | F4 | — | — | Tema 3D, SFX nuevos, accesibilidad, tutorial 2D y 3D, skins de Güero e Ivan, rendimiento |
-| S7 | 11 – 17 nov | F4 | — | — | Tema del jefe y del final, música integrada, jefe 3D, gato aliado, playtest 1 |
-| S8 | 18 – 24 nov | F4 · F5 | **5** | Kudos de los 5 y su evidencia | Bugs del playtest, playtest 2, jugar en celular, plataformas 3D, extras P2 |
+| S3 | 14 – 20 oct | F3 | **3** | **20 oct:** video de 30 s de la automatización ✅ | Mezclador de audio, favicon y etiquetas meta, incentivos educativos (cerrar criaderos paga, abate y fichas que faltaban) |
+| S4 | 21 – 27 oct | F3 | **4** | **27 oct:** link de la página de estado de UptimeRobot ✅ | Reproductor de música, tema del menú, créditos, fase 2 del jefe 2D, contenido nuevo con fuentes, repaso entre niveles y mito o realidad |
+| S5 | 28 oct – 3 nov | F4 | — | — | Tema 2D, menú estilo Katana Zero, opciones, guardado, nivel 4 en 3D, aviso en celular, «Revisa tu casa» |
+| S6 | 4 – 10 nov | F4 | — | — | Tema 3D, SFX nuevos, accesibilidad, tutorial 2D y 3D, skins de Güero e Ivan, rendimiento, quiz antes y después, Modo Patio, Ivan en fase febril |
+| S7 | 11 – 17 nov | F4 | — | — | Tema del jefe y del final, música integrada, jefe 3D, gato aliado, playtest 1, ciclo de vida en el criadero, repelente e insecticida, submenú Aprende |
+| S8 | 18 – 24 nov | F4 · F5 | **5** | Kudos de los 5 y su evidencia | Bugs del playtest, playtest 2 con medición de aprendizaje, jugar en celular, plataformas 3D, extras P2 (lluvia, triage, niveles en lugares reales) |
 | S9 | 25 – 29 nov | F5 | **5** | Slides y video de respaldo · **29 nov: release v2.0, proyecto terminado** | Código congelado |
 | S10 | 30 nov – 4 dic | F6 | **6** | Presentación en vivo · evaluación entre equipos | Testing final (solo arreglos P0) |
 
@@ -63,13 +63,13 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 
 | Integrante | Rol | Tareas hechas | Pendientes | Pendientes P0 | Horas estimadas pendientes |
 |---|---|---|---|---|---|
-| Ana | CEO / Project Manager | 12 | 6 | 3 | 12.5 |
-| Jared | Backend | 22 | 16 | 6 | 56 |
+| Ana | CEO / Project Manager | 12 | 9 | 4 | 25.5 |
+| Jared | Backend | 24 | 22 | 8 | 81 |
 | Gael | Música y sonido | 2 | 10 | 6 | 38.5 |
-| Mau | Frontend | 11 | 14 | 3 | 60.5 |
-| Ivan | QA, métricas y documentación | 8 | 10 | 5 | 21.5 |
+| Mau | Frontend | 11 | 19 | 3 | 77 |
+| Ivan | QA, métricas y documentación | 8 | 11 | 5 | 22.5 |
 | Todos | — | 0 | 3 | 3 | 1 |
-| **Total** | | **55** | **59** | **26** | **190** |
+| **Total** | | **57** | **74** | **29** | **245.5** |
 
 Cada tarea cuenta para su responsable; quien apoyó aparece en la columna *Apoyo* de ✅ Tareas. Por ejemplo, Gael en todo el mundo 2D (DI-008 a DI-011).
 
@@ -88,3 +88,4 @@ Cada tarea cuenta para su responsable; quien apoyó aparece en la columna *Apoyo
 | Se pierde el ritmo a mitad de noviembre | Media | Medio | Rituales semanales y la gráfica de avance de Notion revisada cada lunes |
 | Se sumaron 11 tareas (5 oct) con las mismas fechas | Alta | Medio | Los bugs P0 van primero (13 oct); las P2 nuevas (gato aliado, plataformas 3D) se recortan antes que cualquier otra |
 | Faltan las imágenes de referencia (Güero, Ivan, la Gorda) | Media | Bajo | Se piden a Jared antes de S6; mientras, se modela con primitivas y se ajusta después |
+| El rediseño educativo (DI-471 a DI-487) suma 58.5 h | Alta | Medio | Las P0 educativas (DI-471 a DI-474 y DI-484) van antes que cualquier extra; si falta tiempo se recortan primero las P2 que no enseñan nada (gato aliado DI-468, plataformas 3D DI-465) y luego las P2 educativas |

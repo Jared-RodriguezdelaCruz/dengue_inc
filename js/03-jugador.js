@@ -27,6 +27,7 @@ const jugador = {
     infeccion: null,        // { serotipo, fase:'febril'|'critica', t, tMax, grave }
     sangrado: 0,            // secuela de tomar AINE: daño por segundo en fase crítica
     protegido: 0,           // paracetamol: acorta fiebre y amortigua la fase crítica
+    repelente: 0,           // frames en que casi no te pican (no mata a nadie)
     vacunado: false,
     tomoAINE: false,        // para el reporte final
     // Presentación
@@ -58,7 +59,7 @@ function reiniciarJugador(completo) {
         // Partida nueva: se olvida todo el historial clínico.
         jugador.inmunes = [false, false, false, false, false];
         jugador.infeccion = null;
-        jugador.sangrado = 0; jugador.protegido = 0;
+        jugador.sangrado = 0; jugador.protegido = 0; jugador.repelente = 0;
         jugador.vacunado = false; jugador.tomoAINE = false;
     }
 }
@@ -153,6 +154,8 @@ function picar(serotipo, fx, fy) {
     if (debugGodMode) return false;
     if (invulnerable() || jugador.muerto || estado === estados.TRANSICION) return false;
     serotipo = serotipo || 1;
+    // La primera picadura abre la ficha: te pican despierto, de día.
+    desbloquearFicha('dia');
 
     // Ya pasaste ESE serotipo: la picadura molesta pero no enferma. La inmunidad
     // es real, y es exactamente igual de real que su límite.
@@ -164,6 +167,14 @@ function picar(serotipo, fx, fy) {
             fxChispas(jugador.x + jugador.ancho / 2, jugador.y + jugador.alto / 2, 8, COL.TURQ, 3);
         }
         desbloquearFicha('serotipos');
+        return false;
+    }
+
+    // El repelente evita la picadura mientras dura; tampoco cierra criaderos.
+    if (jugador.repelente > 0 && Math.random() < 0.7) {
+        jugador.iframes = Math.max(jugador.iframes, CFG.iframesGolpe * 0.6);
+        tono(700, 0.06, 'triangle', 0.05);
+        aviso('REPELENTE · NO TE PICÓ', 900);
         return false;
     }
 
@@ -202,6 +213,10 @@ function infectar(serotipo, fx, fy) {
 /** Avance del curso clínico. Corre en las dos dimensiones. */
 function actualizarInfeccion(dt) {
     if (jugador.protegido > 0) jugador.protegido -= dt;
+    if (jugador.repelente > 0) {
+        jugador.repelente -= dt;
+        if (jugador.repelente <= 0) aviso('SE ACABÓ EL REPELENTE · HAY QUE VOLVER A PONERLO', 1500);
+    }
 
     const inf = jugador.infeccion;
     if (!inf || jugador.muerto) return;
@@ -270,6 +285,13 @@ function tomarAINE() {
     destellar('#c0392b', 0.4, 500); sacudir(10);
     aviso('LA FIEBRE BAJÓ… PERO NO ERA ESO', 2200);
     desbloquearFicha('sangrado');
+}
+
+/** Repelente: casi no te pican durante ~30 s. No mata mosquitos ni toca un criadero. */
+function aplicarRepelente() {
+    jugador.repelente = 1800;
+    aviso('REPELENTE · 30 s CASI SIN PICADURAS', 1400); sfx.moneda();
+    desbloquearFicha('repelente');
 }
 
 function aplicarVacuna() {

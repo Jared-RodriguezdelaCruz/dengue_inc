@@ -125,7 +125,7 @@ let sacudida = 0;           // magnitud actual en píxeles
 let hitstop = 0;            // frames congelados (el render sigue, la lógica no)
 let camX = 0, camY = 0;     // cámara del mundo 2D
 
-function sacudir(mag)  { sacudida = Math.max(sacudida, mag); }
+function sacudir(mag)  { if (!opciones.menosSacudidas) sacudida = Math.max(sacudida, mag); }
 function congelar(fr)  { hitstop = Math.max(hitstop, fr); }
 
 const elDestello = document.getElementById('destello');
@@ -162,7 +162,7 @@ function destellar(color, opacidad, msFade) {
     elDestello.classList.remove('grieta');
     elDestello.style.animation = '';              // limpia el 'none' del último recurso
     elDestello.style.background = color;
-    pintarCortina(opacidad, 0);
+    pintarCortina(opciones.menosDestellos ? opacidad * 0.35 : opacidad, 0);
     void elDestello.offsetWidth;                  // commit síncrono del valor alto
     pintarCortina(0, msFade || 320);
 }
@@ -313,6 +313,36 @@ function guardarPrefsAudio() {
     catch (e) { /* no se pudo guardar: no pasa nada */ }
 }
 
+// Opciones del jugador (menú Opciones, DI-423). Música y sonido ON/OFF siguen en
+// CLAVE_AUDIO para no perder lo que ya tenía guardado quien jugó antes.
+const CLAVE_OPCIONES = 'dengueinc.opciones';
+const OPCIONES_BASE = { volMusica: 1, volSfx: 1, sens: 1,
+                        menosDestellos: false, menosSacudidas: false, tutorial: true };
+const opciones = Object.assign({}, OPCIONES_BASE);
+try {
+    const o = JSON.parse(localStorage.getItem(CLAVE_OPCIONES) || 'null');
+    if (o) for (const k in OPCIONES_BASE)
+        if (typeof o[k] === typeof OPCIONES_BASE[k]) opciones[k] = o[k];
+} catch (e) { /* sin opciones guardadas: valores por defecto */ }
+
+function guardarOpciones() {
+    try { localStorage.setItem(CLAVE_OPCIONES, JSON.stringify(opciones)); }
+    catch (e) { /* no se pudo guardar: valen hasta que se cierre la pestaña */ }
+}
+
+const VOL_MUSICA_BASE = 0.45;
+const SENS_BASE = CFG.sensibilidad, CAM_MANDO_BASE = CFG.velCamaraMando;
+
+/** Lleva las opciones a donde se usan. Se llama al cargar y en cada cambio. */
+function aplicarOpciones() {
+    CFG.sensibilidad = SENS_BASE * opciones.sens;
+    CFG.velCamaraMando = CAM_MANDO_BASE * opciones.sens;
+    if (musicaFondo) musicaFondo.volume = VOL_MUSICA_BASE * opciones.volMusica;
+    // El diálogo de Güero vive en 11c, que carga después: al arrancar aún no existe.
+    if (typeof audioGueroDialogue1 !== 'undefined') audioGueroDialogue1.volume = clamp(opciones.volSfx, 0, 1);
+    document.body.classList.toggle('menos-destellos', opciones.menosDestellos);
+}
+
 function audio() {
     if (!ctxAudio) { try { ctxAudio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
     if (ctxAudio.state === 'suspended') ctxAudio.resume();
@@ -341,7 +371,7 @@ function inicializarMusicaFondo() {
     const sonido = new Audio('assets/sounds/dg_song.mp3');
     sonido.loop = true;
     sonido.preload = 'auto';
-    sonido.volume = 0.45;
+    sonido.volume = VOL_MUSICA_BASE * opciones.volMusica;
     sonido.muted = !musicaActiva;
     musicaFondo = sonido;
 
@@ -359,9 +389,11 @@ function inicializarMusicaFondo() {
 }
 
 inicializarMusicaFondo();
+aplicarOpciones();
 /** Un tono simple con envolvente exponencial. Barato y suficiente para SFX. */
 function tono(freq, dur, tipoOsc, vol, barridoA) {
-    if (!sfxActivo) return;
+    // Con el volumen en 0 no se toca nada: la rampa exponencial no admite 0.
+    if (!sfxActivo || opciones.volSfx <= 0) return;
     const ac = audio(); if (!ac) return;
     const t = ac.currentTime;
     const osc = ac.createOscillator(), g = ac.createGain();
@@ -369,14 +401,14 @@ function tono(freq, dur, tipoOsc, vol, barridoA) {
     osc.frequency.setValueAtTime(freq, t);
     if (barridoA) osc.frequency.exponentialRampToValueAtTime(Math.max(30, barridoA), t + dur);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol || 0.08, t + 0.008);
+    g.gain.exponentialRampToValueAtTime((vol || 0.08) * opciones.volSfx, t + 0.008);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     osc.connect(g); g.connect(ac.destination);
     osc.start(t); osc.stop(t + dur + 0.02);
 }
 /** Ruido blanco filtrado: la base de explosiones e impactos. */
 function ruido(dur, vol, freqFiltro) {
-    if (!sfxActivo) return;
+    if (!sfxActivo || opciones.volSfx <= 0) return;
     const ac = audio(); if (!ac) return;
     const n = Math.floor(ac.sampleRate * dur);
     const buf = ac.createBuffer(1, n, ac.sampleRate);
@@ -385,7 +417,7 @@ function ruido(dur, vol, freqFiltro) {
     const src = ac.createBufferSource(); src.buffer = buf;
     const filtro = ac.createBiquadFilter(); filtro.type = 'lowpass';
     filtro.frequency.setValueAtTime(freqFiltro || 1200, ac.currentTime);
-    const g = ac.createGain(); g.gain.value = vol || 0.16;
+    const g = ac.createGain(); g.gain.value = (vol || 0.16) * opciones.volSfx;
     src.connect(filtro); filtro.connect(g); g.connect(ac.destination);
     src.start();
 }

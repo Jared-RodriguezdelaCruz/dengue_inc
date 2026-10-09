@@ -65,6 +65,7 @@ function conectarPad(gp) {
     // Si el menú ya estaba abierto, que la tabla de controles enseñe los botones.
     const pc = document.getElementById('pm-controles');
     if (pc && pc.innerHTML) pc.innerHTML = tablaControles();
+    if (typeof tituloVisible === 'function' && tituloVisible()) pintarAyudaTitulo();
     if (gp.mapping !== 'standard' && !avisadoNoEstandar) {
         avisadoNoEstandar = true;
         console.warn('[mando] "' + gp.id + '" no usa el layout standard; los botones pueden no coincidir.');
@@ -101,6 +102,9 @@ let focoPanel = null, focoIdx = 0, focoEl = null;
 let navRepT = 0, navDirPrev = 0;
 
 function panelConFoco() {
+    // La pantalla de título lleva su propia selección (11f-menu.js).
+    const ti = document.getElementById('titulo');
+    if (ti && !ti.classList.contains('oculto')) return { el: ti, completo: true, titulo: true };
     const pm = document.getElementById('pantalla-mensaje');
     if (pm && !pm.classList.contains('oculto')) return { el: pm, completo: true };
     if (tiendaAbierta())  return { el: document.getElementById('tienda'),  completo: true };
@@ -132,6 +136,7 @@ function soltarFoco() {
 // entre botones y lo que quedaba arriba o abajo no se podía leer.
 /** Lo que se desplaza en cada panel. */
 function scrollDePanel(panel) {
+    if (panel.id === 'titulo') return document.getElementById('t-panel');
     if (panel.id === 'fichero') return document.getElementById('fichero-lista');
     if (panel.id === 'tienda') return panel.closest('.riel');
     return panel;
@@ -197,7 +202,23 @@ function actualizarMando(dtReal) {
     // --- Paneles con foco ---
     const p = panelConFoco();
     if (!p) soltarFoco();
-    else {
+    else if (p.titulo) {
+        // Una sola selección para teclado, ratón y mando: aquí no se pinta el
+        // marco de foco genérico, se mueve el de la pantalla de título.
+        soltarFoco();
+        let dir = 0;
+        if (ahora.Digit1 || ly < -0.5) dir = -1;
+        else if (ahora.Digit3 || ly > 0.5) dir = 1;
+        else if (ahora.Digit4 || lx < -0.5) dir = -2;          // ← →: deslizadores y ON/OFF
+        else if (ahora.Digit2 || lx > 0.5) dir = 2;
+        const paso = pasoNavegacion(dir, dtReal * 16.667);
+        if (paso === -1 || paso === 1) navegarTitulo(paso);
+        else if (paso) ajustarTitulo(paso / 2);
+        const s = scrollDePanel(p.el), v = curvaStick(ax(3), ZONA_MUERTA_CAM);
+        if (s && v) s.scrollTop += v * VEL_SCROLL_MANDO * Math.min(dtReal, 3);
+        if (nuevo('Space') || nuevo('Escape')) activarTitulo();
+        else if (nuevo('ShiftLeft')) volverTitulo();
+    } else {
         if (p.el !== focoPanel) { soltarFoco(); focoPanel = p.el; focoIdx = 0; }
         const botones = botonesVisibles(p.el);
         if (focoIdx >= botones.length) focoIdx = Math.max(0, botones.length - 1);

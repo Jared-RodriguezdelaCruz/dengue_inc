@@ -1,6 +1,6 @@
 # Dengue Inc — Roadmap
 
-> Documento vivo del equipo. Última actualización: **5 de octubre de 2026** · el juego ya está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/).
+> Documento vivo del equipo. Última actualización: **9 de octubre de 2026** · el juego ya está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/).
 > Todo lo que va en Notion está en [`docs/notion/`](notion/): la portada, las páginas del equipo y las bases de datos de tareas, kudos y minutas, listas para importarse.
 
 **Contenido:** [1. Visión](#1-visión-y-propósito) · [2. Equipo](#2-equipo-y-roles) · [3. Dónde estamos](#3-dónde-estamos) · [4. Fases](#4-fases) · [5. Calendario](#5-calendario-por-semana) · [6. Tareas](#6-tareas) · [7. Herramientas](#7-herramientas-todas-gratuitas) · [8. Terminado](#8-definición-de-terminado) · [9. Riesgos](#9-riesgos) · [10. Demo Day](#10-demo-day-guion-sugerido)
@@ -24,6 +24,7 @@
 | Avance | 100 % de las tareas P0 hechas el 29 de noviembre | Gráfica de avance en Notion |
 | Reconocimiento | 5 de 5 integrantes dieron y recibieron kudos | Discord #kudos + Notion |
 | Producto | El juego se termina de principio a fin, con música, sin errores | Plan de pruebas, 2 playtests y testing final |
+| Aprendizaje | En los playtests, el quiz sube de antes a después de jugar (meta: 4 de 5 o más al final) | Quiz del juego (DI-474) en los playtests (DI-485) |
 
 ---
 
@@ -49,7 +50,7 @@
 
 ## 3. Dónde estamos
 
-**Avance al 5 de octubre: 55 de 114 tareas hechas (48 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
+**Avance al 9 de octubre: 57 de 131 tareas hechas (44 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
 
 El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas de JavaScript sin dependencias (salvo Three.js), **5 niveles procedurales** (1, 3 y 4 en 2D; 2 y 5 en 3D en primera persona), jefe de dos fases, transición dimensional, final con Güero y una capa educativa en la que cada dato cita su fuente.
 
@@ -58,15 +59,15 @@ El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas 
 | Motor y entrada | ✅ Listo | PRNG con semilla, dt normalizado, teclado, ratón y mando |
 | Mundo 2D | ✅ Listo | Funciona a la perfección (Jared y Gael): 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases. Solo falta acelerar la fase 2 del jefe (DI-462) |
 | Mundo 3D | ✅ Listo | Salas procedurales, muros instanciados, brújula. Vienen el nivel 4 en 3D, el jefe 3D y plataformas (DI-463 a DI-465) |
-| Capa educativa | ✅ Listo | 10 envases, 4 serotipos, 21 fichas, 5 mitos, tienda con datos reales, Güero |
+| Capa educativa | 🟡 Rediseño | La maestra pidió repensar cómo enseñamos: casi todo se leía y el juego premiaba matar mosquitos. En la rama `feature/educacion-rediseno` ya está casi todo (DI-471 a DI-484 y DI-486): cerrar criaderos paga, quiz antes y después, repaso y retos entre niveles, ciclo de vida, lluvia, Ivan en fase febril, Modo Patio, «Aprende» y «Revisa tu casa». Son 25 fichas, 5 mitos y 5 realidades, todo con fuente. Faltan la revisión de Ana (DI-484), medir en los playtests (DI-485) y los niveles en lugares reales (DI-487) |
 | Flujo de equipo | ✅ Listo | Notion, Discord, ramas protegidas, PRs con revisión, plantillas y CODEOWNERS. Falta subir `CONTRIBUTING.md` (DI-202) |
 | Automatización | ✅ Listo | *Validar* y *Título del PR* en cada PR; el bot de kudos felicita en Discord cada PR fusionado |
 | Publicación y monitoreo | ✅ Listo | GitHub Pages con cache-busting por commit, UptimeRobot cada 5 min y badges en el README |
-| Bugs del juego publicado | 🟡 En curso | 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) y 9 mejoras, repartidas en F4 por área |
+| Bugs del juego publicado | 🟡 En curso | Los 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) ya están arreglados y verificados (DI-460, DI-461); quedan 9 mejoras, repartidas en F4 por área |
 | Audio | 🟡 Parcial | 12 efectos sintetizados; **no hay música** ni control de volumen (DI-401 a DI-412 y DI-470) |
-| Interfaz y marca | 🟡 Parcial | HUD y menús completos; faltan el menú principal nuevo (DI-469), créditos, opciones, nombre único, favicon y etiquetas meta (DI-456) |
-| Accesibilidad y celular | 🔴 Falta | Los serotipos se distinguen solo por color; no se pueden reducir destellos; no se puede jugar en celular (DI-430) |
-| Guardado | 🔴 Falta | Nada persiste entre sesiones |
+| Interfaz y marca | 🟡 Casi lista | En la rama `feature/menu-tutorial`: pantalla de título estilo Katana Zero con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos (DI-469, DI-422, DI-423), nombre único «Dengue Inc» (DI-420), favicon y vista previa al compartir (DI-456) y tutorial la primera vez (DI-426). Faltan los créditos de audio (DI-412) |
+| Accesibilidad y celular | 🔴 Falta | Ya se pueden reducir destellos y sacudidas (DI-423); los serotipos se siguen distinguiendo solo por color (DI-425) y no se puede jugar en celular (DI-430) |
+| Guardado | 🟡 Parcial | Se guardan las opciones, el audio, el tutorial visto, los resultados del quiz y el mejor tiempo del Modo Patio; faltan las fichas y el progreso (DI-440) |
 
 ---
 
@@ -95,12 +96,12 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | S0 | 11 – 29 sep | F0 | — | — | Prototipo `b5` (hecho) |
 | S1 | 30 sep – 6 oct | F1 | **1** | **6 oct:** link del workspace de Notion ✅ | Juego publicado en GitHub Pages ✅ |
 | S2 | 7 – 13 oct | F2 | **2** | **13 oct:** flujo de GitHub documentado y configurado ✅ | Bugs P0 (vida del HUD, ratón con Güero), dirección musical, marca, Three.js local, plan de pruebas |
-| S3 | 14 – 20 oct | F3 | **3** | **20 oct:** video de 30 s de la automatización ✅ | Mezclador de audio, favicon y etiquetas meta |
-| S4 | 21 – 27 oct | F3 | **4** | **27 oct:** link de la página de estado de UptimeRobot ✅ | Reproductor de música, tema del menú, créditos, fase 2 del jefe 2D |
-| S5 | 28 oct – 3 nov | F4 | — | — | Tema 2D, menú estilo Katana Zero, opciones, guardado, nivel 4 en 3D, aviso en celular |
-| S6 | 4 – 10 nov | F4 | — | — | Tema 3D, SFX nuevos, accesibilidad, tutorial 2D y 3D, skins de Güero e Ivan, rendimiento |
-| S7 | 11 – 17 nov | F4 | — | — | Tema del jefe y del final, música integrada, jefe 3D, gato aliado, playtest 1 |
-| S8 | 18 – 24 nov | F4 · F5 | **5** | Kudos de los 5 y su evidencia | Bugs del playtest, playtest 2, jugar en celular, plataformas 3D, extras P2 |
+| S3 | 14 – 20 oct | F3 | **3** | **20 oct:** video de 30 s de la automatización ✅ | Mezclador de audio, favicon y etiquetas meta, incentivos educativos (cerrar criaderos paga, abate y fichas que faltaban) |
+| S4 | 21 – 27 oct | F3 | **4** | **27 oct:** link de la página de estado de UptimeRobot ✅ | Reproductor de música, tema del menú, créditos, fase 2 del jefe 2D, contenido nuevo con fuentes, repaso entre niveles y mito o realidad |
+| S5 | 28 oct – 3 nov | F4 | — | — | Tema 2D, menú estilo Katana Zero, opciones, guardado, nivel 4 en 3D, aviso en celular, «Revisa tu casa» |
+| S6 | 4 – 10 nov | F4 | — | — | Tema 3D, SFX nuevos, accesibilidad, tutorial 2D y 3D, skins de Güero e Ivan, rendimiento, quiz antes y después, Modo Patio, Ivan en fase febril |
+| S7 | 11 – 17 nov | F4 | — | — | Tema del jefe y del final, música integrada, jefe 3D, gato aliado, playtest 1, ciclo de vida en el criadero, repelente e insecticida, submenú Aprende |
+| S8 | 18 – 24 nov | F4 · F5 | **5** | Kudos de los 5 y su evidencia | Bugs del playtest, playtest 2 con medición de aprendizaje, jugar en celular, plataformas 3D, extras P2 (lluvia, triage, niveles en lugares reales) |
 | S9 | 25 – 29 nov | F5 | **5** | Slides y video de respaldo · **29 nov: release v2.0, proyecto terminado** | Código congelado |
 | S10 | 30 nov – 4 dic | F6 | **6** | Presentación en vivo · evaluación entre equipos | Testing final (solo arreglos P0) |
 
@@ -117,13 +118,13 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 
 | Integrante | Rol | Tareas hechas | Pendientes | Pendientes P0 | Horas estimadas pendientes |
 |---|---|---|---|---|---|
-| Ana | CEO / Project Manager | 12 | 6 | 3 | 12.5 |
-| Jared | Backend | 22 | 16 | 6 | 56 |
+| Ana | CEO / Project Manager | 12 | 9 | 4 | 25.5 |
+| Jared | Backend | 24 | 22 | 8 | 81 |
 | Gael | Música y sonido | 2 | 10 | 6 | 38.5 |
-| Mau | Frontend | 11 | 14 | 3 | 60.5 |
-| Ivan | QA, métricas y documentación | 8 | 10 | 5 | 21.5 |
+| Mau | Frontend | 11 | 19 | 3 | 77 |
+| Ivan | QA, métricas y documentación | 8 | 11 | 5 | 22.5 |
 | Todos | — | 0 | 3 | 3 | 1 |
-| **Total** | | **55** | **59** | **26** | **190** |
+| **Total** | | **57** | **74** | **29** | **245.5** |
 
 Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)». Por ejemplo, Gael en todo el mundo 2D (DI-008 a DI-011).
 
@@ -227,20 +228,25 @@ Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)».
 
 | ID | Tarea | Responsable | Entrega | Prio. | Est. (h) | Criterio de aceptación |
 |---|---|---|---|---|---|---|
-| DI-420 | Unificar la marca «Dengue Inc» | Mau (+ Ana) | 13 oct | P0 | 2 | Hoy conviven «Dengue Inc» (README), «Dengue: Multiverso» (menú) y «Dengue: Multiverso Aguascalientes v2» (pestaña). Un solo nombre y logo; el favicon va en DI-456. |
+| DI-420 | Unificar la marca «Dengue Inc» | Mau (+ Ana) | 13 oct | P0 | 2 | Un solo nombre: «Dengue Inc», con el subtítulo «Multiverso · Aguascalientes». Así dicen la pestaña, la pantalla de título, la vista previa al compartir y el README. |
 | DI-421 | Incluir Three.js dentro del repositorio | Mau | 13 oct | P0 | 0.5 | Hoy se carga del CDN: sin internet los niveles 2 y 5 no funcionan. Copia local de r128 como respaldo. |
-| DI-422 | Pantalla de créditos con el equipo y sus roles | Mau | 27 oct | P0 | 2 | Se abre desde el menú y al terminar el juego; incluye créditos de audio. |
-| DI-423 | Menú de opciones | Mau (+ Gael) | 3 nov | P1 | 4 | Volumen de música y SFX, sensibilidad 3D, reducir destellos y sacudidas; se guarda entre sesiones (DI-440). Es el submenú Opciones del menú principal (DI-469). |
+| DI-422 | Pantalla de créditos con el equipo y sus roles | Mau | 27 oct | P0 | 2 | Equipo y roles (los de la sección 2 del roadmap), tecnología y las fuentes del contenido. Se abre desde la pantalla de título y desde la pantalla final. El autor y la licencia de cada pista se agregan con DI-412. |
+| DI-423 | Menú de opciones | Mau (+ Gael) | 3 nov | P1 | 4 | Música y sonidos ON/OFF, volumen de música y de efectos, sensibilidad 3D (×0.3 a ×2.5), reducir destellos, reducir sacudidas y tutorial. Se guardan en el navegador (localStorage «dengueinc.opciones»); si no deja, valen durante la sesión. Se abren desde la pantalla de título y desde la pausa. El resto del guardado sigue en DI-440. |
 | DI-424 | Aviso en celulares y pantallas pequeñas | Mau | 3 nov | P1 | 1 | El Demo Day se abrirá el link desde celulares: explicar que se juega con teclado o mando. |
 | DI-425 | Serotipos distinguibles sin depender del color (2D y 3D) | Mau | 10 nov | P1 | 4 | DENV-2 (rojo) y DENV-4 (verde) se confunden con daltonismo: añadir número o patrón en mosquitos y proyectiles. |
-| DI-426 | Tutorial interactivo en el primer nivel 2D y el primer 3D | Mau (+ Jared) | 10 nov | P1 | 7 | Carteles contextuales la primera vez. En 2D: moverse, saltar, dash, raqueta y las 4 medidas. En 3D: mirar con el ratón, disparar, rodar y seguir la brújula. |
+| DI-426 | Tutorial interactivo en el primer nivel 2D y el primer 3D | Mau (+ Jared) | 10 nov | P1 | 7 | La primera vez en un nivel 2D y en uno 3D, una tarjeta arriba al centro enseña los controles de uno en uno, con las teclas o los botones del mando. 2D: moverse, saltar, dash, raqueta y cerrar un criadero con 1-4. 3D: mirar, caminar, atacar, esquivar, seguir la brújula y cerrar el criadero. Cada paso se cumple por lo que pasa en el juego, así que lo ya hecho se salta, y nunca dice qué medida va con qué envase. Se apaga en Opciones y se repite desde Ayuda. |
 | DI-427 | Pulido visual 3D: texturas procedurales y luz por tipo de sala | Mau | 17 nov | P2 | 6 |  |
 | DI-428 | Fichero con filtros por categoría y animación de ficha nueva | Mau (+ Ivan) | 17 nov | P2 | 3 |  |
 | DI-429 | Modelos 3D más detallados de los envases | Mau | 24 nov | P2 | 6 | Con primitivas de Three.js, sin archivos externos. Güero pasa a DI-466. |
 | DI-430 | Jugar en celular: controles táctiles en 2D y 3D | Mau (+ Jared) | 24 nov | P1 | 10 | Stick y botones en pantalla para 2D y 3D (en 3D se mira arrastrando el dedo), en horizontal y sin zoom accidental. Cuando esté listo, reemplaza el aviso de DI-424. |
 | DI-466 | Skin low poly de Güero (melena de león) | Mau (+ Jared) | 10 nov | P1 | 5 | A partir de la imagen de referencia: en 3D con primitivas de Three.js (low poly) y en 2D un sprite que lo distinga. Su rasgo: la melena de león. |
 | DI-467 | NPC de Ivan (con gorra): otro caso de dengue | Mau (+ Ivan) | 10 nov | P1 | 4 | Otro vecino con dengue en un nivel distinto al de Güero, con su propia skin low poly (rasgo: la gorra) a partir de la imagen de referencia. |
-| DI-469 | Menú principal estilo Katana Zero con submenús | Mau (+ Jared) | 3 nov | P1 | 6 | Pantalla de título con estética Katana Zero y submenús: Jugar (con semilla), Opciones (DI-423), Ayuda y controles, y Créditos (DI-422). Se navega con teclado, ratón y mando. |
+| DI-469 | Menú principal estilo Katana Zero con submenús | Mau (+ Jared) | 3 nov | P1 | 6 | Pantalla de título «DENGUE INC» con estética de VHS y neón al atardecer (estilo Katana Zero): lista vertical con Jugar (con semilla), Modo Patio, Aprende, Opciones, Ayuda y Créditos, y cada submenú en un panel a la derecha. Una sola selección que mueven el teclado (↑↓, Enter, Esc), el ratón y el mando (cruceta, A, B). Todo «Menú principal» y «Volver» llega aquí. Con «Reducir destellos» o prefers-reduced-motion no hay glitch ni parpadeo. |
+| DI-479 | «Lo que aprendiste en este nivel» | Mau (+ Ivan) | 27 oct | P1 | 1.5 | La pantalla entre niveles lista las fichas que se abrieron en ese nivel; durante la pelea el aviso de ficha nueva se acorta. El repaso queda en la pausa, que es cuando sí se lee. |
+| DI-480 | Mito o realidad entre niveles | Mau (+ Ana) | 27 oct | P1 | 3 | Entre niveles salen dos afirmaciones y hay que contestar MITO o REALIDAD antes de ver la explicación con su fuente; acertar da 2 monedas. Mitos y realidades se alternan para que «mito» a ciegas no sirva. Funciona con ratón, teclas 1-4 y mando. |
+| DI-481 | Ivan: el caso de la fase febril | Mau (+ Ana) | 10 nov | P1 | 6 | Contenido educativo de DI-467. Ivan (low poly, con gorra) está junto al portal del nivel 2 y solo se le atiende con la cuadra sin criaderos. Tres decisiones con su explicación y fuente: qué darle (paracetamol y suero), cómo cuidar a su familia (repelente y mosquitero) y cuándo ir a urgencias (señales de alarma). Falta ajustar la skin con la imagen de referencia (DI-467). |
+| DI-482 | «Revisa tu casa» al terminar | Mau (+ Ana) | 3 nov | P1 | 2 | La pantalla final trae la lista de envases con su medida para imprimir o compartir por WhatsApp: el juego termina en el patio de verdad. |
+| DI-483 | Submenú «Aprende» | Mau (+ Ana) | 17 nov | P2 | 4 | Botón «Aprende» en la pantalla de título nueva (DI-469): las 4 medidas, el mosquito, síntomas, qué hacer si te da dengue, mitos y realidades, y cifras, con sus fuentes. Ahí se ven todas las fichas como consulta; en la partida se siguen abriendo jugando. |
 
 #### Backend y sistemas — Jared
 
@@ -251,13 +257,21 @@ Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)».
 | DI-442 | Selector de dificultad | Jared (+ Ana) | 17 nov | P2 | 3 | Fácil y Normal: vida, daño y ritmo de los criaderos. |
 | DI-443 | Logros dentro del juego | Jared (+ Mau) | 24 nov | P2 | 4 | Por ejemplo «Cerraste 10 criaderos sin atajos» o «Salvaste a Güero»; aparecen en el reporte final. |
 | DI-444 | Arreglar los bugs críticos del playtest | Jared (+ Mau) | 24 nov | P0 | 4 | Todo hallazgo P0 del playtest 1 (DI-454) queda cerrado antes del playtest 2. |
-| DI-460 | Arreglar: la vida del HUD no se actualiza al recibir daño | Jared (+ Mau) | 13 oct | P0 | 2 | Al recibir daño, los corazones del HUD no bajan en ese momento. Cada golpe y cada curación se ven al instante, en 2D y en 3D, también después de reintentar un nivel. |
-| DI-461 | Arreglar: no se pueden elegir con el ratón las opciones para salvar a Güero | Jared (+ Ivan) | 13 oct | P0 | 1 | Hoy el cursor no se mueve sobre las opciones y hay que abrir la tienda con T para liberarlo. Al abrirse el panel de Güero el ratón queda libre y cada opción se elige con clic, teclado o mando. |
+| DI-460 | Arreglar: la vida del HUD no se actualiza al recibir daño | Jared (+ Mau) | 13 oct | P0 | 2 | Al recibir daño, los corazones del HUD no bajan en ese momento. Cada golpe y cada curación se ven al instante, en 2D y en 3D, también después de reintentar un nivel. ✅ Verificado el 9 oct: en 2D, en 3D y tras reintentar, los corazones bajan en el mismo instante del golpe. |
+| DI-461 | Arreglar: no se pueden elegir con el ratón las opciones para salvar a Güero | Jared (+ Ivan) | 13 oct | P0 | 1 | Hoy el cursor no se mueve sobre las opciones y hay que abrir la tienda con T para liberarlo. Al abrirse el panel de Güero el ratón queda libre y cada opción se elige con clic, teclado o mando. ✅ Verificado el 9 oct: con el panel abierto, cada opción se elige con clic sin capturar el ratón. |
 | DI-462 | Jefe 2D: fase 2 más rápida pero igual de difícil | Jared (+ Gael) | 27 oct | P1 | 3 | La fase 2 dura de más. Que se resuelva en menos tiempo (embestidas más seguidas o núcleo con menos vida) sin quitar el aviso antes de cada ataque ni bajar el reto. |
 | DI-463 | Jefe final en 3D | Jared (+ Mau) | 17 nov | P1 | 8 | Sala de arena con un jefe propio del modo 3D y aviso antes de cada ataque, como el jefe 2D. En qué nivel queda se decide junto con DI-464. |
 | DI-464 | Nivel 4 en 3D: dos niveles 2D y dos 3D | Jared (+ Mau) | 3 nov | P1 | 3 | Hoy NIVEL_ES_2D marca 1, 3 y 4 como 2D, y el jefe 2D vive en el 4. Quedan 1 y 3 en 2D y 2 y 4 en 3D; el jefe 2D se mueve a un nivel 2D y el 5 sigue siendo el final con Güero. |
 | DI-465 | Plataformas en los niveles 3D | Jared (+ Mau) | 24 nov | P2 | 5 | Plataformas y desniveles dentro de las salas, alcanzables con el salto 3D; la generación valida que la meta siga siendo alcanzable. |
 | DI-468 | Gato aliado que ataca mosquitos (se compra en la tienda) | Jared (+ Mau) | 17 nov | P2 | 6 | Aliado inspirado en la Gorda (imagen de referencia): se compra en la tienda y acompaña al jugador en 2D y 3D atacando a los mosquitos cercanos. |
+| DI-471 | Cerrar criaderos paga; matar mosquitos casi no | Jared (+ Ana) | 20 oct | P0 | 2 | Hoy las monedas salen de matar mosquitos y cerrar un criadero no da nada, justo lo contrario de la ficha «Matar mosquitos no sirve». La medida correcta da 3 monedas (el abate 2), el mosquito que sale de un criadero vivo no suelta moneda y el reporte final compara mosquitos aplastados contra criaderos cerrados. |
+| DI-472 | El abate solo cierra lo que guarda agua | Jared (+ Ana) | 20 oct | P0 | 1 | Hoy su explosión cierra cualquier criadero del radio y con 10 💰 te saltas las 4 medidas. Solo cierra tinacos, cisternas y tambos (verbo «tapa»); en lo demás avisa qué medida pide. Igual en 2D y 3D. |
+| DI-473 | Desbloquear las fichas «Pica de día» y «Vuela menos de 100 m» | Jared (+ Ivan) | 20 oct | P0 | 1 | Hoy ningún evento las abre y el fichero se queda en 19/21. «Pica de día» se abre con la primera picadura; «Vuela menos de 100 m» al cerrar un criadero, cuando sus mosquitos se dispersan. |
+| DI-474 | Quiz antes y después de jugar | Jared (+ Ana) | 10 nov | P0 | 5 | 5 preguntas al pulsar Iniciar (se pueden saltar y no revelan la respuesta) y las mismas antes del final, ya con su explicación y fuente: «Antes 2/5 → Después 5/5». Cada resultado se guarda en el navegador (localStorage «dengueinc.quiz») para los playtests (DI-485). Preguntas en 01b-datos-dengue.js, validadas por el CI. Complementa DI-457. |
+| DI-475 | Modo Patio: inspeccionar una casa de Aguascalientes | Jared (+ Mau) | 10 nov | P1 | 8 | Botón «Modo Patio» en el menú: una casa con azotea y patio, sin enemigos. Hay que encontrar los 10 envases y aplicar la medida correcta contra reloj, con ratón, teclado o mando; lo vaciado sin tallar revive. Estrellas por tiempo, errores y atajos, y mejor tiempo guardado. Usa la misma regla (resultadoVerbo) y el mismo dibujo de envases que la partida. |
+| DI-476 | Ciclo de vida visible en el criadero | Jared (+ Mau) | 17 nov | P1 | 4 | Cada criadero activo muestra la etapa de su cría (huevos → larvas → pupas) con una barra, en 2D sobre el envase y en 3D en el aviso de medidas; al completarse sale el mosquito. La primera cría tarda más y cerrarlo antes de que nazca el primero da +2 monedas. Ficha nueva «De huevo a mosquito en una semana» (CDC). Las semillas siguen dando los mismos niveles. |
+| DI-477 | Repelente que protege, insecticida que no resuelve | Jared (+ Mau) | 17 nov | P2 | 3 | El arma que dispara pasa a ser «Insecticida», y comprarla abre la ficha «Matar mosquitos no sirve». El repelente es consumible (4 monedas): 30 s en que casi no te pican, con contador en el HUD y ficha propia. |
+| DI-478 | La lluvia reactiva los criaderos | Jared (+ Gael) | 24 nov | P2 | 4 | Una vez por nivel llueve, entre los 45 y los 70 s: lo vaciado sin tallar revive al instante. Al escampar sale «Después de llover, revisa el patio» y una ficha nueva. |
 
 #### Calidad, documentación y contenido — Ivan y Ana
 
@@ -269,8 +283,12 @@ Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)».
 | DI-453 | Revisión de exactitud del contenido educativo | Ana (+ Ivan) | 10 nov | P1 | 2 | Fuentes vigentes (OMS, SSA, COFEPRIS) y cifras de Aguascalientes actualizadas. |
 | DI-454 | Playtest 1 con 3 a 5 personas externas | Ivan (+ Todos) | 17 nov | P1 | 3 | Cada hallazgo se registra como tarea en Notion con su prioridad. |
 | DI-455 | Playtest 2 con los arreglos | Ivan (+ Todos) | 24 nov | P1 | 2 | Otras personas, misma checklist; confirma que los bugs críticos ya no aparecen. |
-| DI-456 | Favicon, etiquetas meta y vista previa al compartir (Open Graph) | Ivan (+ Mau) | 20 oct | P1 | 1.5 | El juego ya está publicado: favicon, descripción, theme-color y Open Graph (título, descripción e imagen al pegar el link en Discord o WhatsApp). |
+| DI-456 | Favicon, etiquetas meta y vista previa al compartir (Open Graph) | Ivan (+ Mau) | 20 oct | P1 | 1.5 | Favicon SVG (un Aedes sobre el atardecer) con PNG de 32 px y apple-touch-icon de 180 px; descripción, theme-color, Open Graph y Twitter con imagen de 1200×630. Al pegar el link en WhatsApp o Discord sale «Dengue Inc · Multiverso Aguascalientes» con su imagen. |
 | DI-457 | Encuesta de aprendizaje al terminar (Google Forms) | Ana (+ Jared) | 24 nov | P2 | 2 | Botón en la pantalla final con 3 preguntas; respuestas en Sheets para medir el impacto educativo. |
+| DI-484 | Contenido y fuentes de las secciones nuevas | Ana (+ Ivan) | 27 oct | P0 | 3 | Fichas nuevas (ciclo de vida, que no piquen al enfermo, repelente y lluvia), 5 realidades, 5 preguntas del quiz, 3 decisiones de Ivan y 3 casos de triage, cada uno con su fuente en 01b-datos-dengue.js. Falta que Ana revise la exactitud (DI-453). |
+| DI-485 | Medir el aprendizaje en los playtests | Ivan (+ Ana) | 24 nov | P1 | 1 | En DI-454 y DI-455 se anota el quiz de antes y después de cada persona; el promedio va a las métricas de las slides (DI-503). |
+| DI-486 | ¿Es dengue? Triage de vecinos | Ana (+ Mau) | 24 nov | P2 | 4 | En la pausa antes del nivel 4, en lugar de «¿mito o realidad?», dos vecinos con síntomas: en casa con paracetamol y suero, al centro de salud o a urgencias (señales de alarma). Cada caso con su explicación y fuente. |
+| DI-487 | Niveles en lugares reales de Aguascalientes | Ana (+ Mau) | 24 nov | P2 | 6 | Patio → escuela → azotea → panteón (floreros, Día de Muertos) → la colonia de Güero, con los envases de cada lugar. Verificar con fuente las campañas en panteones (DI-453). |
 
 ### F5 · Cultura de reconocimiento y cierre — Paso 5 (18 – 29 nov)
 
@@ -405,6 +423,7 @@ Una tarea pasa a **Hecho** solo si:
 | Se pierde el ritmo a mitad de noviembre | Media | Medio | Rituales semanales y la gráfica de avance de Notion revisada cada lunes |
 | Se sumaron 11 tareas (5 oct) con las mismas fechas | Alta | Medio | Los bugs P0 van primero (13 oct); las P2 nuevas (gato aliado, plataformas 3D) se recortan antes que cualquier otra |
 | Faltan las imágenes de referencia (Güero, Ivan, la Gorda) | Media | Bajo | Se piden a Jared antes de S6; mientras, se modela con primitivas y se ajusta después |
+| El rediseño educativo (DI-471 a DI-487) suma 58.5 h | Alta | Medio | Las P0 educativas (DI-471 a DI-474 y DI-484) van antes que cualquier extra; si falta tiempo se recortan primero las P2 que no enseñan nada (gato aliado DI-468, plataformas 3D DI-465) y luego las P2 educativas |
 
 ---
 
