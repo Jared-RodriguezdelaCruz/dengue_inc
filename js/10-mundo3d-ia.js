@@ -42,7 +42,7 @@ function actualizarMosquitos3D(dt) {
             e.aturdido -= dt;
             e.vx *= Math.pow(0.9, dt); e.vz *= Math.pow(0.9, dt);
             p.x += e.vx * dt; p.z += e.vz * dt;
-            p.y = lerp(p.y, 0.9, 0.05 * dt);
+            p.y = lerp(p.y, alturaMundo(p.x, p.z) + 0.9, 0.05 * dt);
             e.malla.rotation.z += 0.14 * dt;
             if (Math.random() < 0.3) emitir3D(p.x, p.y + 0.7, p.z, 0, 0.01, 0, 20, 1, 0.85, 0.2, 0);
             if (e.aturdido <= 0) { e.est = 'persecucion'; e.malla.rotation.z = 0; e.cd = 30; }
@@ -82,7 +82,8 @@ function actualizarMosquitos3D(dt) {
                 }
                 e.vx = aprox(e.vx, deX * vel, 0.007 * dt);
                 e.vz = aprox(e.vz, deZ * vel, 0.007 * dt);
-                p.y = lerp(p.y, clamp(cam.position.y + 0.2, 1.0, 3.2), 0.03 * dt);
+                // Siguen al jugador también arriba de una losa.
+                p.y = lerp(p.y, clamp(cam.position.y + 0.2, 1.0, ALTO_MURO - 0.7), 0.03 * dt);
             }
             if (ve && d < a.rangoAtaque / 22 && e.cd <= 0 && pedirToken(e)) {
                 e.est = 'telegrafia'; e.cargaT = a.carga; sfx.telegrafia();
@@ -152,7 +153,7 @@ function actualizarMosquitos3D(dt) {
             if (!chocaCirculo(nx, p.z, 0.4)) p.x = nx; else e.vx = -e.vx;
             if (!chocaCirculo(p.x, nz, 0.4)) p.z = nz; else e.vz = -e.vz;
         }
-        p.y = clamp(p.y, 0.65, ALTO_MURO - 0.7);
+        p.y = clamp(p.y, alturaMundo(p.x, p.z) + 0.65, ALTO_MURO - 0.7);
 
         // Contacto pasivo
         if (!a.embiste && d < 1.0 && !invulnerable()) picar(e.serotipo, 0, 0);
@@ -199,7 +200,7 @@ function actualizarProyectiles3D(dt) {
         const pos = p.malla.position;
         emitir3D(pos.x, pos.y, pos.z, 0, 0, 0, 10, p.col[0], p.col[1], p.col[2], 0);
 
-        let muere = p.vida <= 0 || pos.y < 0.1 || pos.y > ALTO_MURO ||
+        let muere = p.vida <= 0 || pos.y < alturaMundo(pos.x, pos.z) + 0.1 || pos.y > ALTO_MURO ||
                     solidoMundo(pos.x, pos.z);
 
         // Parry en 3D: el orbe morado es la señal de que se puede devolver.
@@ -208,15 +209,17 @@ function actualizarProyectiles3D(dt) {
             p.delJugador = true; p.pareable = false;
             p.daño *= 2; p.col = [1, 0.85, 0.2];
             p.malla.material.color.setHex(0xf1c40f);
+            // Devuelta va a la Hembra si está peleando; si no, al mosquito más cercano.
             let mejor = null, mejorD = 1e9;
             for (const e of mosquitos3D) {
                 if (!e.vivo) continue;
                 const dd = e.malla.position.distanceTo(pos);
-                if (dd < mejorD) { mejorD = dd; mejor = e; }
+                if (dd < mejorD) { mejorD = dd; mejor = e.malla.position; }
             }
+            if (jefe3D && jefe3D.despierta && !jefe3D.muerto) mejor = jefe3D.grupo.position;
             const v = Math.hypot(p.vx, p.vy, p.vz) * 2.2;
             if (mejor) {
-                tmpV.copy(mejor.malla.position).sub(pos).normalize().multiplyScalar(v);
+                tmpV.copy(mejor).sub(pos).normalize().multiplyScalar(v);
                 p.vx = tmpV.x; p.vy = tmpV.y; p.vz = tmpV.z;
             } else { p.vx *= -2; p.vy *= -2; p.vz *= -2; }
             parryExitoso(0, 0);
@@ -232,6 +235,10 @@ function actualizarProyectiles3D(dt) {
                         if (!p.explota) dañarMosquito3D(e, p.daño);
                         muere = true; break;
                     }
+                }
+                if (!muere && jefe3D && !jefe3D.muerto && distanciaJefe3D(pos) < 0.3) {
+                    if (!p.explota) dañarJefe3D(p.daño);
+                    muere = true;
                 }
             } else if (pos.distanceTo(cam.position) < 0.85 && !invulnerable()) {
                 if (p.tipo === 'picadura') picar(p.serotipo, 0, 0);
@@ -266,7 +273,7 @@ function actualizarObjetos3D(dt) {
     for (let i = monedas3D.length - 1; i >= 0; i--) {
         const m = monedas3D[i];
         m.rotation.y += 0.06 * dt;
-        m.position.y = 1.1 + Math.sin(t * 2.4 + i) * 0.16;
+        m.position.y = m.userData.y0 + Math.sin(t * 2.4 + i) * 0.16;
         if (cam.position.distanceTo(m.position) < 1.7) {
             fxChispas3D(m.position.x, m.position.y, m.position.z, 14, 1, 0.85, 0.15, 0.07);
             grupoNivel.remove(m); m.geometry.dispose(); m.material.dispose();
@@ -304,10 +311,11 @@ function actualizarObjetos3D(dt) {
             // Con Güero sin resolver el portal es decorado: no se sale de aquí
             // dejándolo tirado, y el juego lo dice en vez de fallar en silencio.
             if (cam.position.distanceTo(meta3D.position) < 2.6) {
-                if (gueroListo() && ivanListo()) completarNivel();
+                if (gueroListo() && ivanListo() && jefe3DListo()) completarNivel();
                 else if (!avisoGuero) {
                     avisoGuero = 90;
-                    aviso(ivanListo() ? 'NO TE VAS SIN GÜERO' : 'NO TE VAS SIN ATENDER A IVAN', 1800);
+                    aviso(!jefe3DListo() ? 'NO TE VAS CON ELLA VIVA'
+                          : ivanListo() ? 'NO TE VAS SIN GÜERO' : 'NO TE VAS SIN ATENDER A IVAN', 1800);
                 }
             }
         }

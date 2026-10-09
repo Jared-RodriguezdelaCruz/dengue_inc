@@ -424,7 +424,13 @@ function actualizarObjetos2D(dt) {
     }
 }
 
-// --- Jefe del nivel 4: el "Núcleo Mutante" ---------------------------------
+// --- Jefe del nivel 3: el "Núcleo Mutante" ---------------------------------
+// Fase 2 más corta sin bajarle el reto (DI-462): los ataques llegan más
+// seguidos y nunca pasan dos sin una embestida, así que las ventanas de daño
+// (el choque contra la pared) también. Siguen haciendo falta dos: un golpe doble al
+// núcleo aturdido la resolvía en un solo choque, y eso sí era bajarle el reto.
+const JEFE2_CD = { embestida: 35, trasAturdido: 40, anillo: 50, orbe: 50 };
+
 function dañarJefe(n) {
     if (!jefe || jefe.muerto) return;
     if (jefe.escudo) {
@@ -443,8 +449,8 @@ function dañarJefe(n) {
 
 function matarJefe() {
     jefe.muerto = true;
-    // Toda la secuencia (estallidos, grieta, carga del nivel 5) la lleva el
-    // bucle en frames: ver actualizarTransicion en 11-flujo.js.
+    // Toda la secuencia (estallidos, grieta y la pausa antes del nivel 4) la
+    // agenda iniciarTransicionFinal en 11-flujo.js.
     iniciarTransicionFinal(jefe.x + jefe.ancho / 2, jefe.y + jefe.alto / 2);
 }
 
@@ -483,7 +489,7 @@ function actualizarJefe(dt) {
         // solo vuelve en fase 1, donde parear es la lección.
         if (jefe.aturdido <= 0) {
             jefe.escudo = jefe.fase === 1;
-            jefe.cd = 70; jefe.patron = 0;
+            jefe.cd = jefe.fase === 1 ? 70 : JEFE2_CD.trasAturdido; jefe.patron = 0;
         }
         tocarJefe();
         return;
@@ -595,7 +601,7 @@ function jefeFase2(dt, jx, jy, cx, cy) {
                    COL.ROJO, TP.BRILLO, 0, 0.9, 0);
         if (jefe.telegrafiaT <= 0) {
             jefe.patron = 1; jefe.patronT = 120;
-            jefe.embisteVX = Math.sign(jx - cx) * 11.5 || 11.5;
+            jefe.embisteVX = Math.sign(jx - cx) * 13 || 13;
             sfx.dash(); sacudir(10);
         }
         return;
@@ -616,7 +622,7 @@ function jefeFase2(dt, jx, jy, cx, cy) {
                 explotar(jefe.x + jefe.ancho / 2, cy, 110, 0, true);
                 sacudir(20); congelar(9);
             }
-            jefe.patron = 0; jefe.cd = 55;
+            jefe.patron = 0; jefe.cd = JEFE2_CD.embestida;
         }
         return;
     }
@@ -625,18 +631,18 @@ function jefeFase2(dt, jx, jy, cx, cy) {
     if (jefe.patron === 2) {
         jefe.patronT -= dt;
         if (jefe.patronT <= 0) {
-            for (let i = 0; i < 10; i++) {
-                const a = (i / 10) * 6.283185 + jefe.giroAnillo;
-                nuevoProyectil(cx, cy, Math.cos(a) * 3.5, Math.sin(a) * 3.5,
+            for (let i = 0; i < 12; i++) {
+                const a = (i / 12) * 6.283185 + jefe.giroAnillo;
+                nuevoProyectil(cx, cy, Math.cos(a) * 4, Math.sin(a) * 4,
                     { daño: 1, col: COL.ROJO, tipo: 'onda', pareable: true,
                       ancho: 16, alto: 16, vida: 160 });
             }
-            jefe.giroAnillo += 0.36;          // los huecos rotan en cada andanada
+            jefe.giroAnillo += 0.3;           // los huecos rotan en cada andanada
             tono(260, 0.14, 'square', 0.05, 130);
             sacudir(5);
             jefe.andanadas--;
             jefe.patronT = 34;
-            if (jefe.andanadas <= 0) { jefe.patron = 0; jefe.cd = 80; }
+            if (jefe.andanadas <= 0) { jefe.patron = 0; jefe.cd = JEFE2_CD.anillo; }
         }
         return;
     }
@@ -650,7 +656,7 @@ function jefeFase2(dt, jx, jy, cx, cy) {
             nuevoProyectil(cx, cy, dx / d * 5.2, dy / d * 5.2,
                 { daño: 1, col: COL.TURQ, tipo: 'orbe', pareable: true,
                   ancho: 24, alto: 24, vida: 200 });
-            jefe.cd = 75;
+            jefe.cd = JEFE2_CD.orbe;
         }
         return;
     }
@@ -658,17 +664,20 @@ function jefeFase2(dt, jx, jy, cx, cy) {
     // --- Elegir el siguiente ataque -----------------------------------------
     if (jefe.cd > 0) {
         // Deriva hacia el jugador mientras espera: nunca se queda quieto del todo.
-        jefe.x = aprox(jefe.x, clamp(jx - jefe.ancho / 2, jefe.x0, jefe.x1 - jefe.ancho), 0.9 * dt);
+        jefe.x = aprox(jefe.x, clamp(jx - jefe.ancho / 2, jefe.x0, jefe.x1 - jefe.ancho), 1.3 * dt);
         return;
     }
-    const r = rnd();
-    if (r < 0.45) {
+    // Nunca dos ataques seguidos sin embestida: la embestida es la que abre la
+    // ventana de daño, y el anillo y el orbe solo alargaban la pelea.
+    const r = jefe.otros >= 1 ? 0 : rnd();
+    jefe.otros = r < 0.55 ? 0 : (jefe.otros || 0) + 1;
+    if (r < 0.55) {
         jefe.telegrafiaT = 40;
         jefe.embisteY = alturaEmbestida(jy);
         aviso('¡EMBESTIDA!', 800);
         sfx.telegrafia();
     } else if (r < 0.85) {
-        jefe.patron = 2; jefe.andanadas = 3; jefe.patronT = 16;
+        jefe.patron = 2; jefe.andanadas = 2; jefe.patronT = 16;
         sfx.telegrafia();
     } else {
         jefe.cargaT = 26;

@@ -90,6 +90,9 @@
           <div id="brujula-txt"></div>
       </div>
 
+      <!-- La Hembra (10b): nombre, escudo o fase y vida, solo durante la pelea. -->
+      <div id="jefe3d" class="oculto"></div>
+
       <div id="prompt-verbos" class="oculto"></div>
       <div id="tutorial" class="oculto" aria-live="polite"></div>
 
@@ -211,6 +214,13 @@
             </div>
             <button id="btn-aine" onclick="comprar('aine')">Comprar</button>
         </div>
+        <div class="item">
+            <div>
+                <h3>🐈 La Gorda — 15 💰</h3>
+                <p>Te sigue y caza a los mosquitos que vuelan bajo cerca de ti. <b>En la vida real:</b> ningún gato controla el dengue; los criaderos los cierras tú.</p>
+            </div>
+            <button id="btn-gata" onclick="comprar('gata')">Comprar</button>
+        </div>
         <div class="item" id="item-vacuna">
             <div>
                 <h3>💉 Vacuna Qdenga — 20 💰</h3>
@@ -242,6 +252,7 @@
 <script src="js/08-mundo3d-gen.js?v=b6"></script>
 <script src="js/09-mundo3d-jugador.js?v=b6"></script>
 <script src="js/10-mundo3d-ia.js?v=b6"></script>
+<script src="js/10b-jefe3d.js?v=b6"></script>
 <script src="js/11-flujo.js?v=b6"></script>
 <script src="js/11b-educacion.js?v=b6"></script>
 <script src="js/11c-guero.js?v=b6"></script>
@@ -249,6 +260,7 @@
 <script src="js/11e-patio.js?v=b6"></script>
 <script src="js/11f-menu.js?v=b6"></script>
 <script src="js/11g-tutorial.js?v=b6"></script>
+<script src="js/11h-gata.js?v=b6"></script>
 <script src="js/12-bucle.js?v=b6"></script>
 </body>
 </html>
