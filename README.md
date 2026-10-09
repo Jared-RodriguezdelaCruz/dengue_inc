@@ -24,7 +24,9 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
 ## Características principales
 
 - Juego en navegador con HTML, CSS y JavaScript puro
-- Modo 2D y 3D alternados por nivel
+- Dos niveles en 2D (1 y 3) y tres en 3D (2, 4 y 5), con un jefe por dimensión: el Núcleo Mutante al final del nivel 3 y la Hembra en el nivel 4, que se protege con sus propios criaderos
+- Plataformas y desniveles en 3D que se suben saltando
+- La Gorda, una gata aliada que se compra en la tienda y caza mosquitos en 2D y 3D
 - Generación procedural de niveles con semilla configurable
 - Sistema de tienda, inventario, fichas y mejoras
 - Sistema de combate con dash, raqueta, esquives y ataque
@@ -53,6 +55,7 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
   - `08-mundo3d-gen.js` — generación y preparación del mundo 3D
   - `09-mundo3d-jugador.js` — control del jugador en 3D
   - `10-mundo3d-ia.js` — IA y objetos del mundo 3D
+  - `10b-jefe3d.js` — la Hembra, el jefe 3D del nivel 4
   - `11-flujo.js` — niveles, tienda, HUD, menús y transiciones
   - `11b-educacion.js` — capa educativa, fichas, reportes y estadísticas
   - `11c-guero.js` — lógica del personaje Güero y el final
@@ -60,6 +63,7 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
   - `11e-patio.js` — Modo Patio: inspeccionar una casa sin enemigos
   - `11f-menu.js` — pantalla de título y submenús (Jugar, Opciones, Ayuda, Créditos)
   - `11g-tutorial.js` — minitutorial del primer nivel 2D y el primer 3D
+  - `11h-gata.js` — la Gorda, gata aliada (2D y 3D)
   - `12-bucle.js` — bucle principal y arranque
 - `assets/` — texturas, sonidos, favicon (`favicon.svg`, `icono-32.png`, `icono-180.png`) y la imagen para compartir (`og-imagen.png`)
 
@@ -107,9 +111,10 @@ http://localhost:8000
 - En la pausa, el botón *Opciones* permite cambiar la sensibilidad 3D sin salir del nivel
 
 ### Solo en 3D
+- `Espacio` — saltar (las losas grises se suben de un salto; para bajar, camina fuera del borde)
 - `Q` (mantener) — gancho: te jala hacia la pared o el mosquito que tengas en la mira. Cuesta estamina y tiene cooldown; al mosquito lo aturde y le quita 1 de vida, no lo mata de un golpe.
 - `Ctrl + Shift` — rodar
-- El ratón se captura solo al entrar a un nivel 3D o al volver de la pausa, la tienda o el fichero. Si el navegador no lo permite (por ejemplo, tras la transición al nivel 5), basta un clic o cualquier tecla.
+- El ratón se captura solo al entrar a un nivel 3D o al volver de la pausa, la tienda o el fichero. Si el navegador no lo permite, basta un clic o cualquier tecla.
 
 ### Medidas para criaderos
 - `1` — lava
@@ -151,7 +156,8 @@ Se aprende jugando y decidiendo, no solo leyendo:
 - **El juego premia lo que enseña:** cerrar un criadero da monedas y el mosquito que acaba de salir de uno no da nada. El abate solo sirve donde el agua se guarda.
 - **Quiz antes y después:** las mismas 5 preguntas al empezar y antes del final, para ver cuánto se aprendió. El resultado se guarda en el navegador para los playtests.
 - **Entre niveles:** repaso de las fichas que se abrieron y retos que se contestan antes de ver la respuesta (¿mito o realidad?, ¿a dónde llevas al vecino?).
-- **En el mundo:** cada criadero muestra el ciclo huevos → larvas → pupas, llueve una vez por nivel, e Ivan (nivel 2) y Güero (nivel 5) enseñan las dos fases de la enfermedad.
+- **Los jefes enseñan algo:** el del nivel 3 solo baja el escudo con la raqueta; la Hembra del nivel 4 no cae mientras sus envases tengan agua (o solo se hayan vaciado), así que hay que cerrarlos con su medida.
+- **En el mundo:** cada criadero muestra el ciclo huevos → larvas → pupas, llueve una vez por nivel, e Ivan (nivel 2) y Güero (nivel 5) enseñan las dos fases de la enfermedad. A los dos se les atiende con los criaderos ya cerrados: un enfermo rodeado de criaderos vuelve a alimentar la cadena.
 - **Fuera de la partida:** *Modo Patio* (una casa con 10 criaderos, sin enemigos), *Aprende* (todo el contenido con sus fuentes) y, al terminar, la lista *Revisa tu casa* para imprimir o mandar por WhatsApp.
 
 Todo dato sale de `js/01b-datos-dengue.js` con su fuente, y la Action *Validar* revisa que cada ficha, mito, realidad y pregunta la cite.

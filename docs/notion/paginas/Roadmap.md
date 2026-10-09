@@ -4,20 +4,20 @@ Las tareas, con su responsable, fecha límite y estado, viven en **✅ Tareas**.
 
 ## Dónde estamos
 
-**Avance al 9 de octubre: 57 de 131 tareas hechas (44 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
+**Avance al 9 de octubre: 57 de 132 tareas hechas (43 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
 
 El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas de JavaScript sin dependencias (salvo Three.js), **5 niveles procedurales** (1, 3 y 4 en 2D; 2 y 5 en 3D en primera persona), jefe de dos fases, transición dimensional, final con Güero y una capa educativa en la que cada dato cita su fuente.
 
 | Área | Estado | Qué hay / qué falta |
 |---|---|---|
 | Motor y entrada | ✅ Listo | PRNG con semilla, dt normalizado, teclado, ratón y mando |
-| Mundo 2D | ✅ Listo | Funciona a la perfección (Jared y Gael): 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases. Solo falta acelerar la fase 2 del jefe (DI-462) |
-| Mundo 3D | ✅ Listo | Salas procedurales, muros instanciados, brújula. Vienen el nivel 4 en 3D, el jefe 3D y plataformas (DI-463 a DI-465) |
+| Mundo 2D | ✅ Listo | Funciona a la perfección (Jared y Gael): 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases. En la rama `feature/jefes-3d-gata` el jefe pasa al nivel 3, el último 2D, y su fase 2 dura un 39 % menos sin perder ningún aviso (DI-462) |
+| Mundo 3D | 🟡 En curso | Salas procedurales, muros instanciados, brújula. En la rama `feature/jefes-3d-gata`: el nivel 4 pasa a 3D (DI-464) con la Hembra, un jefe que se protege con sus criaderos (DI-463), plataformas que se suben saltando (DI-465) y la Gorda, gata aliada en 2D y 3D (DI-468) |
 | Capa educativa | 🟡 Rediseño | La maestra pidió repensar cómo enseñamos: casi todo se leía y el juego premiaba matar mosquitos. En la rama `feature/educacion-rediseno` ya está casi todo (DI-471 a DI-484 y DI-486): cerrar criaderos paga, quiz antes y después, repaso y retos entre niveles, ciclo de vida, lluvia, Ivan en fase febril, Modo Patio, «Aprende» y «Revisa tu casa». Son 25 fichas, 5 mitos y 5 realidades, todo con fuente. Faltan la revisión de Ana (DI-484), medir en los playtests (DI-485) y los niveles en lugares reales (DI-487) |
 | Flujo de equipo | ✅ Listo | Notion, Discord, ramas protegidas, PRs con revisión, plantillas y CODEOWNERS. Falta subir `CONTRIBUTING.md` (DI-202) |
 | Automatización | ✅ Listo | *Validar* y *Título del PR* en cada PR; el bot de kudos felicita en Discord cada PR fusionado |
 | Publicación y monitoreo | ✅ Listo | GitHub Pages con cache-busting por commit, UptimeRobot cada 5 min y badges en el README |
-| Bugs del juego publicado | 🟡 En curso | Los 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) ya están arreglados y verificados (DI-460, DI-461); quedan 9 mejoras, repartidas en F4 por área |
+| Bugs del juego publicado | 🟡 En curso | Los 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) ya están arreglados y verificados (DI-460, DI-461). De las mejoras pedidas faltan el celular (DI-424, DI-430) y las que esperan material: las skins (DI-466, DI-467) y la música (DI-470) |
 | Audio | 🟡 Parcial | 12 efectos sintetizados; **no hay música** ni control de volumen (DI-401 a DI-412 y DI-470) |
 | Interfaz y marca | 🟡 Casi lista | En la rama `feature/menu-tutorial`: pantalla de título estilo Katana Zero con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos (DI-469, DI-422, DI-423), nombre único «Dengue Inc» (DI-420), favicon y vista previa al compartir (DI-456) y tutorial la primera vez (DI-426). Faltan los créditos de audio (DI-412) |
 | Accesibilidad y celular | 🔴 Falta | Ya se pueden reducir destellos y sacudidas (DI-423); los serotipos se siguen distinguiendo solo por color (DI-425) y no se puede jugar en celular (DI-430) |
@@ -64,12 +64,12 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | Integrante | Rol | Tareas hechas | Pendientes | Pendientes P0 | Horas estimadas pendientes |
 |---|---|---|---|---|---|
 | Ana | CEO / Project Manager | 12 | 9 | 4 | 25.5 |
-| Jared | Backend | 24 | 22 | 8 | 81 |
+| Jared | Backend | 24 | 23 | 8 | 82 |
 | Gael | Música y sonido | 2 | 10 | 6 | 38.5 |
 | Mau | Frontend | 11 | 19 | 3 | 77 |
 | Ivan | QA, métricas y documentación | 8 | 11 | 5 | 22.5 |
 | Todos | — | 0 | 3 | 3 | 1 |
-| **Total** | | **57** | **74** | **29** | **245.5** |
+| **Total** | | **57** | **75** | **29** | **246.5** |
 
 Cada tarea cuenta para su responsable; quien apoyó aparece en la columna *Apoyo* de ✅ Tareas. Por ejemplo, Gael en todo el mundo 2D (DI-008 a DI-011).
 

@@ -123,6 +123,7 @@ function dibujar2D() {
     if (jefe && !jefe.muerto) dibujarJefe();
     dibujarEnemigos();
     dibujarProyectiles();
+    dibujarGata2D();                 // la Gorda, si la compraste (11h)
     if (!jugador.muerto) dibujarJugador();
     dibujarParticulas();
     dibujarOndas();

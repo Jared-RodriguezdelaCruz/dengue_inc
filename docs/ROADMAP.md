@@ -50,20 +50,20 @@
 
 ## 3. Dónde estamos
 
-**Avance al 9 de octubre: 57 de 131 tareas hechas (44 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
+**Avance al 9 de octubre: 57 de 132 tareas hechas (43 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
 
 El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas de JavaScript sin dependencias (salvo Three.js), **5 niveles procedurales** (1, 3 y 4 en 2D; 2 y 5 en 3D en primera persona), jefe de dos fases, transición dimensional, final con Güero y una capa educativa en la que cada dato cita su fuente.
 
 | Área | Estado | Qué hay / qué falta |
 |---|---|---|
 | Motor y entrada | ✅ Listo | PRNG con semilla, dt normalizado, teclado, ratón y mando |
-| Mundo 2D | ✅ Listo | Funciona a la perfección (Jared y Gael): 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases. Solo falta acelerar la fase 2 del jefe (DI-462) |
-| Mundo 3D | ✅ Listo | Salas procedurales, muros instanciados, brújula. Vienen el nivel 4 en 3D, el jefe 3D y plataformas (DI-463 a DI-465) |
+| Mundo 2D | ✅ Listo | Funciona a la perfección (Jared y Gael): 8 plantillas de chunk validadas, 4 tipos de mosquito, jefe de 2 fases. En la rama `feature/jefes-3d-gata` el jefe pasa al nivel 3, el último 2D, y su fase 2 dura un 39 % menos sin perder ningún aviso (DI-462) |
+| Mundo 3D | 🟡 En curso | Salas procedurales, muros instanciados, brújula. En la rama `feature/jefes-3d-gata`: el nivel 4 pasa a 3D (DI-464) con la Hembra, un jefe que se protege con sus criaderos (DI-463), plataformas que se suben saltando (DI-465) y la Gorda, gata aliada en 2D y 3D (DI-468) |
 | Capa educativa | 🟡 Rediseño | La maestra pidió repensar cómo enseñamos: casi todo se leía y el juego premiaba matar mosquitos. En la rama `feature/educacion-rediseno` ya está casi todo (DI-471 a DI-484 y DI-486): cerrar criaderos paga, quiz antes y después, repaso y retos entre niveles, ciclo de vida, lluvia, Ivan en fase febril, Modo Patio, «Aprende» y «Revisa tu casa». Son 25 fichas, 5 mitos y 5 realidades, todo con fuente. Faltan la revisión de Ana (DI-484), medir en los playtests (DI-485) y los niveles en lugares reales (DI-487) |
 | Flujo de equipo | ✅ Listo | Notion, Discord, ramas protegidas, PRs con revisión, plantillas y CODEOWNERS. Falta subir `CONTRIBUTING.md` (DI-202) |
 | Automatización | ✅ Listo | *Validar* y *Título del PR* en cada PR; el bot de kudos felicita en Discord cada PR fusionado |
 | Publicación y monitoreo | ✅ Listo | GitHub Pages con cache-busting por commit, UptimeRobot cada 5 min y badges en el README |
-| Bugs del juego publicado | 🟡 En curso | Los 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) ya están arreglados y verificados (DI-460, DI-461); quedan 9 mejoras, repartidas en F4 por área |
+| Bugs del juego publicado | 🟡 En curso | Los 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) ya están arreglados y verificados (DI-460, DI-461). De las mejoras pedidas faltan el celular (DI-424, DI-430) y las que esperan material: las skins (DI-466, DI-467) y la música (DI-470) |
 | Audio | 🟡 Parcial | 12 efectos sintetizados; **no hay música** ni control de volumen (DI-401 a DI-412 y DI-470) |
 | Interfaz y marca | 🟡 Casi lista | En la rama `feature/menu-tutorial`: pantalla de título estilo Katana Zero con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos (DI-469, DI-422, DI-423), nombre único «Dengue Inc» (DI-420), favicon y vista previa al compartir (DI-456) y tutorial la primera vez (DI-426). Faltan los créditos de audio (DI-412) |
 | Accesibilidad y celular | 🔴 Falta | Ya se pueden reducir destellos y sacudidas (DI-423); los serotipos se siguen distinguiendo solo por color (DI-425) y no se puede jugar en celular (DI-430) |
@@ -119,12 +119,12 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | Integrante | Rol | Tareas hechas | Pendientes | Pendientes P0 | Horas estimadas pendientes |
 |---|---|---|---|---|---|
 | Ana | CEO / Project Manager | 12 | 9 | 4 | 25.5 |
-| Jared | Backend | 24 | 22 | 8 | 81 |
+| Jared | Backend | 24 | 23 | 8 | 82 |
 | Gael | Música y sonido | 2 | 10 | 6 | 38.5 |
 | Mau | Frontend | 11 | 19 | 3 | 77 |
 | Ivan | QA, métricas y documentación | 8 | 11 | 5 | 22.5 |
 | Todos | — | 0 | 3 | 3 | 1 |
-| **Total** | | **57** | **74** | **29** | **245.5** |
+| **Total** | | **57** | **75** | **29** | **246.5** |
 
 Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)». Por ejemplo, Gael en todo el mundo 2D (DI-008 a DI-011).
 
@@ -259,11 +259,11 @@ Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)».
 | DI-444 | Arreglar los bugs críticos del playtest | Jared (+ Mau) | 24 nov | P0 | 4 | Todo hallazgo P0 del playtest 1 (DI-454) queda cerrado antes del playtest 2. |
 | DI-460 | Arreglar: la vida del HUD no se actualiza al recibir daño | Jared (+ Mau) | 13 oct | P0 | 2 | Al recibir daño, los corazones del HUD no bajan en ese momento. Cada golpe y cada curación se ven al instante, en 2D y en 3D, también después de reintentar un nivel. ✅ Verificado el 9 oct: en 2D, en 3D y tras reintentar, los corazones bajan en el mismo instante del golpe. |
 | DI-461 | Arreglar: no se pueden elegir con el ratón las opciones para salvar a Güero | Jared (+ Ivan) | 13 oct | P0 | 1 | Hoy el cursor no se mueve sobre las opciones y hay que abrir la tienda con T para liberarlo. Al abrirse el panel de Güero el ratón queda libre y cada opción se elige con clic, teclado o mando. ✅ Verificado el 9 oct: con el panel abierto, cada opción se elige con clic sin capturar el ratón. |
-| DI-462 | Jefe 2D: fase 2 más rápida pero igual de difícil | Jared (+ Gael) | 27 oct | P1 | 3 | La fase 2 dura de más. Que se resuelva en menos tiempo (embestidas más seguidas o núcleo con menos vida) sin quitar el aviso antes de cada ataque ni bajar el reto. |
-| DI-463 | Jefe final en 3D | Jared (+ Mau) | 17 nov | P1 | 8 | Sala de arena con un jefe propio del modo 3D y aviso antes de cada ataque, como el jefe 2D. En qué nivel queda se decide junto con DI-464. |
-| DI-464 | Nivel 4 en 3D: dos niveles 2D y dos 3D | Jared (+ Mau) | 3 nov | P1 | 3 | Hoy NIVEL_ES_2D marca 1, 3 y 4 como 2D, y el jefe 2D vive en el 4. Quedan 1 y 3 en 2D y 2 y 4 en 3D; el jefe 2D se mueve a un nivel 2D y el 5 sigue siendo el final con Güero. |
-| DI-465 | Plataformas en los niveles 3D | Jared (+ Mau) | 24 nov | P2 | 5 | Plataformas y desniveles dentro de las salas, alcanzables con el salto 3D; la generación valida que la meta siga siendo alcanzable. |
-| DI-468 | Gato aliado que ataca mosquitos (se compra en la tienda) | Jared (+ Mau) | 17 nov | P2 | 6 | Aliado inspirado en la Gorda (imagen de referencia): se compra en la tienda y acompaña al jugador en 2D y 3D atacando a los mosquitos cercanos. |
+| DI-462 | Jefe 2D: fase 2 más rápida pero igual de difícil | Jared (+ Gael) | 27 oct | P1 | 3 | El Núcleo Mutante pasa al nivel 3, el último 2D. En la fase 2 los ataques llegan más seguidos (esperas de 55-80 a 35-50 frames), nunca pasan dos ataques sin una embestida, que además es más rápida, y el anillo es de 2 andanadas de 12 balas. Cada ataque conserva su aviso. Con un jugador simulado que solo pega cuando el jefe se estrella, la fase 2 bajó de 849 a 519 frames en promedio (10 partidas con 5 semillas), un 39 % menos, y siguen haciendo falta dos choques. |
+| DI-463 | Jefe final en 3D | Jared (+ Mau) | 17 nov | P1 | 8 | La Hembra, en el nivel 4: una arena de 12×12 en el borde del mapa con 3 envases propios y 4 pilares. Mientras alguno de sus envases tenga agua (o solo se haya vaciado) tiene escudo y desova en ellos; cerrarlos con su medida la deja expuesta. Ataca con una picada que marca un aro rojo en el suelo, el desove y un anillo de picaduras que se salta o se devuelve con la raqueta; cada ataque se avisa antes. El portal abre cuando cae y no quedan criaderos. |
+| DI-464 | Nivel 4 en 3D: dos niveles 2D y dos 3D | Jared (+ Mau) | 3 nov | P1 | 3 | NIVEL_ES_2D marca el 1 y el 3; el 2, el 4 y el 5 son 3D. Al caer el jefe 2D, la grieta lleva a la pausa del nivel 3 (con su repaso y el triage) y de ahí al 4 en 3D. Del 4 al 5 hay pausa con «¿mito o realidad?», que antes no existía. |
+| DI-465 | Plataformas en los niveles 3D | Jared (+ Mau) | 24 nov | P2 | 5 | Losas de 0.9, 1.4 y 1.9 de alto que ocupan celdas enteras (el salto 3D llega a 2.75): torres con monedas arriba en las salas de botín, tarimas en las de pelea y pilares en la arena del jefe. Son pared hasta que los pies las rebasan, y se baja del borde. Una búsqueda caminando, sin saltar, comprueba que los envases, el portal, Ivan y Güero se alcancen; en 50 semillas por nivel no hizo falta quitar ninguna. |
+| DI-468 | Gato aliado que ataca mosquitos (se compra en la tienda) | Jared (+ Mau) | 17 nov | P2 | 6 | La Gorda (15 💰), en 2D y en 3D: te sigue, salta muros y huecos, reaparece si se queda atrás y caza a los mosquitos que vuelan bajo cerca de ti (los aturde y les quita vida). No cierra criaderos ni toca a los jefes, y lo que caza paga lo mismo que lo tuyo. La tienda aclara que ningún gato controla el dengue. Dibujo provisional con formas hasta tener la imagen de la Gorda. |
 | DI-471 | Cerrar criaderos paga; matar mosquitos casi no | Jared (+ Ana) | 20 oct | P0 | 2 | Hoy las monedas salen de matar mosquitos y cerrar un criadero no da nada, justo lo contrario de la ficha «Matar mosquitos no sirve». La medida correcta da 3 monedas (el abate 2), el mosquito que sale de un criadero vivo no suelta moneda y el reporte final compara mosquitos aplastados contra criaderos cerrados. |
 | DI-472 | El abate solo cierra lo que guarda agua | Jared (+ Ana) | 20 oct | P0 | 1 | Hoy su explosión cierra cualquier criadero del radio y con 10 💰 te saltas las 4 medidas. Solo cierra tinacos, cisternas y tambos (verbo «tapa»); en lo demás avisa qué medida pide. Igual en 2D y 3D. |
 | DI-473 | Desbloquear las fichas «Pica de día» y «Vuela menos de 100 m» | Jared (+ Ivan) | 20 oct | P0 | 1 | Hoy ningún evento las abre y el fichero se queda en 19/21. «Pica de día» se abre con la primera picadura; «Vuela menos de 100 m» al cerrar un criadero, cuando sus mosquitos se dispersan. |
@@ -272,6 +272,7 @@ Cada tarea cuenta para su responsable; quien apoyó aparece como «(+ nombre)».
 | DI-476 | Ciclo de vida visible en el criadero | Jared (+ Mau) | 17 nov | P1 | 4 | Cada criadero activo muestra la etapa de su cría (huevos → larvas → pupas) con una barra, en 2D sobre el envase y en 3D en el aviso de medidas; al completarse sale el mosquito. La primera cría tarda más y cerrarlo antes de que nazca el primero da +2 monedas. Ficha nueva «De huevo a mosquito en una semana» (CDC). Las semillas siguen dando los mismos niveles. |
 | DI-477 | Repelente que protege, insecticida que no resuelve | Jared (+ Mau) | 17 nov | P2 | 3 | El arma que dispara pasa a ser «Insecticida», y comprarla abre la ficha «Matar mosquitos no sirve». El repelente es consumible (4 monedas): 30 s en que casi no te pican, con contador en el HUD y ficha propia. |
 | DI-478 | La lluvia reactiva los criaderos | Jared (+ Gael) | 24 nov | P2 | 4 | Una vez por nivel llueve, entre los 45 y los 70 s: lo vaciado sin tallar revive al instante. Al escampar sale «Después de llover, revisa el patio» y una ficha nueva. |
+| DI-488 | Güero solo se atiende con los criaderos cerrados | Jared (+ Ana) | 27 oct | P1 | 1 | Como Ivan: mientras queden criaderos, Güero solo pide que los cierres; no sale su panel y su reloj no arranca. |
 
 #### Calidad, documentación y contenido — Ivan y Ana
 

@@ -90,8 +90,12 @@ const MODO_COCO_PERMITIDO = location.protocol === 'file:' ||
     /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ||
     new URLSearchParams(location.search).has('coco');
 
-// Los niveles impares (1, 3) y el 4 son 2D; el 2 y el post-transición son 3D.
-const NIVEL_ES_2D = n => n === 1 || n === 3 || n === 4;
+// Dos niveles por dimensión antes del final: el 1 y el 3 son 2D; el 2 y el 4 son
+// 3D, y el 5 (Güero) también. Cada dimensión cierra con su jefe: el Núcleo
+// Mutante al final del 3 y la Hembra en la sala del portal del 4.
+const NIVEL_ES_2D = n => n === 1 || n === 3;
+const NIVEL_JEFE_2D = 3;
+const NIVEL_JEFE_3D = 4;
 
 // ---------------------------------------------------------------------------
 //  2. UTILIDADES Y PRNG CON SEMILLA

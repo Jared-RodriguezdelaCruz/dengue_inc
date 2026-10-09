@@ -257,6 +257,9 @@ function aplicarAbate(c) {
 }
 
 function avisarSalidaAbierta() {
+    // Con la Hembra viva (nivel 4) el portal espera a que caiga: matarJefe3D
+    // vuelve a llamar aquí. Ella misma avisa que se le cayó el escudo.
+    if (!jefe3DListo()) return;
     if (modoRender === '3d') metaAbierta = true;
     aviso('SIN CRIADEROS · LA SALIDA SE ABRIÓ', 2200);
     destellar('#2ecc71', 0.3, 520);

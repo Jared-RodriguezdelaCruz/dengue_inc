@@ -95,6 +95,7 @@ function loop(t) {
                 fase = 'jugador2d';   actualizarJugadorComun(dt); actualizarJugador2D(dt);
                 fase = 'enemigos2d';  actualizarEnemigos2D(dt);
                 fase = 'jefe';        actualizarJefe(dt);
+                fase = 'gata2d';      actualizarGata2D(dt);
                 fase = 'proyectiles2d'; actualizarProyectiles2D(dt);
                 fase = 'objetos2d';   actualizarObjetos2D(dt);
             }
@@ -110,6 +111,8 @@ function loop(t) {
             if (jugando && dt > 0) {
                 fase = 'jugador3d';   actualizarJugadorComun(dt); actualizarJugador3D(dt);
                 fase = 'mosquitos3d'; actualizarMosquitos3D(dt);
+                fase = 'jefe3d';      actualizarJefe3D(dt);
+                fase = 'gata3d';      actualizarGata3D(dt);
                 fase = 'proyectiles3d'; actualizarProyectiles3D(dt);
                 fase = 'objetos3d';   actualizarObjetos3D(dt);
             } else if (dt > 0 && estado !== estados.PAUSA) {
@@ -138,7 +141,7 @@ function loop(t) {
 
         // HUD continuo: solo toca unos pocos estilos, y no cada frame.
         fase = 'hud';
-        if (++contadorHUD % 3 === 0) actualizarHUDContinuo();
+        if (++contadorHUD % 3 === 0) { actualizarHUDContinuo(); pintarBarraJefe3D(); }
     } catch (e) {
         anotarErrorBucle(fase, e);
     } finally {
