@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a0845"/>
+      <stop offset=".55" stop-color="#c2306b"/>
+      <stop offset="1" stop-color="#ff8a3d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#cielo)"/>
+  <!-- Aedes aegypti: cuerpo oscuro con bandas blancas y alas cian -->
+  <path d="M30 31 L39 13 L45 16 Z" fill="#29f0ff"/>
+  <path d="M36 31 L51 17 L54 22 Z" fill="#29f0ff" opacity=".85"/>
+  <g stroke="#12031f" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M28 40 L21 52 M36 41 L36 55 M44 40 L52 51"/>
+    <path d="M15 35 L5 40"/>
+  </g>
+  <ellipse cx="37" cy="36" rx="15" ry="6" fill="#12031f"/>
+  <circle cx="19" cy="34" r="5.5" fill="#12031f"/>
+  <g stroke="#fff" stroke-width="2" stroke-linecap="round">
+    <path d="M33 31.5 L33 40.5 M39 31 L39 41 M45 31.5 L45 40.5"/>
+  </g>
+</svg>

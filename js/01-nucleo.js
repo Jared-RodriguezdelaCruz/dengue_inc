@@ -222,6 +222,8 @@ function accionGlobal(code) {
 }
 
 window.addEventListener('keydown', e => {
+    // Escribiendo la semilla, una «m» es una letra, no el atajo de silencio.
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'text') return;
     if (!teclas[e.code]) teclasNuevas[e.code] = true;
     teclas[e.code] = true;
 

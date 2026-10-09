@@ -133,6 +133,9 @@ function loop(t) {
             fase = 'lluvia';  actualizarLluvia(dt);
         }
 
+        // Minitutorial (11g): fuera del bloque anterior para ocultarse en la pausa.
+        fase = 'tutorial'; actualizarTutorial(dt);
+
         // HUD continuo: solo toca unos pocos estilos, y no cada frame.
         fase = 'hud';
         if (++contadorHUD % 3 === 0) actualizarHUDContinuo();

@@ -7,7 +7,7 @@
 
 ## Descripción
 
-Este proyecto es un juego web de acción y aprendizaje sobre la prevención del dengue, ambientado en Aguascalientes. Combina mecánicas tipo arcade, exploración en 2D y 3D, y elementos educativos para enseñar cómo se comporta el dengue, cuáles son los criaderos más comunes y qué medidas reales ayudan a prevenirlo.
+**Dengue Inc · Multiverso Aguascalientes** es un juego web de acción y aprendizaje sobre la prevención del dengue, ambientado en Aguascalientes. Combina mecánicas tipo arcade, exploración en 2D y 3D, y elementos educativos para enseñar cómo se comporta el dengue, cuáles son los criaderos más comunes y qué medidas reales ayudan a prevenirlo.
 
 El juego está pensado como una experiencia interactiva donde el jugador no solo avanza por niveles, sino que también aprende a identificar:
 
@@ -30,6 +30,10 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
 - Sistema de combate con dash, raqueta, esquives y ataque
 - Capa educativa con fichas, mitos reales, estadísticas y reportes finales
 - Uso de Three.js para la parte 3D
+- Pantalla de título estilo Katana Zero (VHS y neón) con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos, que se maneja con teclado, ratón o mando
+- Minitutorial la primera vez que se juega en 2D y en 3D
+- Opciones que se guardan en el navegador: volumen de música y efectos, sensibilidad 3D, reducir destellos y sacudidas, tutorial
+- Favicon y vista previa al compartir el link (Open Graph)
 - Sin necesidad de un servidor para abrirse en navegador local
 
 ## Estructura del proyecto
@@ -54,7 +58,10 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
   - `11c-guero.js` — lógica del personaje Güero y el final
   - `11d-ivan.js` — Ivan, el caso de la fase febril en el nivel 2
   - `11e-patio.js` — Modo Patio: inspeccionar una casa sin enemigos
+  - `11f-menu.js` — pantalla de título y submenús (Jugar, Opciones, Ayuda, Créditos)
+  - `11g-tutorial.js` — minitutorial del primer nivel 2D y el primer 3D
   - `12-bucle.js` — bucle principal y arranque
+- `assets/` — texturas, sonidos, favicon (`favicon.svg`, `icono-32.png`, `icono-180.png`) y la imagen para compartir (`og-imagen.png`)
 
 ## Cómo ejecutar
 
@@ -91,8 +98,13 @@ http://localhost:8000
 - `T` — tienda
 - `C` — fichero
 - `Esc` — pausa
-- `M` — silenciar/activar audio (en el menú hay botones para música y sonidos por separado; se recuerdan al recargar)
+- `M` — silenciar/activar audio (en Opciones están la música y los sonidos por separado, con su volumen; se recuerdan al recargar)
 - `F3` — mostrar debug
+
+### Menús
+- `↑ / ↓` (o `W / S`) — elegir · `← / →` — ajustar una opción · `Enter` — aceptar · `Esc` — volver
+- Con el ratón: pasar por encima elige y el clic acepta
+- En la pausa, el botón *Opciones* permite cambiar la sensibilidad 3D sin salir del nivel
 
 ### Solo en 3D
 - `Q` (mantener) — gancho: te jala hacia la pared o el mosquito que tengas en la mira. Cuesta estamina y tiene cooldown; al mosquito lo aturde y le quita 1 de vida, no lo mata de un golpe.
@@ -120,7 +132,7 @@ Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. 
 - `View` / `Share` / `−` — silenciar
 - `L3` — rodar (3D)
 - `R3` (clic del stick derecho) — fichero
-- Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección; en el primer o el último botón, desplaza el texto que falte por ver)
+- Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección; en el primer o el último botón, desplaza el texto que falte por ver; en la pantalla de título, `← →` ajustan las opciones)
 
 El código está en `js/01c-mando.js`.
 

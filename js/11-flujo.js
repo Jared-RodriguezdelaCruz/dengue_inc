@@ -396,9 +396,12 @@ function alternarSonidosMenu() {
 
 function mostrarMenu(o) {
     opcionesActivas = null;              // las teclas 1-4 ya no contestan lo de antes
+    ocultarTitulo();                     // el quiz, Aprende o el Patio van encima del título
     document.getElementById('pm-titulo').innerHTML = o.titulo;
     document.getElementById('pm-desc').innerHTML = o.desc || '';
     document.getElementById('pm-controles').innerHTML = o.controles ? tablaControles() : '';
+    // Las opciones y los créditos ya traen lo suyo: ahí los botones de audio sobran.
+    document.getElementById('pm-audio').style.display = o.sinAudio ? 'none' : '';
     actualizarBotonesAudioMenu();
     document.getElementById('pm-semilla').innerHTML = o.semilla
         ? 'Semilla (deja vacío para una nueva): <input id="in-semilla" value="' + semillaRun + '">'
@@ -434,25 +437,13 @@ function hashSemilla(txt) {
     return Math.abs(h | 0);
 }
 
+/** La pantalla de título (11f-menu.js): Jugar, Modo Patio, Aprende, Opciones,
+ *  Ayuda y Créditos. Todo lo que dice «Menú principal» o «Volver» llega aquí. */
 function menuPrincipal() {
     estado = estados.MENU;
     abortarTransicion();
-    mostrarMenu({
-        titulo: 'Dengue: Multiverso',
-        desc: 'Aguascalientes tiene un problema de criaderos… y una grieta dimensional.<br>' +
-              'Cinco niveles <b>generados por procedimientos</b> que cambian con cada semilla, alternando ' +
-              'plataformas 2D y exploración 3D en primera persona.<br><br>' +
-              '<b>Dash</b> te vuelve invulnerable. La <b>raqueta</b> (F) achicharra lo que tengas ' +
-              'delante, devuelve los proyectiles morados y aturde a lo que esté cerca — es la ' +
-              'mecánica que abre el escudo del jefe.',
-        controles: true, semilla: true,
-        boton: 'Iniciar', accion: empezarJuego,
-        // Sin enemigos: encontrar y cerrar los criaderos de una casa (11e).
-        boton2: 'Modo Patio', accion2: abrirPatio,
-        // Para consultar sin jugar: lo mismo que enseña el juego, con sus fuentes.
-        boton3: 'Aprende', accion3: () => abrirAprende('medidas'),
-        pie: BUILD
-    });
+    ocultarMenu();
+    mostrarTitulo();
 }
 
 function empezarJuego() {
@@ -489,9 +480,10 @@ function finalGuero() {
     quizFinal(pantallaFinal);
 }
 
-function pantallaFinal() {
+/** `deVuelta`: se regresa de los créditos; el desenlace ya sonó. */
+function pantallaFinal(deVuelta) {
     const salvado = guero && guero.salvado;
-    if (salvado) sfx.nivel(); else sfx.muerte();
+    if (deVuelta !== true) { if (salvado) sfx.nivel(); else sfx.muerte(); }
     mostrarMenu({
         titulo: salvado ? 'Transmisión cortada' : 'Cortaste la transmisión… casi',
         desc: (salvado
@@ -501,9 +493,19 @@ function pantallaFinal() {
               desenlaceGuero() + resultadoQuiz() + repasoFichas('Lo último que aprendiste') +
               reporteFinal() + revisaTuCasa() +
               '<div style="color:#90a4ae;font-size:11px;margin-top:8px">Semilla jugada: ' + semillaRun + '</div>',
-        boton: 'Jugar otra vez', accion: menuPrincipal
+        boton: 'Jugar otra vez', accion: menuPrincipal,
+        boton2: 'Créditos', accion2: creditosFinal
     });
     montarRevisaTuCasa();
+}
+
+function creditosFinal() {
+    mostrarMenu({
+        titulo: 'Créditos',
+        desc: '<div class="t-cred-final">' + htmlCreditos() + '</div>', sinAudio: true,
+        boton: 'Volver', accion: () => pantallaFinal(true)
+    });
+    elPantalla.scrollTop = 0;
 }
 
 function pausar() {
@@ -511,13 +513,28 @@ function pausar() {
     estadoPrevio = estado;
     estado = estados.PAUSA;
     detenerDialogoGuero();
+    menuPausa();
+}
+
+function menuPausa() {
     mostrarMenu({
         titulo: 'Pausa',
         desc: 'Nivel ' + nivelActual + ' · semilla ' + semillaRun + ' · ' + fichas + ' 💰',
         controles: true,
         boton: 'Continuar', accion: reanudar,
-        boton2: 'Menú principal', accion2: menuPrincipal
+        boton2: 'Menú principal', accion2: menuPrincipal,
+        // La sensibilidad 3D se ajusta mejor jugando que desde el título.
+        boton3: 'Opciones', accion3: opcionesPausa
     });
+}
+
+function opcionesPausa() {
+    mostrarMenu({
+        titulo: 'Opciones',
+        desc: '<div id="opc-pausa"></div>', sinAudio: true,
+        boton: 'Volver', accion: menuPausa
+    });
+    pintarOpciones(document.getElementById('opc-pausa'));
 }
 function reanudar() { ocultarMenu(); estado = estadoPrevio; capturarRaton3D(); }
 
@@ -558,6 +575,7 @@ function iniciarNivel(n) {
     actualizarHUD();
     sfx.nivel();
     aviso('NIVEL ' + n, 1100);
+    iniciarTutorial(n);      // la primera vez en el nivel 1 (2D) y en el primer 3D (11g)
     capturarRaton3D();       // si se llegó con un clic («Nivel 2», «Reintentar»), ya no hace falta otro
 }
 
@@ -635,7 +653,7 @@ const T_FIN    = 3900;   // ms: la animación ya bajó del todo
 function iniciarTransicionFinal(cx, cy) {
     estado = estados.TRANSICION;
     transicion = { t: 0, cx: cx, cy: cy, hito: 0, estallidos: 0, timers: [] };
-    contenedor.classList.add('temblor');
+    if (!opciones.menosSacudidas) contenedor.classList.add('temblor');
     sacudir(18);
     transicion.timers = [
         setTimeout(gueroEnLaGrieta,       T_GUERO),

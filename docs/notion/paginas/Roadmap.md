@@ -1,10 +1,10 @@
-Plan del proyecto de septiembre a diciembre de 2026. Última actualización: **8 de octubre de 2026**.
+Plan del proyecto de septiembre a diciembre de 2026. Última actualización: **9 de octubre de 2026**.
 
 Las tareas, con su responsable, fecha límite y estado, viven en **✅ Tareas**. Esta página resume hacia dónde vamos.
 
 ## Dónde estamos
 
-**Avance al 8 de octubre: 55 de 131 tareas hechas (42 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
+**Avance al 9 de octubre: 57 de 131 tareas hechas (44 %) y 4 de las 7 fases cerradas (F0 a F3).** El juego está publicado en [GitHub Pages](https://jared-rodriguezdelacruz.github.io/dengue_inc/) y monitoreado en la [página de estado de UptimeRobot](https://stats.uptimerobot.com/KSFC94VXhP). Cada cambio entra por PR revisado, con CI y bot de kudos en Discord. Lo que sigue es F4 (audio, pulido, el rediseño educativo que pidió la maestra y los bugs y mejoras que salieron del juego publicado) y el cierre (F5 y F6).
 
 El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas de JavaScript sin dependencias (salvo Three.js), **5 niveles procedurales** (1, 3 y 4 en 2D; 2 y 5 en 3D en primera persona), jefe de dos fases, transición dimensional, final con Güero y una capa educativa en la que cada dato cita su fuente.
 
@@ -17,11 +17,11 @@ El juego está completo y se puede jugar de principio a fin: unas 7,000 líneas 
 | Flujo de equipo | ✅ Listo | Notion, Discord, ramas protegidas, PRs con revisión, plantillas y CODEOWNERS. Falta subir `CONTRIBUTING.md` (DI-202) |
 | Automatización | ✅ Listo | *Validar* y *Título del PR* en cada PR; el bot de kudos felicita en Discord cada PR fusionado |
 | Publicación y monitoreo | ✅ Listo | GitHub Pages con cache-busting por commit, UptimeRobot cada 5 min y badges en el README |
-| Bugs del juego publicado | 🟡 En curso | 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) y 9 mejoras, repartidas en F4 por área |
+| Bugs del juego publicado | 🟡 En curso | Los 2 bugs P0 (la vida del HUD y el ratón en el final con Güero) ya están arreglados y verificados (DI-460, DI-461); quedan 9 mejoras, repartidas en F4 por área |
 | Audio | 🟡 Parcial | 12 efectos sintetizados; **no hay música** ni control de volumen (DI-401 a DI-412 y DI-470) |
-| Interfaz y marca | 🟡 Parcial | HUD y menús completos; faltan el menú principal nuevo (DI-469), créditos, opciones, nombre único, favicon y etiquetas meta (DI-456) |
-| Accesibilidad y celular | 🔴 Falta | Los serotipos se distinguen solo por color; no se pueden reducir destellos; no se puede jugar en celular (DI-430) |
-| Guardado | 🔴 Falta | Nada persiste entre sesiones |
+| Interfaz y marca | 🟡 Casi lista | En la rama `feature/menu-tutorial`: pantalla de título estilo Katana Zero con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos (DI-469, DI-422, DI-423), nombre único «Dengue Inc» (DI-420), favicon y vista previa al compartir (DI-456) y tutorial la primera vez (DI-426). Faltan los créditos de audio (DI-412) |
+| Accesibilidad y celular | 🔴 Falta | Ya se pueden reducir destellos y sacudidas (DI-423); los serotipos se siguen distinguiendo solo por color (DI-425) y no se puede jugar en celular (DI-430) |
+| Guardado | 🟡 Parcial | Se guardan las opciones, el audio, el tutorial visto, los resultados del quiz y el mejor tiempo del Modo Patio; faltan las fichas y el progreso (DI-440) |
 
 ## Fases
 
@@ -64,12 +64,12 @@ Las semanas van de **miércoles a martes** para que cada entrega caiga en martes
 | Integrante | Rol | Tareas hechas | Pendientes | Pendientes P0 | Horas estimadas pendientes |
 |---|---|---|---|---|---|
 | Ana | CEO / Project Manager | 12 | 9 | 4 | 25.5 |
-| Jared | Backend | 22 | 24 | 10 | 84 |
+| Jared | Backend | 24 | 22 | 8 | 81 |
 | Gael | Música y sonido | 2 | 10 | 6 | 38.5 |
 | Mau | Frontend | 11 | 19 | 3 | 77 |
 | Ivan | QA, métricas y documentación | 8 | 11 | 5 | 22.5 |
 | Todos | — | 0 | 3 | 3 | 1 |
-| **Total** | | **55** | **76** | **31** | **248.5** |
+| **Total** | | **57** | **74** | **29** | **245.5** |
 
 Cada tarea cuenta para su responsable; quien apoyó aparece en la columna *Apoyo* de ✅ Tareas. Por ejemplo, Gael en todo el mundo 2D (DI-008 a DI-011).
 

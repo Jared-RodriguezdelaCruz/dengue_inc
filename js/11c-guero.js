@@ -19,8 +19,8 @@ const audioGueroDialogue1 = new Audio('assets/sounds/guero_dialogue1.mp3');
 audioGueroDialogue1.preload = 'auto';
 // 1.0 es el máximo: HTMLMediaElement lanza IndexSizeError con un volumen > 1,
 // y esa excepción cortaba la carga del script entero. Para que suene más fuerte
-// hay que exportar el MP3 con más ganancia.
-audioGueroDialogue1.volume = 1.0;
+// hay que exportar el MP3 con más ganancia. Se escala con el volumen de efectos.
+audioGueroDialogue1.volume = clamp(opciones.volSfx, 0, 1);
 audioGueroDialogue1.loop = false;
 
 /** No reinicia si ya está hablando: así no se duplica el frame del hallazgo ni
