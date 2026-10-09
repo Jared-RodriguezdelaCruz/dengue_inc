@@ -2,8 +2,29 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dengue: Multiverso Aguascalientes v2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- «Agregar a inicio» en el celular abre el juego a pantalla completa. -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Dengue Inc · Multiverso Aguascalientes</title>
+<meta name="description" content="Videojuego educativo sobre el dengue en Aguascalientes: cierra los criaderos del mosquito con las cuatro medidas (lava, tapa, voltea y tira) en niveles 2D y 3D. Cada dato cita su fuente.">
+<meta name="theme-color" content="#2a0845">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=b6">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icono-32.png?v=b6">
+<link rel="apple-touch-icon" href="assets/icono-180.png?v=b6">
+<!-- Vista previa al pegar el link (WhatsApp, Discord…). La imagen va con URL
+     absoluta: los que generan la vista previa no resuelven rutas relativas. -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_MX">
+<meta property="og:site_name" content="Dengue Inc">
+<meta property="og:title" content="Dengue Inc · Multiverso Aguascalientes">
+<meta property="og:description" content="Cierra los criaderos. Aprende jugando: un juego sobre el dengue en Aguascalientes, con plataformas 2D y exploración 3D.">
+<meta property="og:url" content="https://jared-rodriguezdelacruz.github.io/dengue_inc/">
+<meta property="og:image" content="https://jared-rodriguezdelacruz.github.io/dengue_inc/assets/og-imagen.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dengue Inc: título neón sobre un atardecer con casas y tinacos">
+<meta name="twitter:card" content="summary_large_image">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link rel="stylesheet" href="css/estilos.css?v=b6">
 </head>
@@ -56,7 +77,8 @@
       <div class="hud" id="hud-sup-der">
           <span id="ui-fichas">0</span> 💰<br>
           <span style="color:#f1c40f" id="ui-arma">Botas</span><br>
-          <span style="font-size:11px; color:#90a4ae">T tienda · C fichero · ESC pausa</span>
+          <span style="color:#7bed9f;display:block" id="ui-repelente" class="oculto"></span>
+          <span class="solo-teclado" style="font-size:11px; color:#90a4ae">T tienda · C fichero · ESC pausa</span>
       </div>
 
       <div class="hud" id="hud-inf-izq"><span id="ui-objetivo"></span></div>
@@ -71,16 +93,60 @@
           <div id="brujula-txt"></div>
       </div>
 
+      <!-- La Hembra (10b): nombre, escudo o fase y vida, solo durante la pelea. -->
+      <div id="jefe3d" class="oculto"></div>
+
       <div id="prompt-verbos" class="oculto"></div>
+      <div id="tutorial" class="oculto" aria-live="polite"></div>
 
       <div id="crosshair"></div>
+      <div id="lluvia"></div>
       <div id="vineta"></div>
       <div id="destello"></div>
       <div id="aviso-central"></div>
       <div id="debug"></div>
 
-      <div id="pantalla-mensaje" class="overlay">
-          <h1 id="pm-titulo">Dengue: Multiverso</h1>
+      <!-- Pantalla de título (11f-menu.js): VHS y neón al atardecer. El fondo es
+           CSS y SVG en línea, sin imágenes: abre igual desde file://. -->
+      <div id="titulo" class="oculto">
+          <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+              <symbol id="mosquito" viewBox="0 0 40 24">
+                  <g fill="#12031f" stroke="#12031f" stroke-width="1.3" stroke-linecap="round">
+                      <ellipse cx="21" cy="13" rx="9" ry="3"/><circle cx="11" cy="12" r="2.6"/>
+                      <line x1="9" y1="12" x2="1" y2="14"/>
+                      <path d="M19 11 L25 2 L28 4 Z" opacity=".6"/><path d="M22 11 L31 4 L32 7 Z" opacity=".6"/>
+                      <line x1="17" y1="15" x2="12" y2="22"/><line x1="21" y1="15" x2="21" y2="23"/>
+                      <line x1="25" y1="15" x2="30" y2="22"/>
+                  </g>
+              </symbol>
+          </svg>
+          <div class="t-cielo"></div>
+          <div class="t-estrellas"></div>
+          <div class="t-sol"></div>
+          <svg id="t-skyline" class="t-skyline" viewBox="0 0 960 170" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="t-mosquitos" aria-hidden="true">
+              <svg class="t-mosq m1"><use href="#mosquito"/></svg>
+              <svg class="t-mosq m2"><use href="#mosquito"/></svg>
+              <svg class="t-mosq m3"><use href="#mosquito"/></svg>
+          </div>
+          <div class="t-scan" aria-hidden="true"></div>
+          <div class="t-vhs t-vhs-izq">▶ PLAY</div>
+          <div class="t-vhs t-vhs-der" id="t-cinta">SP 00:00:00</div>
+          <div class="t-cuerpo">
+              <div class="t-col">
+                  <h1 class="t-logo" data-text="DENGUE INC">DENGUE INC</h1>
+                  <div class="t-sub">Multiverso · Aguascalientes</div>
+                  <nav class="t-lista" id="t-lista" aria-label="Menú principal"></nav>
+                  <div class="t-desc" id="t-desc"></div>
+              </div>
+              <div class="t-panel oculto" id="t-panel"></div>
+          </div>
+          <div class="t-ayuda" id="t-ayuda"></div>
+          <div class="t-build" id="t-build"></div>
+      </div>
+
+      <div id="pantalla-mensaje" class="overlay oculto">
+          <h1 id="pm-titulo">Dengue Inc</h1>
           <div class="sub" id="pm-desc"></div>
           <div id="pm-controles"></div>
           <div id="pm-audio" class="fila-audio">
@@ -91,6 +157,7 @@
           <div style="margin-top:20px; display:flex; gap:12px;">
               <button class="btn" id="pm-boton" onclick="accionBotonMenu()">Iniciar</button>
               <button class="btn azul" id="pm-boton2" style="display:none" onclick="accionBotonMenu2()">Menú</button>
+              <button class="btn azul" id="pm-boton3" style="display:none" onclick="accionBotonMenu3()">Aprende</button>
           </div>
       </div>
     </div>
@@ -110,17 +177,24 @@
         <div class="nota">Cada compra es una medida real contra el <i>Aedes aegypti</i>.</div>
         <div class="item">
             <div>
-                <h3>🧴 Repelente — 5 💰</h3>
-                <p>Disparo rápido en línea recta. <b>En la vida real:</b> aplícalo sobre la piel expuesta para evitar picaduras.</p>
+                <h3>🧯 Insecticida — 5 💰</h3>
+                <p>Disparo rápido en línea recta. <b>En la vida real:</b> mata mosquitos adultos y da alivio de días, pero si el criadero sigue ahí, los repone.</p>
             </div>
-            <button id="btn-repelente" onclick="comprar('repelente')">Comprar</button>
+            <button id="btn-insecticida" onclick="comprar('insecticida')">Comprar</button>
         </div>
         <div class="item">
             <div>
                 <h3>🎒 Abate — 10 💰</h3>
-                <p>Se lanza en arco y <b>explota</b> al impactar. <b>En la vida real:</b> larvicida para tinacos y agua estancada.</p>
+                <p>Se lanza en arco y <b>explota</b>. Solo cierra tinacos, cisternas y tambos. <b>En la vida real:</b> larvicida para el agua que sí se guarda; lo demás se lava, se voltea o se tira.</p>
             </div>
             <button id="btn-abate" onclick="comprar('abate')">Comprar</button>
+        </div>
+        <div class="item">
+            <div>
+                <h3>🧴 Repelente — 4 💰</h3>
+                <p>30 s en que casi no te pican. <b>En la vida real:</b> se pone en la piel expuesta; no mata mosquitos ni cierra criaderos.</p>
+            </div>
+            <button id="btn-repelente" onclick="comprar('repelente')">Comprar</button>
         </div>
         <div class="item">
             <div>
@@ -143,6 +217,13 @@
             </div>
             <button id="btn-aine" onclick="comprar('aine')">Comprar</button>
         </div>
+        <div class="item">
+            <div>
+                <h3>🐈 La Gorda — 15 💰</h3>
+                <p>Te sigue y caza a los mosquitos que vuelan bajo cerca de ti. <b>En la vida real:</b> ningún gato controla el dengue; los criaderos los cierras tú.</p>
+            </div>
+            <button id="btn-gata" onclick="comprar('gata')">Comprar</button>
+        </div>
         <div class="item" id="item-vacuna">
             <div>
                 <h3>💉 Vacuna Qdenga — 20 💰</h3>
@@ -156,6 +237,17 @@
 
 </div>
 
+<!-- Controles táctiles (01d-tactil.js): fuera del marco, en px reales, para que
+     el pulgar no dependa de la escala. Solo se ven jugando en un celular. -->
+<div id="tactil" class="oculto"></div>
+
+<!-- Un teléfono en vertical no le da espacio al juego: se pide girarlo. -->
+<div id="girar" role="alert">
+  <div class="gi-tel" aria-hidden="true"></div>
+  <div class="gi-txt">Gira tu celular</div>
+  <div class="gi-sub">Dengue Inc se juega en horizontal</div>
+</div>
+
 <!-- El ?v= no es decoración: sin él, una recarga normal (F5 o doble clic)
      puede seguir sirviendo los .js viejos de la caché, y un arreglo tarda
      días en llegar. Al subir BUILD en 01-nucleo.js, subir también este v. -->
@@ -165,6 +257,7 @@
 <script src="js/01-nucleo.js?v=b6"></script>
 <script src="js/01b-datos-dengue.js?v=b6"></script>
 <script src="js/01c-mando.js?v=b6"></script>
+<script src="js/01d-tactil.js?v=b6"></script>
 <script src="js/02-efectos.js?v=b6"></script>
 <script src="js/03-jugador.js?v=b6"></script>
 <script src="js/04-mundo2d-gen.js?v=b6"></script>
@@ -174,9 +267,15 @@
 <script src="js/08-mundo3d-gen.js?v=b6"></script>
 <script src="js/09-mundo3d-jugador.js?v=b6"></script>
 <script src="js/10-mundo3d-ia.js?v=b6"></script>
+<script src="js/10b-jefe3d.js?v=b6"></script>
 <script src="js/11-flujo.js?v=b6"></script>
 <script src="js/11b-educacion.js?v=b6"></script>
 <script src="js/11c-guero.js?v=b6"></script>
+<script src="js/11d-ivan.js?v=b6"></script>
+<script src="js/11e-patio.js?v=b6"></script>
+<script src="js/11f-menu.js?v=b6"></script>
+<script src="js/11g-tutorial.js?v=b6"></script>
+<script src="js/11h-gata.js?v=b6"></script>
 <script src="js/12-bucle.js?v=b6"></script>
 </body>
 </html>

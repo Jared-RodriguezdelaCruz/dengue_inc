@@ -123,6 +123,7 @@ function dibujar2D() {
     if (jefe && !jefe.muerto) dibujarJefe();
     dibujarEnemigos();
     dibujarProyectiles();
+    dibujarGata2D();                 // la Gorda, si la compraste (11h)
     if (!jugador.muerto) dibujarJugador();
     dibujarParticulas();
     dibujarOndas();
@@ -243,9 +244,18 @@ function dibujarCriaderos() {
         if (c.neutralizado) {
             ctx.fillStyle = '#2ecc71'; ctx.font = 'bold 17px Segoe UI';
             ctx.fillText('OK', cx, c.y - 8);
-        } else if (c.producidos > 0) {
-            ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 11px Segoe UI';
-            ctx.fillText('x' + c.producidos, cx, c.y - 7);
+        } else if (c.activo) {
+            // La cría que viene: huevos → larvas → pupas. Cuando la barra se
+            // llena, sale un mosquito y empieza otra. «xN» son los que ya salieron.
+            const e = etapaCriadero(c), w = 46, y = c.y - 12;
+            ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(cx - w / 2, y, w, 4);
+            ctx.fillStyle = e.etapa.color;     ctx.fillRect(cx - w / 2, y, w * e.p, 4);
+            ctx.font = 'bold 9px Segoe UI';
+            ctx.fillText(e.etapa.nombre, cx, y - 3);
+            if (c.producidos > 0) {
+                ctx.fillStyle = '#e74c3c'; ctx.textAlign = 'left';
+                ctx.fillText('x' + c.producidos, cx + w / 2 + 3, y + 5);
+            }
         }
         ctx.textAlign = 'left';
 
@@ -267,7 +277,8 @@ function dibujarMenuVerbos(c, cx, cy) {
     for (let i = 0; i < 4; i++) {
         const v = VERBOS[orden[i]];
         ctx.fillStyle = v.color;
-        ctx.fillText((i + 1) + ' ' + v.nombre, cx - w / 2 + 30 + i * 57, cy - 13);
+        // Con el dedo no hay teclas 1-4: las medidas son botones (01d-tactil.js).
+        ctx.fillText((tactilVisible() ? '' : (i + 1) + ' ') + v.nombre, cx - w / 2 + 30 + i * 57, cy - 13);
     }
     ctx.textAlign = 'left';
     ctx.restore();

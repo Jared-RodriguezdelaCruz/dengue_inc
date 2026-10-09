@@ -25,7 +25,7 @@ function cerrarTienda() {
     capturarRaton3D();
 }
 
-const PRECIOS = { repelente: 5, abate: 10, suero: 8, paracetamol: 4, aine: 3, vacuna: 20 };
+const PRECIOS = { insecticida: 5, abate: 10, repelente: 4, suero: 8, paracetamol: 4, aine: 3, vacuna: 20, gata: 15 };
 
 function comprar(id) {
     const costo = PRECIOS[id];
@@ -46,6 +46,21 @@ function comprar(id) {
         actualizarHUD(); refrescarTienda();
         return;
     }
+    // El repelente se gasta: protege un rato, no es un arma.
+    if (id === 'repelente') {
+        if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
+        fichas -= costo; aplicarRepelente();
+        actualizarHUD(); refrescarTienda();
+        return;
+    }
+    // La Gorda (11h): se compra una vez y te acompaña el resto de la partida.
+    if (id === 'gata') {
+        if (gataComprada) { aviso('LA GORDA YA VIENE CONTIGO', 900); return; }
+        if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
+        fichas -= costo; comprarGata();
+        actualizarHUD(); refrescarTienda();
+        return;
+    }
     if (id === 'suero') {
         if (jugador.vida >= CFG.vidaMax) { aviso('VIDA COMPLETA', 700); return; }
         if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
@@ -56,11 +71,13 @@ function comprar(id) {
     if (inventario.includes(id)) { armaActiva = id; actualizarHUD(); refrescarTienda(); return; }
     if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
     fichas -= costo; inventario.push(id); armaActiva = id;
+    // Comprar con qué matar adultos es el momento de saber que eso no cierra nada.
+    if (id === 'insecticida') desbloquearFicha('criadero_infinito');
     sfx.nivel(); actualizarHUD(); refrescarTienda();
 }
 
 function refrescarTienda() {
-    for (const id of ['repelente', 'abate']) {
+    for (const id of ['insecticida', 'abate']) {
         const b = document.getElementById('btn-' + id);
         if (inventario.includes(id)) {
             b.textContent = armaActiva === id ? 'Equipado' : 'Equipar';
@@ -70,6 +87,9 @@ function refrescarTienda() {
             b.className = fichas >= PRECIOS[id] ? '' : 'caro';
         }
     }
+    const br = document.getElementById('btn-repelente');
+    br.textContent = 'Comprar (' + PRECIOS.repelente + ')';
+    br.className = fichas >= PRECIOS.repelente ? '' : 'caro';
     const bp = document.getElementById('btn-paracetamol');
     bp.textContent = 'Comprar (' + PRECIOS.paracetamol + ')';
     bp.className = fichas >= PRECIOS.paracetamol ? '' : 'caro';
@@ -79,6 +99,9 @@ function refrescarTienda() {
     const bv = document.getElementById('btn-vacuna');
     bv.textContent = jugador.vacunado ? 'Aplicada' : 'Comprar (' + PRECIOS.vacuna + ')';
     bv.className = jugador.vacunado ? 'equipado' : (fichas >= PRECIOS.vacuna ? '' : 'caro');
+    const bg = document.getElementById('btn-gata');
+    bg.textContent = gataComprada ? 'Contigo' : 'Comprar (' + PRECIOS.gata + ')';
+    bg.className = gataComprada ? 'equipado' : (fichas >= PRECIOS.gata ? '' : 'caro');
     const bs = document.getElementById('btn-suero');
     bs.textContent = jugador.vida >= CFG.vidaMax ? 'Vida llena' : 'Comprar (' + PRECIOS.suero + ')';
     bs.className = (jugador.vida < CFG.vidaMax && fichas >= PRECIOS.suero) ? '' : 'caro';
@@ -108,7 +131,7 @@ function actualizarHUD() {
     pintarCorazones();
     document.getElementById('ui-fichas').textContent = fichas;
     document.getElementById('ui-arma').textContent =
-        armaActiva === 'botas' ? 'Botas' : (armaActiva === 'abate' ? 'Abate' : 'Repelente');
+        armaActiva === 'botas' ? 'Botas' : (armaActiva === 'abate' ? 'Abate' : 'Insecticida');
     document.getElementById('ui-nivel').textContent =
         'Nivel ' + nivelActual + (NIVEL_ES_2D(nivelActual) ? ' · 2D' : ' · 3D');
     document.getElementById('ui-semilla').textContent = 'semilla ' + semillaRun;
@@ -140,11 +163,16 @@ function pintarPromptVerbos() {
     if (!el) return;
     const c = (modoRender === '3d' && estado === estados.J3D) ? criaderoCercano3D() : null;
     if (!c) { el.classList.add('oculto'); promptVerbosPrev = ''; return; }
-    // Se repintaba veinte veces por segundo para mostrar siempre lo mismo.
-    if (c.tipo === promptVerbosPrev) { el.classList.remove('oculto'); return; }
-    promptVerbosPrev = c.tipo;
+    // Se repintaba veinte veces por segundo para mostrar siempre lo mismo: solo
+    // cambia con el envase o con la etapa de su cría.
+    const etapa = c.activo ? etapaCriadero(c).etapa : null;
+    const clave = c.tipo + (etapa ? etapa.nombre : '');
+    if (clave === promptVerbosPrev) { el.classList.remove('oculto'); return; }
+    promptVerbosPrev = clave;
     const orden = ['lava', 'tapa', 'voltea', 'tira'];
-    let html = '<div class="pv-tit">' + CRIADEROS[c.tipo].nombre + '</div><div>';
+    let html = '<div class="pv-tit">' + CRIADEROS[c.tipo].nombre +
+               (etapa ? ' · <span style="color:' + etapa.color + '">' + etapa.nombre + '</span>' : '') +
+               '</div><div>';
     for (let i = 0; i < 4; i++) {
         const v = VERBOS[orden[i]];
         html += '<span class="pv-v" style="color:' + v.color + '">' + (i + 1) + ' ' + v.nombre + '</span>';
@@ -163,6 +191,8 @@ function latirCorazones() {
 }
 
 function actualizarHUDContinuo() {
+    // El Modo Patio no tiene vida, fiebre ni objetivo de partida.
+    if (estado === estados.PATIO) return;
     // Red de seguridad para cualquier camino que cambie la vida sin avisar.
     pintarCorazones();
 
@@ -187,6 +217,9 @@ function actualizarHUDContinuo() {
         cont.classList.remove('febril', 'critica');
     }
     document.getElementById('ui-casos').textContent = casosColonia;
+    const elRep = document.getElementById('ui-repelente');
+    elRep.classList.toggle('oculto', jugador.repelente <= 0);
+    if (jugador.repelente > 0) elRep.textContent = '🧴 repelente ' + Math.ceil(jugador.repelente / 60) + ' s';
     pintarPromptVerbos();
 
     elEstamina.style.width = (jugador.estamina / CFG.estaminaMax * 100) + '%';
@@ -213,7 +246,7 @@ function actualizarHUDContinuo() {
             const quedan = criaderosVivos();
             if (quedan > 0) {
                 objetivo('Cierra los criaderos — quedan ' + quedan,
-                         'Acércate a un envase y pulsa 1-4. Cada uno pide su medida.');
+                         'Acércate a un envase y ' + txtMedidas() + '. Cada uno pide su medida.');
             } else {
                 const d = Math.max(0, Math.round((meta.x - jugador.x) / 10));
                 objetivo('Alcanza la salida — ' + d + ' m',
@@ -222,16 +255,30 @@ function actualizarHUDContinuo() {
         } else objetivo('', '');
         brujula3D(null);
     } else {
-        if (!document.pointerLockElement && !mandoActivo && estado === estados.J3D) {
+        if (!document.pointerLockElement && !mandoActivo && !modoTactil && estado === estados.J3D) {
             objetivo('🖱️ Haz clic o pulsa una tecla para capturar el ratón', '');
         } else if (guero && guero.encontrado && !guero.resuelto) {
             objetivo('Decide qué hacer con Güero',
                      'Está en fase crítica. El panel de la derecha tiene las opciones.');
+        } else if (jefe3D && jefe3D.despierta && !jefe3D.muerto) {
+            const quedan = envasesJefe3D();
+            if (quedan > 0)
+                objetivo('La Hembra: cierra sus envases — quedan ' + quedan,
+                         'Mientras tengan agua tiene escudo y pone huevos. El aro rojo marca ' +
+                         'dónde cae la picada: esquívala con el dash.');
+            else
+                objetivo('Vence a la Hembra',
+                         'Cuando falla la picada se queda en el suelo: pégale. El anillo se salta, ' +
+                         'se esquiva con el dash o se devuelve con la raqueta.');
         } else if (criaderosVivos() > 0) {
             objetivo('Cierra los criaderos — quedan ' + criaderosVivos(),
-                     'Acércate a un envase y pulsa 1-4. La flecha te lleva al más cercano.');
+                     'Acércate a un envase y ' + txtMedidas() + '. La flecha te lleva al más cercano.');
+        } else if (!ivanListo()) {
+            objetivo('Atiende a Ivan', 'Tiene fiebre. La flecha te lleva con él.');
         } else if (!gueroListo()) {
             objetivo('Encuentra a Güero', 'La columna naranja marca dónde está.');
+        } else if (!jefe3DListo()) {
+            objetivo('Vence a la Hembra', 'Está en la sala del portal. La flecha te lleva.');
         } else {
             objetivo('Llega al portal morado', 'Ya cerraste todo. La flecha apunta a la salida.');
         }
@@ -258,15 +305,21 @@ function objetivo(txt, detalle) {
 function objetivo3D() {
     if (!camera3D) return null;
     const cam = camera3D.position;
+    // Peleando con la Hembra: primero sus envases y luego ella.
+    const J = jefe3D && jefe3D.despierta && !jefe3D.muerto ? jefe3D : null;
     let mejor = null, mejorD = 1e9;
     for (const c of criaderos3D) {
-        if (c.neutralizado) continue;
+        if (c.neutralizado || (J && !c.deJefe)) continue;
         const d = Math.hypot(c.x - cam.x, c.z - cam.z);
         if (d < mejorD) { mejorD = d; mejor = c; }
     }
     if (mejor) return { x: mejor.x, z: mejor.z, txt: CRIADEROS[mejor.tipo].nombre, meta: false };
+    if (J) return { x: J.x, z: J.z, txt: 'La Hembra', meta: false };
+    if (ivan && !ivan.resuelto) return { x: ivan.x, z: ivan.z, txt: IVAN.nombre, meta: false };
     if (guero && !guero.resuelto)
         return { x: guero.x, z: guero.z, txt: GUERO.nombre, meta: false };
+    if (jefe3D && !jefe3D.muerto)
+        return { x: jefe3D.x, z: jefe3D.z, txt: 'La Hembra', meta: false };
     if (meta3D && metaAbierta)
         return { x: meta3D.position.x, z: meta3D.position.z, txt: 'Portal', meta: true };
     return null;
@@ -314,6 +367,7 @@ function pintarLegenda() {
 const elPantalla = document.getElementById('pantalla-mensaje');
 let accionMenu = () => {};
 let accionMenu2 = null;
+let accionMenu3 = null;
 
 function tablaControles() {
     const filas = [
@@ -329,6 +383,21 @@ function tablaControles() {
     ];
     const tabla = f => '<div class="tabla-controles">' +
         f.map(x => '<div>' + x[0] + ' <b>' + x[1] + '</b></div>').join('') + '</div>';
+    if (tactilVisible()) {
+        // En el celular la tabla de teclado no le sirve a nadie (01d-tactil.js).
+        const filasTactil = [
+            ['Mover', 'joystick: apoya el pulgar izq.'], ['Saltar', 'Saltar'],
+            ['Dash', 'Dash'],                ['Esquive', 'joystick ↓ + Dash'],
+            ['Raqueta', 'Raqueta'],          ['Atacar', 'Atacar (en 3D, mantener)'],
+            ['Medidas', 'aparecen junto al envase'], ['Pausa · tienda · fichero', '⏸ 🛒 📖'],
+            ['Mirar (3D)', 'arrastra a la derecha'], ['Gancho (3D)', 'Gancho (mantener)']
+        ];
+        return '<div style="margin-top:8px;font-size:12px;color:#4dd0e1">📱 Pantalla táctil</div>' +
+            tabla(filasTactil) +
+            '<div style="font-size:11px;color:#90a4ae;margin-top:4px">En 3D la mira se acerca sola un poco ' +
+            'a lo que tengas casi enfrente mientras disparas. En iPhone, para jugar a pantalla completa: ' +
+            'Compartir → «Agregar a inicio».</div>';
+    }
     if (!mandoActivo) return tabla(filas);
 
     const e = etiquetasMando();
@@ -369,9 +438,13 @@ function alternarSonidosMenu() {
 }
 
 function mostrarMenu(o) {
+    opcionesActivas = null;              // las teclas 1-4 ya no contestan lo de antes
+    ocultarTitulo();                     // el quiz, Aprende o el Patio van encima del título
     document.getElementById('pm-titulo').innerHTML = o.titulo;
     document.getElementById('pm-desc').innerHTML = o.desc || '';
     document.getElementById('pm-controles').innerHTML = o.controles ? tablaControles() : '';
+    // Las opciones y los créditos ya traen lo suyo: ahí los botones de audio sobran.
+    document.getElementById('pm-audio').style.display = o.sinAudio ? 'none' : '';
     actualizarBotonesAudioMenu();
     document.getElementById('pm-semilla').innerHTML = o.semilla
         ? 'Semilla (deja vacío para una nueva): <input id="in-semilla" value="' + semillaRun + '">'
@@ -382,13 +455,23 @@ function mostrarMenu(o) {
     const b2 = document.getElementById('pm-boton2');
     if (o.boton2) { b2.textContent = o.boton2; b2.style.display = 'inline-block'; accionMenu2 = o.accion2; }
     else { b2.style.display = 'none'; accionMenu2 = null; }
+    const b3 = document.getElementById('pm-boton3');
+    if (o.boton3) { b3.textContent = o.boton3; b3.style.display = 'inline-block'; accionMenu3 = o.accion3; }
+    else { b3.style.display = 'none'; accionMenu3 = null; }
     accionMenu = o.accion;
     elPantalla.classList.remove('oculto');
     if (document.pointerLockElement) document.exitPointerLock();
 }
-function ocultarMenu() { elPantalla.classList.add('oculto'); }
+function ocultarMenu() { elPantalla.classList.add('oculto'); opcionesActivas = null; }
+
+/** Cambia el botón principal sin redibujar el menú (el quiz pasa de «Saltar» a «Siguiente»). */
+function cambiarBotonMenu(txt, accion) {
+    document.getElementById('pm-boton').textContent = txt;
+    accionMenu = accion;
+}
 function accionBotonMenu()  { if (accionMenu) accionMenu(); }
 function accionBotonMenu2() { if (accionMenu2) accionMenu2(); }
+function accionBotonMenu3() { if (accionMenu3) accionMenu3(); }
 
 function hashSemilla(txt) {
     if (/^\d+$/.test(txt)) return parseInt(txt, 10) % 2147483647;
@@ -397,21 +480,13 @@ function hashSemilla(txt) {
     return Math.abs(h | 0);
 }
 
+/** La pantalla de título (11f-menu.js): Jugar, Modo Patio, Aprende, Opciones,
+ *  Ayuda y Créditos. Todo lo que dice «Menú principal» o «Volver» llega aquí. */
 function menuPrincipal() {
     estado = estados.MENU;
     abortarTransicion();
-    mostrarMenu({
-        titulo: 'Dengue: Multiverso',
-        desc: 'Aguascalientes tiene un problema de criaderos… y una grieta dimensional.<br>' +
-              'Cinco niveles <b>generados por procedimientos</b> que cambian con cada semilla, alternando ' +
-              'plataformas 2D y exploración 3D en primera persona.<br><br>' +
-              '<b>Dash</b> te vuelve invulnerable. La <b>raqueta</b> (F) achicharra lo que tengas ' +
-              'delante, devuelve los proyectiles morados y aturde a lo que esté cerca — es la ' +
-              'mecánica que abre el escudo del jefe.',
-        controles: true, semilla: true,
-        boton: 'Iniciar', accion: empezarJuego,
-        pie: BUILD
-    });
+    ocultarMenu();
+    mostrarTitulo();
 }
 
 function empezarJuego() {
@@ -419,13 +494,16 @@ function empezarJuego() {
     const txt = inp ? inp.value.trim() : '';
     semillaRun = txt !== '' ? hashSemilla(txt) : ((Math.random() * 2147483647) | 0);
     fichas = 0; inventario = ['botas']; armaActiva = 'botas';
+    reiniciarGata();                            // la Gorda se compra en cada partida
     reiniciarJugador(true);
     reiniciarMarcador();
     jugador.vida = CFG.vidaMax; jugador.estamina = CFG.estaminaMax;
     vidaDibujada = -1;
     audio();                                    // desbloquea WebAudio con un gesto
-    ocultarMenu();
-    iniciarNivel(1);
+    pantallaCompletaAlJugar();                  // en el celular, dentro del mismo toque
+    // Primero las cinco preguntas (se pueden saltar): al final se repiten y la
+    // diferencia es lo que el juego enseñó.
+    quizInicio(() => { ocultarMenu(); iniciarNivel(1); });
 }
 
 function mostrarDerrota() {
@@ -435,26 +513,44 @@ function mostrarDerrota() {
         desc: 'Caíste en el nivel ' + nivelActual + '.' + reporteFinal() +
               '<div style="color:#90a4ae;font-size:11px;margin-top:8px">El nivel se regenera con la ' +
               'misma semilla, así que el trazado será idéntico.</div>',
-        boton: 'Reintentar nivel', accion: () => { ocultarMenu(); reiniciarJugador(true); vidaDibujada = -1; iniciarNivel(nivelActual); },
+        boton: 'Reintentar nivel', accion: () => { pantallaCompletaAlJugar(); ocultarMenu(); reiniciarJugador(true); vidaDibujada = -1; iniciarNivel(nivelActual); },
         boton2: 'Menú principal', accion2: menuPrincipal
     });
 }
 
-/** El final del juego. No lo decide cruzar el portal: lo decide Güero. */
+/** El final del juego. No lo decide cruzar el portal: lo decide Güero. Antes
+ *  de contarlo, las mismas cinco preguntas del principio. */
 function finalGuero() {
     estado = estados.MENU;
+    quizFinal(pantallaFinal);
+}
+
+/** `deVuelta`: se regresa de los créditos; el desenlace ya sonó. */
+function pantallaFinal(deVuelta) {
     const salvado = guero && guero.salvado;
-    if (salvado) sfx.nivel(); else sfx.muerte();
+    if (deVuelta !== true) { if (salvado) sfx.nivel(); else sfx.muerte(); }
     mostrarMenu({
         titulo: salvado ? 'Transmisión cortada' : 'Cortaste la transmisión… casi',
         desc: (salvado
                 ? 'Cerraste los criaderos en las dos dimensiones. Sin criadero no hay mosquito; ' +
                   'sin mosquito no hay dengue.'
                 : 'Llegaste al final, pero el dengue no se mide en niveles terminados.') +
-              desenlaceGuero() + reporteFinal() +
+              desenlaceGuero() + resultadoQuiz() + repasoFichas('Lo último que aprendiste') +
+              reporteFinal() + revisaTuCasa() +
               '<div style="color:#90a4ae;font-size:11px;margin-top:8px">Semilla jugada: ' + semillaRun + '</div>',
-        boton: 'Jugar otra vez', accion: menuPrincipal
+        boton: 'Jugar otra vez', accion: menuPrincipal,
+        boton2: 'Créditos', accion2: creditosFinal
     });
+    montarRevisaTuCasa();
+}
+
+function creditosFinal() {
+    mostrarMenu({
+        titulo: 'Créditos',
+        desc: '<div class="t-cred-final">' + htmlCreditos() + '</div>', sinAudio: true,
+        boton: 'Volver', accion: () => pantallaFinal(true)
+    });
+    elPantalla.scrollTop = 0;
 }
 
 function pausar() {
@@ -462,13 +558,28 @@ function pausar() {
     estadoPrevio = estado;
     estado = estados.PAUSA;
     detenerDialogoGuero();
+    menuPausa();
+}
+
+function menuPausa() {
     mostrarMenu({
         titulo: 'Pausa',
         desc: 'Nivel ' + nivelActual + ' · semilla ' + semillaRun + ' · ' + fichas + ' 💰',
         controles: true,
         boton: 'Continuar', accion: reanudar,
-        boton2: 'Menú principal', accion2: menuPrincipal
+        boton2: 'Menú principal', accion2: menuPrincipal,
+        // La sensibilidad 3D se ajusta mejor jugando que desde el título.
+        boton3: 'Opciones', accion3: opcionesPausa
     });
+}
+
+function opcionesPausa() {
+    mostrarMenu({
+        titulo: 'Opciones',
+        desc: '<div id="opc-pausa"></div>', sinAudio: true,
+        boton: 'Volver', accion: menuPausa
+    });
+    pintarOpciones(document.getElementById('opc-pausa'));
 }
 function reanudar() { ocultarMenu(); estado = estadoPrevio; capturarRaton3D(); }
 
@@ -482,7 +593,9 @@ function iniciarNivel(n) {
     if (ficheroAbierto()) cerrarFichero();
     if (tiendaAbierta()) cerrarTienda();
     tokensAtaque = 0;
+    reiniciarJefe3D();       // la Hembra solo existe en el nivel 4
     limpiarParticulas();
+    programarLluvia();
 
     if (NIVEL_ES_2D(n)) {
         modoRender = '2d';
@@ -502,12 +615,15 @@ function iniciarNivel(n) {
         document.getElementById('crosshair').style.display = 'block';
         if (!scene) iniciarMotor3D();
         const muros = generarNivel3D(n);
-        statsGen = salas.length + ' salas · ' + muros + ' muros(1 draw) · ' + mosquitos3D.length + ' enem';
+        statsGen = salas.length + ' salas · ' + muros + ' muros(1 draw) · ' + mosquitos3D.length + ' enem · ' +
+                   infoPlataformas3D;
     }
+    aparecerGata();          // si ya la compraste, la Gorda llega contigo (11h)
     vidaDibujada = -1;
     actualizarHUD();
     sfx.nivel();
     aviso('NIVEL ' + n, 1100);
+    iniciarTutorial(n);      // la primera vez en el nivel 1 (2D) y en el primer 3D (11g)
     capturarRaton3D();       // si se llegó con un clic («Nivel 2», «Reintentar»), ya no hace falta otro
 }
 
@@ -525,20 +641,24 @@ function pantallaEntreNiveles(n) {
         d += '<div class="rep-nota">Un criadero revivió porque tiraste el agua sin tallar la ' +
              'pared. Los huevos aguantan meses secos: por eso la campaña dice <b>LAVA</b>.</div>';
     d += '</div>';
-    d += mitoDelNivel();
+    d += repasoFichas('Lo que aprendiste en este nivel');
+    d += '<div id="retos"></div>';
     mostrarMenu({
         titulo: 'Nivel ' + (n - 1) + ' cerrado',
         desc: d,
         boton: 'Nivel ' + n,
         accion: () => { ocultarMenu(); iniciarNivel(n); }
     });
+    // Después de mostrarMenu: los botones se montan con sus listeners sobre el
+    // DOM ya puesto, no como HTML que se reescribe.
+    montarRetos(document.getElementById('retos'), retosDelNivel(n));
 }
 
 function completarNivel() {
     if (cambiandoNivel || jugador.muerto || estado === estados.TRANSICION) return;
     cambiandoNivel = true;
     // Morado, el color del portal que acabas de cruzar, y corto. El velo BLANCO
-    // es de la grieta dimensional del nivel 4 y de nada más: si cada cambio de
+    // es de la grieta dimensional del nivel 3 y de nada más: si cada cambio de
     // nivel lo usa, el salto entre dimensiones deja de significar algo.
     destellar('#8e44ad', 0.34, 300);
     sfx.nivel();
@@ -550,7 +670,7 @@ function completarNivel() {
 }
 
 // ---------------------------------------------------------------------------
-//  TRANSICIÓN DIMENSIONAL 2D → 3D (final del nivel 4)
+//  TRANSICIÓN DIMENSIONAL 2D → 3D (al caer el jefe del nivel 3)
 //
 //  Esto eran nueve setTimeout anidados escribiendo sobre la misma propiedad CSS
 //  que destellar(). Dos dueños peleándose: el fogonazo del salto se lo comía
@@ -563,7 +683,7 @@ let transicion = null;
 // ---------------------------------------------------------------------------
 //  Reparto de responsabilidades, aprendido a base de romperlo dos veces:
 //
-//    · Lo CRÍTICO —abrir la grieta, cargar el mundo nuevo, quitar la cortina—
+//    · Lo CRÍTICO —abrir la grieta, montar la pausa, quitar la cortina—
 //      va por setTimeout, agendado entero en cuanto cae el jefe. setTimeout
 //      sigue disparando aunque la pestaña pierda el foco; requestAnimationFrame
 //      no. Atar esto al bucle es lo que dejaba la pantalla en blanco.
@@ -572,16 +692,16 @@ let transicion = null;
 //    · El DUEÑO de la cortina impide que un destello de explosión se coma el
 //      fogonazo. Eso sí era el arreglo bueno y se queda.
 // ---------------------------------------------------------------------------
-const T_GUERO  = 1230;   // ms desde que cae el jefe: aparece Güero en la grieta
+const T_GUERO  = 1230;   // ms desde que cae el jefe: se ve a Güero en la grieta
 const T_GRIETA = 1850;   // ms: se abre la grieta y arranca la animación CSS
-const T_CARGA  = 2320;   // ms: la cortina está arriba, se carga el mundo detrás
+const T_CARGA  = 2320;   // ms: la cortina está arriba, se monta la pausa detrás
 const T_FIN    = 3900;   // ms: la animación ya bajó del todo
 
 /** La llama matarJefe(). Aquí se agenda TODA la secuencia crítica. */
 function iniciarTransicionFinal(cx, cy) {
     estado = estados.TRANSICION;
     transicion = { t: 0, cx: cx, cy: cy, hito: 0, estallidos: 0, timers: [] };
-    contenedor.classList.add('temblor');
+    if (!opciones.menosSacudidas) contenedor.classList.add('temblor');
     sacudir(18);
     transicion.timers = [
         setTimeout(gueroEnLaGrieta,       T_GUERO),
@@ -594,7 +714,8 @@ function iniciarTransicionFinal(cx, cy) {
 function gueroEnLaGrieta() {
     if (!transicion || transicion.hito >= 1) return;
     transicion.hito = 1;
-    aviso('¡GÜERO!', 1600);
+    // Un anticipo: Güero está del otro lado, en el nivel 5.
+    aviso('¡GÜERO ESTÁ DEL OTRO LADO!', 1800);
     emitirTexto(transicion.cx, transicion.cy - 70, '¡GÜERO!', COL.ORO, 26);
     tono(60, 1.4, 'sawtooth', 0.14, 900);
     sacudir(26);
@@ -609,13 +730,16 @@ function abrirGrieta() {
     cortinaGrieta('#ffffff');
 }
 
-/** Carga el mundo nuevo detrás de la cortina. Idempotente. */
+/** Detrás de la cortina se monta la pausa del nivel que termina. Antes se
+ *  cargaba el nivel siguiente directo y ese nivel se quedaba sin su repaso ni
+ *  sus retos; además, «Nivel 4» es un clic, y con él se captura el ratón.
+ *  Idempotente. */
 function cargarMundoTrasGrieta() {
     if (!transicion || transicion.hito >= 3) return;
     transicion.hito = 3;
     contenedor.classList.remove('temblor');
-    try { iniciarNivel(5); }
-    catch (e) { anotarErrorBucle('iniciarNivel(5)', e); }
+    try { pantallaEntreNiveles(nivelActual + 1); }
+    catch (e) { anotarErrorBucle('pantallaEntreNiveles', e); }
 }
 
 function cerrarTransicion() {

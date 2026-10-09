@@ -51,8 +51,10 @@ function matarEnemigo(e) {
         fxExplosion(cx, cy, 26, e.arq.colorP, COL.BLANCO);
         sfx.golpe();
     }
-    // Recompensa: monedas que salen despedidas y se recogen al vuelo.
-    for (let i = 0; i < e.arq.valor; i++)
+    // Recompensa: monedas que salen despedidas y se recogen al vuelo. El que
+    // salió de un criadero vivo no suelta ninguna (valorMosquito, 11b).
+    const valor = valorMosquito(e);
+    for (let i = 0; i < valor; i++)
         monedas.push({ x: cx + rndRango(-14, 14), y: cy, r: 9, recogida: false,
                        fase: rndRango(0, 6.28), vx: rndRango(-2, 2), vy: rndRango(-5, -2) });
     congelar(4);
@@ -357,10 +359,10 @@ function dispararArma() {
         if (tocado) { jugador.vx = -jugador.dir * 2.5; sacudir(4); }
         return;
     }
-    if (armaActiva === 'repelente') {
+    if (armaActiva === 'insecticida') {
         jugador.ataqueCd = 13;
         nuevoProyectil(cx, cy - 2, 10 * jugador.dir, 0,
-            { delJugador: true, daño: 1, col: COL.HUESO, tipo: 'repelente', ancho: 14, alto: 8, vida: 90 });
+            { delJugador: true, daño: 1, col: COL.HUESO, tipo: 'insecticida', ancho: 14, alto: 8, vida: 90 });
         jugador.vx -= jugador.dir * 0.6;
         sfx.disparo();
         fxChispas(cx + 16 * jugador.dir, cy, 5, COL.HUESO, 1.8, jugador.dir, 0);

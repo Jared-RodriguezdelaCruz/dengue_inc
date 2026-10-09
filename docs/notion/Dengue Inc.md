@@ -17,6 +17,7 @@ Juego web educativo sobre la prevención del dengue en Aguascalientes, hecho por
 | Avance | 100 % de las tareas P0 hechas el 29 de noviembre | Gráfica de avance en Notion |
 | Reconocimiento | 5 de 5 integrantes dieron y recibieron kudos | Discord #kudos + Notion |
 | Producto | El juego se termina de principio a fin, con música, sin errores | Plan de pruebas, 2 playtests y testing final |
+| Aprendizaje | En los playtests, el quiz sube de antes a después de jugar (meta: 4 de 5 o más al final) | Quiz del juego (DI-474) en los playtests (DI-485) |
 
 ## Enlaces
 

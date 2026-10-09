@@ -157,11 +157,14 @@ function addCharco(x, ancho, y) {
  *  repone mosquitos sin fin: por eso matar adultos no cierra un nivel. */
 function addCriadero(tipo, x, y) {
     const d = CRIADEROS[tipo];
+    // La primera cría tarda más: es la ventana para cerrarlo antes de que nazca
+    // un solo mosquito (CICLO_PRIMERO, 11b).
+    const prod = CICLO_PRIMERO + rndRango(0, 90);
     criaderos.push({
         tipo, verbo: d.verbo, x: x - d.ancho / 2, y: y - d.alto, ancho: d.ancho, alto: d.alto,
         activo: true, neutralizado: false, vaciado: false, tRevive: 0,
         conVerbo: null,                       // con qué se neutralizó, para el reporte
-        prod: rndRango(0, 90), producidos: 0, vivos: 0,  // cadencia, total y descendencia viva
+        prod, prodMax: prod, producidos: 0, vivos: 0,  // ciclo de cría, total y descendencia viva
         radio: 250,                           // zona de vuelo de su descendencia
         fase: rndRango(0, 6.28), sacude: 0
     });
@@ -175,7 +178,8 @@ function tiposDisponibles() {
     const t = [{ t: 'zumbador', peso: 10 }];
     if (nivelActual >= 1) t.push({ t: 'enjambre', peso: 5 });
     if (nivelActual >= 3) t.push({ t: 'picador',  peso: 8 });
-    if (nivelActual >= 4) t.push({ t: 'mutante',  peso: 5 });
+    // El último nivel 2D (el del jefe) trae los mutantes del viejo nivel 4.
+    if (nivelActual >= NIVEL_JEFE_2D) t.push({ t: 'mutante',  peso: 4 });
     return t;
 }
 function tipoEnemigoAleatorio() { return rndPesos(tiposDisponibles()).t; }
@@ -411,7 +415,7 @@ function generarNivel2D(n) {
     meta = null; jefe = null; tokensAtaque = 0;
     limpiarParticulas();
 
-    const numChunks = n === 1 ? 6 : (n === 4 ? 10 : 8);
+    const numChunks = n === 1 ? 6 : (n === NIVEL_JEFE_2D ? 10 : 8);
     longitudNivel = ANCHO_CHUNK * (numChunks + 2);
 
     // Chunk de entrada: siempre llano y sin enemigos, para no morir al aparecer.
@@ -432,7 +436,7 @@ function generarNivel2D(n) {
     const xFin = ANCHO_CHUNK * (numChunks + 1);
     addSuelo(xFin, longitudNivel, y);
 
-    if (n === 4) {
+    if (n === NIVEL_JEFE_2D) {
         jefe = {
             x: xFin + 260, y: y - 150, ancho: 92, alto: 110,
             vida: 26, vidaMax: 26, escudo: true, fase: 1, t: 0, cd: 90,

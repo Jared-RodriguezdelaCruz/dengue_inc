@@ -58,6 +58,45 @@ function chocaCirculo(x, z, r) {
            solidoMundo(x - r * .7, z - r * .7) || solidoMundo(x + r * .7, z + r * .7) ||
            solidoMundo(x - r * .7, z + r * .7) || solidoMundo(x + r * .7, z - r * .7);
 }
+// --- Plataformas: desniveles que se suben con el salto (DI-465) -------------
+// Ocupan celdas enteras, así que la altura del suelo en cualquier punto se
+// consulta en O(1), igual que los muros. Los límites salen de la física real
+// del salto 3D, como en 2D: ninguna cima pide un salto perfecto.
+const ALTURA_SALTO3D  = (CFG.salto3D * CFG.salto3D) / (2 * CFG.gravedad3D);   // ~2.75 u
+const SUBIDA3D_SEGURA = ALTURA_SALTO3D * 0.72;                               // ~1.98 u
+const ESCALON3D = 0.35;                 // lo que se sube caminando, sin saltar
+const ALTURAS_PLATAFORMA = [0.9, 1.4, 1.9];
+let alturas = new Float32Array(GW * GH);
+let plataformas3D = [];                 // { gx, gz, w, h, alto }, en el orden en que se pusieron
+let infoPlataformas3D = '';
+
+function alturaCelda(gx, gz) {
+    if (gx < 0 || gz < 0 || gx >= GW || gz >= GH) return 0;
+    return alturas[gz * GW + gx];
+}
+const alturaMundo = (x, z) => alturaCelda(x2gx(x), z2gz(z));
+
+/** Como chocaCirculo, pero además choca con las plataformas que queden más
+ *  altas que un escalón por encima de los pies. */
+function chocaConAltura(x, z, r, pies) {
+    if (chocaCirculo(x, z, r)) return true;
+    const tope = pies + ESCALON3D, d = r * 0.7;
+    return alturaMundo(x - r, z) > tope || alturaMundo(x + r, z) > tope ||
+           alturaMundo(x, z - r) > tope || alturaMundo(x, z + r) > tope ||
+           alturaMundo(x - d, z - d) > tope || alturaMundo(x + d, z + d) > tope ||
+           alturaMundo(x - d, z + d) > tope || alturaMundo(x + d, z - d) > tope;
+}
+/** Altura del suelo bajo un círculo: la más alta de las que alcanzan los pies.
+ *  Con varias muestras basta pisar el borde para quedarse arriba. */
+function sueloBajo(x, z, r, pies) {
+    const tope = pies + ESCALON3D, d = r * 0.6;
+    let s = 0;
+    const m = (px, pz) => { const h = alturaMundo(px, pz); if (h <= tope && h > s) s = h; };
+    m(x, z); m(x - d, z); m(x + d, z); m(x, z - d); m(x, z + d);
+    return s;
+}
+const chocaJugador3D = (x, z, pies) => chocaConAltura(x, z, RADIO_JUG, pies);
+
 /** Línea de vista 3D: muestrea celdas entre dos puntos. */
 function visible3D(x1, z1, x2, z2) {
     const d = Math.hypot(x2 - x1, z2 - z1);
@@ -184,7 +223,8 @@ function iniciarMotor3D() {
     scene.add(camera3D);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // En el celular 1.5 basta y se nota en los cuadros por segundo (01d-tactil.js).
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, modoTactil ? 1.5 : 2));
     renderer.setSize(ANCHO, ALTO);
     cont.innerHTML = '';
     cont.appendChild(renderer.domElement);
@@ -231,6 +271,8 @@ function iniciarMotor3D() {
  * clic sobre la vista (`aunConGuero`): ahí el ratón hace falta para elegir.
  */
 function capturarRaton3D(aunConGuero) {
+    // Con el dedo se mira arrastrando: no hay ratón que capturar.
+    if (modoTactil) return;
     if (estado !== estados.J3D || !renderer || document.pointerLockElement) return;
     if (tiendaAbierta() || ficheroAbierto()) return;
     const pg = document.getElementById('panel-guero');
@@ -303,7 +345,10 @@ function limpiarNivel3D() {
     scene.add(grupoNivel);
     mosquitos3D = []; monedas3D = []; proy3D = []; tinacos3D = []; criaderos3D = [];
     meta3D = null; murosInst = null; P3.n = 0;
+    alturas.fill(0); plataformas3D = [];
     reiniciarGuero();          // su malla vive en grupoNivel: ya quedó liberada
+    reiniciarIvan();
+    reiniciarJefe3D();
     limpiarGancho3D();         // no puede seguir jalando hacia un mosquito del nivel anterior
     for (const a of anillos) { a.libre = true; a.mesh.visible = false; }
 }
@@ -328,6 +373,21 @@ function generarMapa3D(n) {
     const numSalas = 5 + Math.min(4, n);
     let intentos = 0;
 
+    // En el nivel del jefe su arena se aparta ANTES de sembrar las salas, en un
+    // borde del mapa. Buscarle hueco al final casi nunca funcionaba: las salas
+    // ya ocupaban el centro y solo 1 de cada 5 arenas salía de 12×12.
+    arenaReservada = null;
+    let empujeX = 0, empujeZ = 0;
+    if (n === NIVEL_JEFE_3D) {
+        const A = LADO_ARENA, lado = rndEnt(0, 3), medio = ((GW - A) >> 1) + rndEnt(-5, 5);
+        const gx = lado === 0 ? 2 : lado === 1 ? GW - A - 2 : medio;
+        const gz = lado === 2 ? 2 : lado === 3 ? GH - A - 2 : medio;
+        arenaReservada = { gx, gz, w: A, h: A, cx: gx + (A >> 1), cz: gz + (A >> 1), vecinas: [], tipo: 'arena', jefe: true };
+        // El inicio se corre hacia el lado contrario.
+        empujeX = lado === 0 ? 4 : lado === 1 ? -4 : 0;
+        empujeZ = lado === 2 ? 4 : lado === 3 ? -4 : 0;
+    }
+
     // Las salas se siembran PEGADAS a una que ya exista, no repartidas por toda
     // la rejilla. Con reparto uniforme el mapa se estiraba 147 unidades mientras
     // la vista llega a 130, y una de cada cinco partidas empezaba en un cuarto
@@ -337,8 +397,8 @@ function generarMapa3D(n) {
         const w = rndEnt(6, 11), h = rndEnt(6, 11);
         let gx, gz;
         if (salas.length === 0) {
-            gx = ((GW - w) >> 1) + rndEnt(-3, 3);
-            gz = ((GH - h) >> 1) + rndEnt(-3, 3);
+            gx = ((GW - w) >> 1) + rndEnt(-3, 3) + empujeX;
+            gz = ((GH - h) >> 1) + rndEnt(-3, 3) + empujeZ;
         } else {
             const base = salas[rndEnt(0, salas.length - 1)];
             const a = rnd() * 6.283, r = rndRango(SEP_MIN, SEP_MAX);
@@ -347,12 +407,7 @@ function generarMapa3D(n) {
         }
         gx = clamp(gx, 2, GW - w - 3);
         gz = clamp(gz, 2, GH - h - 3);
-        // Rechaza si se solapa con otra sala (margen de 2 celdas).
-        let libre = true;
-        for (const s of salas)
-            if (gx < s.gx + s.w + 2 && gx + w + 2 > s.gx && gz < s.gz + s.h + 2 && gz + h + 2 > s.gz)
-                { libre = false; break; }
-        if (!libre) continue;
+        if (solapaSala(gx, gz, w, h)) continue;
         salas.push({ gx, gz, w, h, cx: gx + (w >> 1), cz: gz + (h >> 1), vecinas: [], tipo: 'arena' });
     }
 
@@ -371,6 +426,21 @@ function generarMapa3D(n) {
         }
     }
 
+    // La arena entra al final, unida a la sala más cercana que no sea el inicio
+    // (salvo que el inicio le quede mucho más cerca que cualquier otra).
+    if (arenaReservada) {
+        const a = arenaReservada;
+        const dist = i => Math.hypot(salas[i].cx - a.cx, salas[i].cz - a.cz);
+        const orden = salas.map((s, i) => i).sort((x, y) => dist(x) - dist(y));
+        let base = orden[0];
+        if (base === 0 && orden.length > 1 && dist(orden[1]) < dist(orden[0]) * 1.6 + 4) base = orden[1];
+        salas.push(a);
+        const ia = salas.length - 1;
+        excavarRect(a.gx, a.gz, a.w, a.h);
+        excavarPasillo(salas[base].cx, salas[base].cz, a.cx, a.cz, 3);
+        a.vecinas.push(base); salas[base].vecinas.push(ia);
+    }
+
     // BFS desde la sala de inicio: la meta va en la MÁS LEJANA en número de saltos,
     // así el recorrido siempre atraviesa el mapa.
     const distancia = new Array(salas.length).fill(-1);
@@ -384,6 +454,9 @@ function generarMapa3D(n) {
     let iMeta = 0, mejor = -1;
     for (let i = 0; i < salas.length; i++) if (distancia[i] > mejor) { mejor = distancia[i]; iMeta = i; }
 
+    // En el nivel del jefe, la meta es su arena, quede donde quede.
+    if (arenaReservada) iMeta = salas.length - 1;
+
     // Asignación de tipos de sala
     salas[0].tipo = 'inicio';
     salas[iMeta].tipo = 'meta';
@@ -396,6 +469,182 @@ function generarMapa3D(n) {
         ]).t;
     }
     return iMeta;
+}
+
+/** La arena de la Hembra: 12×12 celdas en un borde del mapa (nivel 4). */
+const LADO_ARENA = 12;
+let arenaReservada = null;
+
+/** ¿Se encima con alguna sala ya puesta, o con la arena apartada? Deja 2
+ *  celdas de margen. */
+function solapaSala(gx, gz, w, h) {
+    const choca = s => gx < s.gx + s.w + 2 && gx + w + 2 > s.gx && gz < s.gz + s.h + 2 && gz + h + 2 > s.gz;
+    if (arenaReservada && choca(arenaReservada)) return true;
+    for (const s of salas) if (choca(s)) return true;
+    return false;
+}
+
+// --- Plataformas: generación, validación y dibujo ---------------------------
+function celdasLibres(gx, gz, w, h) {
+    for (let z = gz; z < gz + h; z++)
+        for (let x = gx; x < gx + w; x++)
+            if (celdaSolida(x, z) || alturas[z * GW + x] > 0) return false;
+    return true;
+}
+function ponerPlataforma(gx, gz, w, h, alto) {
+    if (alto > SUBIDA3D_SEGURA || !celdasLibres(gx, gz, w, h)) return false;
+    for (let z = gz; z < gz + h; z++)
+        for (let x = gx; x < gx + w; x++) alturas[z * GW + x] = alto;
+    plataformas3D.push({ gx, gz, w, h, alto });
+    return true;
+}
+function quitarPlataforma(i) {
+    const p = plataformas3D[i];
+    for (let z = p.gz; z < p.gz + p.h; z++)
+        for (let x = p.gx; x < p.gx + p.w; x++) alturas[z * GW + x] = 0;
+    plataformas3D.splice(i, 1);
+}
+/** Quita las plataformas que pisen un círculo: un envase, un NPC o el portal
+ *  nunca quedan dentro de una losa. */
+function aplanarEn(x, z, r) {
+    for (let i = plataformas3D.length - 1; i >= 0; i--) {
+        const p = plataformas3D[i];
+        const x0 = gx2x(p.gx), x1 = gx2x(p.gx + p.w), z0 = gz2z(p.gz), z1 = gz2z(p.gz + p.h);
+        if (x + r > x0 && x - r < x1 && z + r > z0 && z - r < z1) quitarPlataforma(i);
+    }
+}
+
+/** ¿La celda cae en el bloque central de la sala? Ahí van el envase, el portal
+ *  o las monedas. medio = la mitad del lado del bloque, en celdas. */
+function enCentro(s, gx, gz, medio) {
+    return gx >= s.cx - medio && gx < s.cx + medio && gz >= s.cz - medio && gz < s.cz + medio;
+}
+
+/**
+ * Plataformas por sala, solo en el interior (a una celda del borde) para no
+ * tapar puertas ni pasillos. Se ponen antes de poblar las salas: las monedas
+ * que caigan encima se suben solas (crearMoneda3D).
+ */
+function generarPlataformas3D(n) {
+    const prob = Math.min(0.85, 0.35 + n * 0.1);
+    for (const s of salas) {
+        const ix0 = s.gx + 1, iz0 = s.gz + 1, ix1 = s.gx + s.w - 2, iz1 = s.gz + s.h - 2;
+        if (s.jefe) {
+            // Cuatro pilares para esquivar el anillo, lejos del portal y de los envases.
+            for (const [x, z] of [[ix0 + 2, iz0 + 2], [ix1 - 2, iz0 + 2], [ix0 + 2, iz1 - 2], [ix1 - 2, iz1 - 2]])
+                ponerPlataforma(x, z, 1, 1, 1.4);
+            continue;
+        }
+        if (s.tipo === 'inicio' || s.tipo === 'meta') continue;
+        if (s.tipo === 'botin') {
+            // Torre en escalera con el botín arriba: 0.9 y luego 1.9.
+            if (!rndProb(prob + 0.2)) continue;
+            if (!ponerPlataforma(s.cx - 1, s.cz - 1, 2, 2, 1.9)) continue;
+            const lados = [[s.cx - 1, s.cz + 1, 2, 1], [s.cx - 1, s.cz - 2, 2, 1],
+                           [s.cx + 1, s.cz - 1, 1, 2], [s.cx - 2, s.cz - 1, 1, 2]];
+            const l = lados[rndEnt(0, 3)];
+            ponerPlataforma(l[0], l[1], l[2], l[3], 0.9);
+            s.torre = true;
+            continue;
+        }
+        if (s.tipo === 'criadero') {
+            // Solo en las esquinas: el centro es del envase.
+            if (!rndProb(prob * 0.7)) continue;
+            const esq = [[ix0, iz0], [ix1, iz0], [ix0, iz1], [ix1, iz1]][rndEnt(0, 3)];
+            if (!enCentro(s, esq[0], esq[1], 2)) ponerPlataforma(esq[0], esq[1], 1, 1, rndProb(0.5) ? 0.9 : 1.4);
+            continue;
+        }
+        // arena: una o dos tarimas
+        const cuantas = rndProb(prob) ? (rndProb(0.4) ? 2 : 1) : 0;
+        for (let k = 0; k < cuantas; k++) {
+            for (let intento = 0; intento < 8; intento++) {
+                const w = rndEnt(1, 2), h = rndEnt(1, 2);
+                const gx = rndEnt(ix0, ix1 - w + 1), gz = rndEnt(iz0, iz1 - h + 1);
+                let enMedio = false;
+                for (let z = gz; z < gz + h; z++)
+                    for (let x = gx; x < gx + w; x++) if (enCentro(s, x, z, 1)) enMedio = true;
+                if (enMedio) continue;
+                if (ponerPlataforma(gx, gz, w, h, ALTURAS_PLATAFORMA[rndEnt(0, 2)])) break;
+            }
+        }
+    }
+}
+
+/** Celdas a las que se llega caminando desde el inicio, sin saltar: solo se
+ *  sube lo que mide un escalón; bajar siempre se puede. */
+function alcanzablesCaminando() {
+    const vis = new Uint8Array(GW * GH);
+    const s0 = salas[0], i0 = s0.cz * GW + s0.cx;
+    vis[i0] = 1;
+    const cola = [i0];
+    while (cola.length) {
+        const i = cola.pop(), gx = i % GW, gz = (i / GW) | 0, h = alturas[i];
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = gx + dx, nz = gz + dz;
+            if (nx < 0 || nz < 0 || nx >= GW || nz >= GH) continue;
+            const j = nz * GW + nx;
+            if (vis[j] || mapa[j] === 0 || alturas[j] - h > ESCALON3D) continue;
+            vis[j] = 1; cola.push(j);
+        }
+    }
+    return vis;
+}
+
+/**
+ * La red de seguridad, como validarNivel en 2D: todo lo que hay que alcanzar
+ * (envases, portal, Ivan, Güero, la arena) tiene que poder alcanzarse caminando;
+ * las plataformas son un extra, nunca un muro. Si algo quedó encerrado, se quita
+ * la última plataforma puesta y se vuelve a revisar.
+ */
+function validarPlataformas3D() {
+    const puntos = criaderos3D.map(c => [c.x, c.z]);
+    if (meta3D) puntos.push([meta3D.position.x, meta3D.position.z]);
+    if (guero) puntos.push([guero.x, guero.z]);
+    if (ivan) puntos.push([ivan.x, ivan.z]);
+    let quitadas = 0;
+    for (;;) {
+        const vis = alcanzablesCaminando();
+        // Los puntos caen en esquinas de celda: basta con llegar a una vecina.
+        const llega = (x, z) => [[0, 0], [-0.8, 0], [0.8, 0], [0, -0.8], [0, 0.8]].some(([dx, dz]) => {
+            const gx = x2gx(x + dx), gz = z2gz(z + dz);
+            return gx >= 0 && gz >= 0 && gx < GW && gz < GH && vis[gz * GW + gx] === 1;
+        });
+        if (puntos.every(([x, z]) => llega(x, z)) || !plataformas3D.length) break;
+        quitarPlataforma(plataformas3D.length - 1);
+        quitadas++;
+    }
+    if (quitadas)
+        for (const m of monedas3D) m.userData.y0 = alturaMundo(m.position.x, m.position.z) + 1.1;
+    return quitadas;
+}
+
+/** Las losas en una sola draw call, con una variación de tono por instancia. */
+function construirPlataformas3D() {
+    let total = 0;
+    for (const p of plataformas3D) total += p.w * p.h;
+    if (!total) return;
+    const inst = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1),
+                                         new THREE.MeshLambertMaterial({ color: 0xffffff }), total);
+    const m = new THREE.Matrix4(), color = new THREE.Color();
+    let i = 0;
+    for (const p of plataformas3D) {
+        for (let z = p.gz; z < p.gz + p.h; z++) {
+            for (let x = p.gx; x < p.gx + p.w; x++) {
+                m.makeScale(CELDA3, p.alto, CELDA3);
+                m.setPosition(gx2x(x) + CELDA3 / 2, p.alto / 2, gz2z(z) + CELDA3 / 2);
+                inst.setMatrixAt(i, m);
+                // Gris concreto, oscuro de base: con las tres luces de la escena, la
+                // cara de arriba ya sale clara. Las más altas, un poco más claras.
+                const v = 0.86 + ((x * 5 + z * 11) % 7) / 40 + p.alto * 0.05;
+                color.setRGB(0.37 * v, 0.36 * v, 0.34 * v);
+                inst.setColorAt(i, color);
+                i++;
+            }
+        }
+    }
+    inst.instanceMatrix.needsUpdate = true;
+    if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
+    grupoNivel.add(inst);
 }
 
 function construirMuros3D() {
@@ -474,7 +723,9 @@ function crearMosquito3D(tipo, x, z, y) {
 function crearMoneda3D(x, z, y) {
     const g = new THREE.SphereGeometry(0.34, 10, 8);
     const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xf1c40f }));
-    m.position.set(x, y === undefined ? 1.1 : y, z);
+    // Sobre una losa, la moneda flota sobre la losa.
+    m.userData.y0 = y === undefined ? alturaMundo(x, z) + 1.1 : y;
+    m.position.set(x, m.userData.y0, z);
     grupoNivel.add(m);
     monedas3D.push(m);
 }
@@ -661,7 +912,9 @@ function giroFijo(x, z) {
 /** Un criadero en 3D: el mismo envase, con el mismo verbo, que en 2D. */
 function crearCriadero3D(tipo, x, z) {
     const d = CRIADEROS[tipo];
+    const prod = CICLO_PRIMERO + rndRango(0, 90);   // la primera cría tarda más (11b)
     const m = modeloEnvase3D(tipo);
+    aplanarEn(x, z, m.radio + 0.4);
     m.grupo.position.set(x, 0, z);
     m.grupo.rotation.y = giroFijo(x, z);
     grupoNivel.add(m.grupo);
@@ -670,7 +923,7 @@ function crearCriadero3D(tipo, x, z) {
         tipo, verbo: d.verbo, x, y: 0, z, malla: m.grupo, agua: m.agua,
         aguaY: m.aguaY, mats: m.mats, radioCol: m.radio, gris: false,
         activo: true, neutralizado: false, vaciado: false, tRevive: 0, conVerbo: null,
-        prod: rndRango(0, 90), producidos: 0, vivos: 0,
+        prod, prodMax: prod, producidos: 0, vivos: 0,
         radio: 9, fase: rndRango(0, 6.28)
     };
     criaderos3D.push(c);
@@ -682,8 +935,10 @@ function crearCriadero3D(tipo, x, z) {
 function criaderoCercano3D() {
     if (!camera3D) return null;
     let mejor = null, mejorD = 3.2;
+    // Desde lo alto de una losa no se alcanza el envase de abajo.
+    const pies = camera3D.position.y - CFG.altoOjos;
     for (const c of criaderos3D) {
-        if (c.neutralizado) continue;
+        if (c.neutralizado || Math.abs(pies - c.y) > 1.3) continue;
         const d = Math.hypot(c.x - camera3D.position.x, c.z - camera3D.position.z);
         if (d < mejorD) { mejorD = d; mejor = c; }
     }
@@ -711,7 +966,7 @@ function actualizarCriaderos3D(dt) {
 
         c.prod -= dt;
         if (c.prod > 0) continue;
-        c.prod = Math.max(80, 180 - nivelActual * 12);
+        reiniciarCiclo(c, Math.max(80, 180 - nivelActual * 12));
         if (c.vivos >= 3 || mosquitos3D.length > 26) continue;
 
         const e = crearMosquito3D(rndProb(0.6) ? 'enjambre' : 'zumbador',
@@ -720,6 +975,7 @@ function actualizarCriaderos3D(dt) {
         c.vivos++; c.producidos++;
         fxChispas3D(c.x, c.aguaY + 0.1, c.z, 6, 0.2, 0.7, 0.45, 0.05);
         tono(150, 0.14, 'sawtooth', 0.035, 90);
+        if (c.producidos === 1) desbloquearFicha('ciclo');
         if (c.producidos === 6) desbloquearFicha('criadero_infinito');
     }
 }
@@ -748,10 +1004,15 @@ function poblarSalas3D(n) {
             luzMeta = new THREE.PointLight(0x9b59b6, 2.2, 18);
             luzMeta.position.set(cx, 2.6, cz);
             grupoNivel.add(luzMeta);
+            aplanarEn(cx, cz, 2.4);
+            // La arena del nivel 4: sus tres envases y la Hembra (10b).
+            if (s.jefe) { poblarArena3D(s); continue; }
             crearMosquito3D(nivelActual >= 4 ? 'mutante' : 'zumbador', cx + rad, cz);
             // El último nivel no termina cruzando un portal: termina decidiendo
             // qué hacer con Güero, que está aquí cursando la fase crítica.
             if (nivelActual >= 5) crearGuero3D(cx - 2.6, cz + 2.2);
+            // Ivan, en la fase febril: se le atiende con la cuadra ya sin criaderos.
+            if (nivelActual === NIVEL_IVAN) crearIvan3D(cx - 2.6, cz + 2.2);
             continue;
         }
         if (s.tipo === 'criadero') {
@@ -767,6 +1028,9 @@ function poblarSalas3D(n) {
                 crearMoneda3D(cx + Math.cos(a) * rad * 0.7, cz + Math.sin(a) * rad * 0.7);
             }
             if (rndProb(0.7)) crearMosquito3D('picador', cx, cz, 2.6);
+            // Lo mejor del botín está arriba de la torre.
+            if (s.torre) for (let k = 0; k < 3; k++)
+                crearMoneda3D(cx + (k - 1) * 1.1, cz + (k === 1 ? 0.9 : -0.6));
             continue;
         }
         // arena
@@ -786,11 +1050,14 @@ function poblarSalas3D(n) {
 
     // Garantia: si el sorteo de salas no dio ningun criadero, el nivel no tendria
     // fuente que cerrar y se ganaria corriendo. Se siembran en salas de arena.
-    const minimo = 1 + Math.floor(nivelActual / 2);
-    for (let i = 1; i < salas.length && criaderos3D.length < minimo; i++) {
+    // En el nivel del jefe cuentan aparte los tres de la arena.
+    const minimo = nivelActual === NIVEL_JEFE_3D ? 2 : 1 + Math.floor(nivelActual / 2);
+    let propios = criaderos3D.filter(c => !c.deJefe).length;
+    for (let i = 1; i < salas.length && propios < minimo; i++) {
         const s = salas[i];
-        if (s.tipo !== "arena") continue;
+        if (s.tipo !== "arena" || s.jefe) continue;
         crearCriadero3D(envaseDeNivel(), gx2x(s.cx) + 1.6, gz2z(s.cz) + 1.6);
+        propios++;
     }
 }
 
@@ -798,6 +1065,7 @@ function generarNivel3D(n) {
     sembrarNivel(n + 100);        // desplazamiento: el 3D del nivel N no repite el 2D
     limpiarNivel3D();
     generarMapa3D(n);
+    generarPlataformas3D(n);
 
     // Suelo: un único plano grande (una draw call) bajo todo el mapa.
     const suelo = new THREE.Mesh(
@@ -809,6 +1077,9 @@ function generarNivel3D(n) {
 
     const numMuros = construirMuros3D();
     poblarSalas3D(n);
+    const quitadas = validarPlataformas3D();
+    construirPlataformas3D();
+    infoPlataformas3D = plataformas3D.length + ' plataformas' + (quitadas ? ' (' + quitadas + ' quitadas)' : '');
 
     // La salida se abre solo con todos los criaderos cerrados. Sin fuente que
     // cerrar, el nivel volveria a ganarse corriendo.

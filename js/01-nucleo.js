@@ -71,7 +71,7 @@ const CFG = {
     ganchoAlcance: 16, ganchoVel: 0.9, ganchoCoste: 30, ganchoCd: 75, ganchoGolpe: 1,
 };
 
-const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa' };
+const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa', PATIO:'patio' };
 let estado = estados.MENU;
 let estadoPrevio = estados.J2D;
 
@@ -90,8 +90,12 @@ const MODO_COCO_PERMITIDO = location.protocol === 'file:' ||
     /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ||
     new URLSearchParams(location.search).has('coco');
 
-// Los niveles impares (1, 3) y el 4 son 2D; el 2 y el post-transición son 3D.
-const NIVEL_ES_2D = n => n === 1 || n === 3 || n === 4;
+// Dos niveles por dimensión antes del final: el 1 y el 3 son 2D; el 2 y el 4 son
+// 3D, y el 5 (Güero) también. Cada dimensión cierra con su jefe: el Núcleo
+// Mutante al final del 3 y la Hembra en la sala del portal del 4.
+const NIVEL_ES_2D = n => n === 1 || n === 3;
+const NIVEL_JEFE_2D = 3;
+const NIVEL_JEFE_3D = 4;
 
 // ---------------------------------------------------------------------------
 //  2. UTILIDADES Y PRNG CON SEMILLA
@@ -158,15 +162,20 @@ let ratonDX = 0, ratonDY = 0;
 // teclado no suelta un botón que el mando sigue manteniendo, ni al revés.
 const padTeclas = {};
 const padNuevas = {};
+// Lo táctil igual, con los suyos (ver 01d-tactil.js): el joystick y los botones
+// en pantalla escriben los mismos códigos que el teclado.
+const tactilTeclas = {};
+const tactilNuevas = {};
 
-const pulsada  = c => !!teclasNuevas[c] || !!padNuevas[c];
-const abajo    = c => !!teclas[c] || !!padTeclas[c];
+const pulsada  = c => !!teclasNuevas[c] || !!padNuevas[c] || !!tactilNuevas[c];
+const abajo    = c => !!teclas[c] || !!padTeclas[c] || !!tactilTeclas[c];
 const cualqPulsada = (...cs) => cs.some(pulsada);
 const cualqAbajo   = (...cs) => cs.some(abajo);
 
 function limpiarFlancos() {
     for (const k in teclasNuevas) teclasNuevas[k] = false;
     for (const k in padNuevas) padNuevas[k] = false;
+    for (const k in tactilNuevas) tactilNuevas[k] = false;
     ratonNuevo[0] = ratonNuevo[1] = ratonNuevo[2] = false;
     ratonDX = ratonDY = 0;
 }
@@ -217,10 +226,13 @@ function accionGlobal(code) {
         else if (tiendaAbierta()) cerrarTienda();
         else if (estado === estados.J2D || estado === estados.J3D) pausar();
         else if (estado === estados.PAUSA) reanudar();
+        else if (estado === estados.PATIO) salirPatio();
     }
 }
 
 window.addEventListener('keydown', e => {
+    // Escribiendo la semilla, una «m» es una letra, no el atajo de silencio.
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'text') return;
     if (!teclas[e.code]) teclasNuevas[e.code] = true;
     teclas[e.code] = true;
 

@@ -14,6 +14,8 @@
 const FUENTES = {
     oms:      'OMS · Dengue and severe dengue',
     cdc:      'CDC · Aedes aegypti factsheet',
+    cdcVida:  'CDC · Life cycle of Aedes aegypti mosquitoes',
+    cdcCasa:  'CDC · Dengue: caring for someone at home',
     cdcClin:  'CDC Yellow Book 2026 · Dengue',
     ssa:      'Secretaría de Salud · Lava, tapa, voltea y tira',
     ssaEpi:   'Secretaría de Salud · Panorama epidemiológico',
@@ -122,6 +124,12 @@ const FICHAS = [
              'Si solo tiras el agua, los huevos siguen ahí esperando la próxima lluvia. Hay que TALLAR.',
       fuente: FUENTES.plos },
 
+    { id: 'ciclo', cat: 'Causas', titulo: 'De huevo a mosquito en una semana',
+      texto: 'Del huevo sale una larva, la larva se vuelve pupa y la pupa, mosquito adulto: en el ' +
+             'agua, todo el ciclo toma de 8 a 10 días. Por eso el patio se revisa cada semana: si ' +
+             'cada semana lavas, tapas, volteas y tiras, ningún criadero alcanza a dar un mosquito.',
+      fuente: FUENTES.cdcVida },
+
     { id: 'lava', cat: 'Prevención', titulo: 'LAVA',
       texto: 'Talla con agua y cepillo las paredes de floreros, bebederos y depósitos. No es por ' +
              'limpieza estética: es para arrancar los huevos pegados que sobreviven al secado.',
@@ -143,6 +151,18 @@ const FICHAS = [
       texto: 'Un criadero activo repone a sus adultos indefinidamente. Por eso fumigar da alivio ' +
              'de días y no resuelve nada: baja la población adulta pero no toca la fuente. ' +
              'El control real es eliminar los recipientes con agua.',
+      fuente: FUENTES.ssa },
+
+    { id: 'repelente', cat: 'Prevención', titulo: 'El repelente no mata: evita la picadura',
+      texto: 'El repelente no elimina mosquitos ni criaderos: hace que no te piquen mientras dura. ' +
+             'Se pone en la piel expuesta y se vuelve a aplicar cuando se acaba. Sirve de día, que ' +
+             'es cuando pica el Aedes, y para que alguien con dengue no contagie a su familia.',
+      fuente: FUENTES.oms },
+
+    { id: 'lluvia', cat: 'Prevención', titulo: 'Después de cada lluvia, revisa',
+      texto: 'La lluvia vuelve a llenar todo lo que quedó boca arriba y despierta los huevos ' +
+             'pegados en las paredes: por eso los casos suben en temporada de lluvias. Después de ' +
+             'cada lluvia, una vuelta por el patio: voltear, tapar, tirar y tallar.',
       fuente: FUENTES.ssa },
 
     { id: 'abate', cat: 'Prevención', titulo: 'Larvicida: para lo que no puedes vaciar',
@@ -215,7 +235,13 @@ const FICHAS = [
       texto: 'El dengue grave mata por choque, y el choque avanza en horas. Lo que salva es ' +
              'reponer líquidos a tiempo bajo vigilancia médica. Esperar a ver si se le pasa ' +
              'es la decisión que llega tarde.',
-      fuente: FUENTES.oms }
+      fuente: FUENTES.oms },
+
+    { id: 'no_picar_enfermo', cat: 'Tratamiento', titulo: 'Que no lo piquen mientras tenga fiebre',
+      texto: 'El dengue no pasa directo de una persona a otra, pero durante la primera semana el ' +
+             'virus va en la sangre del enfermo: el mosquito que lo pica se lo lleva y se lo pasa a ' +
+             'su familia. Mientras dure la fiebre: repelente, mosquitero y tela en las ventanas.',
+      fuente: FUENTES.cdcCasa }
 ];
 
 // --- Mitos, uno por transición de nivel ------------------------------------
@@ -237,6 +263,95 @@ const MITOS = [
       fuente: FUENTES.cdcClin }
 ];
 
+// --- Realidades: la otra mitad de «¿mito o realidad?» -----------------------
+// Entre niveles el jugador contesta antes de ver la explicación. Si todo fuera
+// mito, la respuesta sería siempre la misma y no habría nada que recordar.
+const REALIDADES = [
+    { real: 'Los huevos del mosquito aguantan meses secos pegados a la pared del recipiente',
+      porque: 'Por eso vaciar no basta: hay que tallar la pared.',
+      fuente: FUENTES.plos },
+    { real: 'El mosquito del dengue casi nunca se aleja más de 100 metros de donde nació',
+      porque: 'El que te pica nació en tu casa o en la de junto: la prevención es de toda la manzana.',
+      fuente: FUENTES.cdc },
+    { real: 'Te puede dar dengue hasta cuatro veces en la vida',
+      porque: 'Son cuatro serotipos y pasar uno solo te protege de ese.',
+      fuente: FUENTES.oms },
+    { real: 'Con dengue, la fiebre se baja con paracetamol y no con ibuprofeno',
+      porque: 'El ibuprofeno, el naproxeno y la aspirina afectan las plaquetas y aumentan el riesgo de hemorragia.',
+      fuente: FUENTES.oms },
+    { real: 'El tinaco se tapa; la llanta que ya no usas se tira',
+      porque: 'El agua que sí ocupas se protege; lo que no usas solo está ahí para juntar agua.',
+      fuente: FUENTES.ssa }
+];
+
+// --- ¿Es dengue? ¿A dónde lo llevo? -----------------------------------------
+// Casos de vecinos para la pausa antes del nivel 4. Mismo formato que el quiz:
+// la diferencia entre «en casa», «centro de salud» y «urgencias» la marcan la
+// fase y las señales de alarma, que el juego ya enseñó.
+const TRIAGE = [
+    { pregunta: 'Doña Lupe, 62 años, tuvo fiebre tres días. Hoy ya no tiene fiebre, pero vomita ' +
+                'todo lo que toma y le duele mucho el abdomen.',
+      opciones: ['En casa, con paracetamol y suero', 'Al centro de salud mañana', 'A urgencias, ya'],
+      correcta: 2,
+      explica: 'Bajó la fiebre y aparecieron señales de alarma: vómito persistente y dolor abdominal ' +
+               'intenso. Es la fase crítica, y el choque avanza en horas.',
+      fuente: FUENTES.oms },
+    { pregunta: 'Toño, 15 años, empezó ayer con fiebre de 39 °C, dolor de cabeza y dolor detrás ' +
+                'de los ojos. Toma líquidos bien y no tiene sangrados.',
+      opciones: ['A urgencias, ya',
+                 'Al centro de salud para que lo revisen; en casa, paracetamol, suero y reposo',
+                 'Ibuprofeno y a la escuela'],
+      correcta: 1,
+      explica: 'Es la fase febril sin señales de alarma: que lo vea un médico, paracetamol y líquidos, ' +
+               'y vigilarlo sobre todo cuando le baje la fiebre.',
+      fuente: FUENTES.oms },
+    { pregunta: 'Mari, 30 años, tiene dengue desde hace cinco días. Hoy le sangran las encías y ' +
+                'está muy adormilada.',
+      opciones: ['A urgencias, ya', 'Que descanse y tome más suero', 'Al centro de salud la próxima semana'],
+      correcta: 0,
+      explica: 'Sangrado de encías y letargo son señales de alarma. Con cualquiera de ellas, a ' +
+               'urgencias de inmediato.',
+      fuente: FUENTES.oms }
+];
+
+// --- Quiz de antes y después ------------------------------------------------
+// Las mismas cinco preguntas al empezar y al terminar: la diferencia es lo que
+// el juego enseñó. Antes no se revela la respuesta (si no, el quiz enseñaría y
+// no mediría); después sí, con su explicación y su fuente.
+const QUIZ = [
+    { pregunta: '¿En qué agua pone sus huevos el mosquito del dengue?',
+      opciones: ['En agua sucia de drenajes y charcos',
+                 'En agua limpia guardada en recipientes de la casa',
+                 'En ríos y presas'],
+      correcta: 1,
+      explica: 'Agua limpia y quieta: cubetas, tinacos, floreros, llantas. El criadero casi siempre está en tu patio.',
+      fuente: FUENTES.ssa },
+    { pregunta: 'Alguien tiene dengue y fiebre alta. ¿Qué se le da?',
+      opciones: ['Ibuprofeno o aspirina', 'Paracetamol y mucho líquido', 'Un antibiótico'],
+      correcta: 1,
+      explica: 'Los antiinflamatorios aumentan el riesgo de hemorragia y el antibiótico no sirve contra un virus. Paracetamol y suero.',
+      fuente: FUENTES.oms },
+    { pregunta: '¿Qué se hace con una llanta vieja que está en el patio?',
+      opciones: ['Voltearla', 'Taparla', 'Tirarla'],
+      correcta: 2,
+      explica: 'Lo que ya no usas solo sirve para juntar agua: se tira.',
+      fuente: FUENTES.ssa },
+    { pregunta: 'A alguien con dengue por fin le bajó la fiebre. ¿Qué significa?',
+      opciones: ['Que ya se curó',
+                 'Que empieza la fase más peligrosa y hay que vigilar las señales de alarma',
+                 'Que ya puede tomar ibuprofeno'],
+      correcta: 1,
+      explica: 'La fase crítica arranca cuando cede la fiebre y dura de 24 a 48 horas.',
+      fuente: FUENTES.cdcClin },
+    { pregunta: 'Si ya te dio dengue una vez…',
+      opciones: ['Ya estás protegido para siempre',
+                 'Te puede volver a dar, y la segunda vez puede ser más grave',
+                 'Los mosquitos ya no te pican'],
+      correcta: 1,
+      explica: 'Hay cuatro serotipos. Una segunda infección con otro distinto aumenta el riesgo de dengue grave.',
+      fuente: FUENTES.oms }
+];
+
 // --- Cifras reales para el reporte final -----------------------------------
 const DATOS_REALES = {
     aguascalientes: [
@@ -250,7 +365,7 @@ const DATOS_REALES = {
     mexico2024: { casos: 125000, muertes: 478 },
     mexicoNota: 'En 2024 México superó los 125 mil casos y 478 muertes. El dengue no es una ' +
                 'enfermedad lejana ni tropical de postal: es de patios, azoteas y cacharros.',
-    fuentes: [FUENTES.oms, FUENTES.ssa, FUENTES.ssaEpi, FUENTES.cdc, FUENTES.plos, FUENTES.cofepris]
+    fuentes: [FUENTES.oms, FUENTES.ssa, FUENTES.ssaEpi, FUENTES.cdc, FUENTES.cdcVida, FUENTES.plos, FUENTES.cofepris]
 };
 
 // --- Güero: el rescate del final -------------------------------------------
@@ -264,6 +379,8 @@ const GUERO = {
     reloj: 1500,
 
     hallado: 'GÜERO ESTÁ AQUÍ · TIENE DENGUE',
+    // Como Ivan: con criaderos vivos alrededor, curarlo solo compra tiempo.
+    esperar: 'GÜERO TIENE DENGUE · PRIMERO CIERRA LOS CRIADEROS',
     intro: 'Le bajó la fiebre hace rato y dice que ya se siente mejor. ' +
            'Está pálido, le duele el abdomen y le sangran las encías.',
 
@@ -310,4 +427,58 @@ const GUERO = {
                'meses para entrar a la Universidad Tecnológica El Retoño.',
         nota: 'Esto no fue mala suerte. Falló algo que el juego llevaba cinco niveles enseñando:'
     }
+};
+
+// --- Ivan: el otro caso, al principio de la enfermedad ---------------------
+// Güero enseña la fase crítica. Ivan está en la febril, que es cuando se decide
+// casi todo: qué medicamento, cómo se cuida a la familia y qué señales vigilar.
+// Aparece en el nivel 2 y solo se le puede atender con la cuadra ya sin criaderos.
+const IVAN = {
+    nombre: 'Ivan',
+    hallado: 'IVAN TIENE FIEBRE',
+    esperar: 'IVAN TIENE FIEBRE · PRIMERO CIERRA LOS CRIADEROS DE LA CUADRA',
+    intro: 'Ivan empezó ayer con fiebre de 39 °C, dolor de cabeza y dolor detrás de los ojos. ' +
+           'Vive con su familia. Tú decides cómo lo cuidan.',
+    preguntas: [
+        { pregunta: '¿Qué le dan para la fiebre y el dolor?',
+          opciones: ['Paracetamol, y mucho líquido o suero oral',
+                     'Ibuprofeno: baja la fiebre más rápido',
+                     'Un antibiótico, por si acaso'],
+          correcta: 0,
+          explica: 'Paracetamol para la fiebre y líquidos para no deshidratarse. El ibuprofeno ' +
+                   'aumenta el riesgo de hemorragia y el antibiótico no sirve contra un virus.',
+          ficha: 'hidratacion',
+          fuente: FUENTES.oms },
+        { pregunta: '¿Cómo cuidan a su familia mientras él tenga fiebre?',
+          opciones: ['No hace falta: el dengue no se pasa de persona a persona',
+                     'Que use repelente y duerma con mosquitero mientras tenga fiebre',
+                     'Que tome vitamina C para no contagiar'],
+          correcta: 1,
+          explica: 'No se contagia directo, pero un mosquito que pique a Ivan se lleva el virus ' +
+                   'y lo pasa a los demás. Mientras tenga fiebre, que no lo piquen.',
+          ficha: 'no_picar_enfermo',
+          fuente: FUENTES.cdcCasa },
+        { pregunta: '¿Cuándo hay que llevarlo a urgencias sin esperar?',
+          opciones: ['Si la fiebre le dura más de un día',
+                     'Si cuando le baje la fiebre vomita, le duele mucho el abdomen o le sangran las encías',
+                     'Solo si se desmaya'],
+          correcta: 1,
+          explica: 'Las señales de alarma suelen aparecer justo cuando baja la fiebre. Con ' +
+                   'cualquiera de ellas, a urgencias de inmediato.',
+          ficha: 'senales_alarma',
+          fuente: FUENTES.oms }
+    ],
+    // Qué pasa si se falla cada pregunta, en el mismo orden.
+    fallos: [
+        'Con ibuprofeno o un antibiótico en vez de paracetamol y líquidos, Ivan se arriesgó a ' +
+        'una hemorragia sin que nada atacara el virus.',
+        'Sin repelente ni mosquitero, un mosquito de la casa lo picó con fiebre: dos semanas ' +
+        'después alguien más en su casa tenía dengue.',
+        'Esperar a que se desmaye es llegar tarde: las señales de alarma aparecen cuando baja ' +
+        'la fiebre y el choque avanza en horas.'
+    ],
+    finalBien: 'Ivan pasó la fiebre en casa, con paracetamol, suero, repelente y mosquitero, ' +
+               'vigilando las señales de alarma. A la semana estaba otra vez en la cancha, y nadie ' +
+               'más en su casa se enfermó.',
+    finalMal: 'Ivan salió adelante, pero lo que decidiste pudo salir caro:'
 };
