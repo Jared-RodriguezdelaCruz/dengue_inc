@@ -130,8 +130,9 @@ function actualizarJugador3D(dt) {
     cam.position.y -= offVisY;
     offVisX = offVisY = 0;
 
-    // Con mando, el stick derecho escribe en ratonDX/DY y no hace falta capturar el ratón.
-    if (document.pointerLockElement || mandoActivo) {
+    // Con mando, el stick derecho escribe en ratonDX/DY y no hace falta capturar el
+    // ratón; con el dedo, arrastrar en la mitad derecha (01d-tactil.js).
+    if (document.pointerLockElement || mandoActivo || tactilVisible()) {
         jugador.yaw   -= ratonDX * CFG.sensibilidad;
         jugador.pitch -= ratonDY * CFG.sensibilidad;
         jugador.pitch = clamp(jugador.pitch, -1.48, 1.48);
@@ -166,7 +167,8 @@ function actualizarJugador3D(dt) {
         }
         if (entradaParry()) intentarParry();
         if (jugador.parryT > 0) golpeRaqueta3D();
-        if (entradaAtaque() || ((ratonAbajo[0] || padDisparo) && jugador.ataqueCd <= 0)) disparar3D();
+        asistenciaMira3D(dt);          // solo táctil y disparando: imán suave hacia la mira
+        if (entradaAtaque() || ((ratonAbajo[0] || padDisparo || tactilDisparo) && jugador.ataqueCd <= 0)) disparar3D();
         // En 3D el salto es SOLO espacio: W y ↑ son avanzar.
         if (pulsada('Space') && jugador.enSuelo3) {
             jugador.vy3 = CFG.salto3D; jugador.enSuelo3 = false; sfx.salto();

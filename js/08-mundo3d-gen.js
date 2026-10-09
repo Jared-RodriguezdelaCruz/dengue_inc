@@ -223,7 +223,8 @@ function iniciarMotor3D() {
     scene.add(camera3D);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // En el celular 1.5 basta y se nota en los cuadros por segundo (01d-tactil.js).
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, modoTactil ? 1.5 : 2));
     renderer.setSize(ANCHO, ALTO);
     cont.innerHTML = '';
     cont.appendChild(renderer.domElement);
@@ -270,6 +271,8 @@ function iniciarMotor3D() {
  * clic sobre la vista (`aunConGuero`): ahí el ratón hace falta para elegir.
  */
 function capturarRaton3D(aunConGuero) {
+    // Con el dedo se mira arrastrando: no hay ratón que capturar.
+    if (modoTactil) return;
     if (estado !== estados.J3D || !renderer || document.pointerLockElement) return;
     if (tiendaAbierta() || ficheroAbierto()) return;
     const pg = document.getElementById('panel-guero');

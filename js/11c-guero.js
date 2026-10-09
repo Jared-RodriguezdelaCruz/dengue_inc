@@ -210,13 +210,14 @@ function senalesVisibles() {
 }
 
 function montarPanelGuero(el) {
-    let h = '<h2>' + GUERO.nombre + '</h2>';
+    // Tres bloques: en el celular se ponen lado a lado (estilos de .tactil).
+    let h = '<div class="g-info"><h2>' + GUERO.nombre + '</h2>';
     h += '<div id="g-estado">' + GUERO.intro + '</div>';
     h += '<div id="g-reloj"><div></div></div>';
-    h += '<div id="g-reloj-txt"></div>';
+    h += '<div id="g-reloj-txt"></div></div><div class="g-senales">';
     for (const s of SENALES_ALARMA)
         h += '<div class="g-senal"><span class="g-ico">·</span><span>' + s.texto + '</span></div>';
-    h += '<div class="g-op"></div>';
+    h += '</div><div class="g-op"></div>';
     el.innerHTML = h;
 
     panelG.barra = el.querySelector('#g-reloj div');

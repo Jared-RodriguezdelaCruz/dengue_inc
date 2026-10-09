@@ -28,9 +28,9 @@ const ITEMS_TITULO = [
     { id: 'aprende',  txt: 'Aprende',    accion: () => abrirAprende('medidas'),
       desc: 'Todo lo que enseña el juego, con sus fuentes, sin tener que jugar.' },
     { id: 'opciones', txt: 'Opciones',   sub: true,
-      desc: 'Volumen, sensibilidad 3D, destellos, sacudidas y tutorial.' },
+      desc: 'Volumen, sensibilidad 3D, destellos, sacudidas, tutorial y pantalla completa.' },
     { id: 'ayuda',    txt: 'Ayuda',      sub: true,
-      desc: 'Controles de teclado y mando, y cómo se juega.' },
+      desc: 'Controles de teclado, mando y pantalla táctil, y cómo se juega.' },
     { id: 'creditos', txt: 'Créditos',   sub: true,
       desc: 'El equipo, sus roles y las fuentes del contenido.' }
 ];
@@ -97,6 +97,11 @@ function pintarAyudaTitulo() {
     if (mandoActivo) {
         const e = etiquetasMando();
         el.textContent = 'Cruceta elegir · ←→ ajustar · ' + e.A + ' aceptar · ' + e.B + ' volver';
+    } else if (modoTactil) {
+        el.textContent = 'Toca una opción para elegirla';
+    } else if (escalaMarco < 0.75) {
+        // DI-424: en una ventana chica todo se ve reducido; mejor decirlo.
+        el.textContent = 'La ventana es chica: agrándala o activa la pantalla completa en Opciones';
     } else {
         el.textContent = '↑↓ elegir · ←→ ajustar · Enter aceptar · Esc volver';
     }
@@ -253,14 +258,26 @@ const FILAS_OPCIONES = [
     { tipo: 'rango',  txt: 'Sensibilidad 3D',    clave: 'sens',      min: 0.3, max: 2.5, paso: 0.1, fmt: v => '×' + v.toFixed(1) },
     { tipo: 'toggle', txt: 'Reducir destellos',  clave: 'menosDestellos' },
     { tipo: 'toggle', txt: 'Reducir sacudidas',  clave: 'menosSacudidas' },
-    { tipo: 'toggle', txt: 'Tutorial en la primera partida', clave: 'tutorial' }
+    { tipo: 'toggle', txt: 'Tutorial en la primera partida', clave: 'tutorial' },
+    // Solo si el navegador la tiene (Safari en iPhone no): 01d-tactil.js.
+    { tipo: 'toggle', txt: 'Pantalla completa', leer: enPantallaCompleta, cambiar: alternarPantallaCompleta,
+      si: () => PANTALLA_COMPLETA_OK, pantalla: true }
 ];
+
+// Entrar o salir de pantalla completa tarda un instante (o lo hace el sistema,
+// con Esc o el gesto de atrás): la fila se repinta cuando de verdad cambia.
+function repintarFilasPantalla() {
+    for (const b of document.querySelectorAll('.t-fila[data-pantalla]')) if (b._pintar) b._pintar();
+}
+document.addEventListener('fullscreenchange', repintarFilasPantalla);
+document.addEventListener('webkitfullscreenchange', repintarFilasPantalla);
 
 function pintarOpciones(cont) {
     if (!cont) return;
     cont.innerHTML = '';
     cont.classList.add('t-opciones');
     FILAS_OPCIONES.forEach(f => {
+        if (f.si && !f.si()) return;
         if (f.tipo === 'toggle') {
             const b = document.createElement('button');
             b.type = 'button';
@@ -271,6 +288,7 @@ function pintarOpciones(cont) {
                 b.innerHTML = '<span class="t-et">' + f.txt + '</span><span class="t-val ' +
                               (on ? 'on' : 'off') + '">' + (on ? 'ON' : 'OFF') + '</span>';
             };
+            if (f.pantalla) { b.dataset.pantalla = '1'; b._pintar = pintar; }
             b.addEventListener('click', () => {
                 if (f.cambiar) f.cambiar();
                 else { opciones[f.clave] = !opciones[f.clave]; guardarOpciones(); aplicarOpciones(); }

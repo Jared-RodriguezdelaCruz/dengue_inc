@@ -32,9 +32,10 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
 - Sistema de combate con dash, raqueta, esquives y ataque
 - Capa educativa con fichas, mitos reales, estadísticas y reportes finales
 - Uso de Three.js para la parte 3D
-- Pantalla de título estilo Katana Zero (VHS y neón) con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos, que se maneja con teclado, ratón o mando
+- Pantalla de título estilo Katana Zero (VHS y neón) con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos, que se maneja con teclado, ratón, mando o con el dedo
+- Se juega en celular: joystick y botones en pantalla, mirar arrastrando el dedo en 3D y el marco escalado a cualquier pantalla
 - Minitutorial la primera vez que se juega en 2D y en 3D
-- Opciones que se guardan en el navegador: volumen de música y efectos, sensibilidad 3D, reducir destellos y sacudidas, tutorial
+- Opciones que se guardan en el navegador: volumen de música y efectos, sensibilidad 3D, reducir destellos y sacudidas, tutorial (y pantalla completa)
 - Favicon y vista previa al compartir el link (Open Graph)
 - Sin necesidad de un servidor para abrirse en navegador local
 
@@ -46,6 +47,7 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
   - `01-nucleo.js` — configuración global, estado, entrada, utilidades
   - `01b-datos-dengue.js` — datos de criaderos, serotipos y fichas educativas
   - `01c-mando.js` — soporte de mandos (Gamepad API)
+  - `01d-tactil.js` — controles táctiles, escala del marco, pantalla completa y aviso de girar el celular
   - `02-efectos.js` — partículas, audio y efectos visuales
   - `03-jugador.js` — lógica del jugador, vida, estamina y enfermedad
   - `04-mundo2d-gen.js` — generación del mundo 2D
@@ -140,6 +142,20 @@ Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. 
 - Cruceta `↑ → ↓ ←` — lava · tapa · voltea · tira (en menús: mover la selección; en el primer o el último botón, desplaza el texto que falte por ver; en la pantalla de título, `← →` ajustan las opciones)
 
 El código está en `js/01c-mando.js`.
+
+### En celular (pantalla táctil)
+Se juega en horizontal; en vertical el juego pide girar el teléfono y se pausa. Al tocar «Empezar» se pide pantalla completa (también está en Opciones). Los controles solo aparecen jugando, y se van solos si usas teclado, ratón o mando.
+
+- Joystick (apoya el pulgar izquierdo donde quieras) — mover (en 3D: caminar; abajo + Dash: esquive)
+- Arrastrar el dedo en la mitad derecha — mirar (3D). Mientras disparas, la mira se acerca un poco a un mosquito o a la Hembra si están casi enfrente: menos de 8°, nunca a través de un muro
+- `Saltar` · `Atacar` (en 3D, mantenerlo es ráfaga) · `Raqueta` · `Dash` · `Gancho` (3D, mantener)
+- Junto a un envase salen sus cuatro medidas como botones (siempre las cuatro: cuál toca no lo dice)
+- `⏸` pausa · `🛒` tienda · `📖` fichero, arriba a la derecha
+- Modo Patio: toca un envase y luego su medida
+
+En iPhone, Safari no deja poner una página a pantalla completa: Compartir → «Agregar a inicio» la abre sin barras. Para probar desde el celular sin publicar, corre `python -m http.server 8765 --bind 0.0.0.0` en la PC y abre `http://<IP de la PC>:8765` en la misma red Wi-Fi.
+
+El código está en `js/01d-tactil.js`.
 
 ## Sistema educativo del proyecto
 

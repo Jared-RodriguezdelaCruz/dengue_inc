@@ -246,7 +246,7 @@ function actualizarHUDContinuo() {
             const quedan = criaderosVivos();
             if (quedan > 0) {
                 objetivo('Cierra los criaderos — quedan ' + quedan,
-                         'Acércate a un envase y pulsa 1-4. Cada uno pide su medida.');
+                         'Acércate a un envase y ' + txtMedidas() + '. Cada uno pide su medida.');
             } else {
                 const d = Math.max(0, Math.round((meta.x - jugador.x) / 10));
                 objetivo('Alcanza la salida — ' + d + ' m',
@@ -255,7 +255,7 @@ function actualizarHUDContinuo() {
         } else objetivo('', '');
         brujula3D(null);
     } else {
-        if (!document.pointerLockElement && !mandoActivo && estado === estados.J3D) {
+        if (!document.pointerLockElement && !mandoActivo && !modoTactil && estado === estados.J3D) {
             objetivo('🖱️ Haz clic o pulsa una tecla para capturar el ratón', '');
         } else if (guero && guero.encontrado && !guero.resuelto) {
             objetivo('Decide qué hacer con Güero',
@@ -272,7 +272,7 @@ function actualizarHUDContinuo() {
                          'se esquiva con el dash o se devuelve con la raqueta.');
         } else if (criaderosVivos() > 0) {
             objetivo('Cierra los criaderos — quedan ' + criaderosVivos(),
-                     'Acércate a un envase y pulsa 1-4. La flecha te lleva al más cercano.');
+                     'Acércate a un envase y ' + txtMedidas() + '. La flecha te lleva al más cercano.');
         } else if (!ivanListo()) {
             objetivo('Atiende a Ivan', 'Tiene fiebre. La flecha te lleva con él.');
         } else if (!gueroListo()) {
@@ -383,6 +383,21 @@ function tablaControles() {
     ];
     const tabla = f => '<div class="tabla-controles">' +
         f.map(x => '<div>' + x[0] + ' <b>' + x[1] + '</b></div>').join('') + '</div>';
+    if (tactilVisible()) {
+        // En el celular la tabla de teclado no le sirve a nadie (01d-tactil.js).
+        const filasTactil = [
+            ['Mover', 'joystick: apoya el pulgar izq.'], ['Saltar', 'Saltar'],
+            ['Dash', 'Dash'],                ['Esquive', 'joystick ↓ + Dash'],
+            ['Raqueta', 'Raqueta'],          ['Atacar', 'Atacar (en 3D, mantener)'],
+            ['Medidas', 'aparecen junto al envase'], ['Pausa · tienda · fichero', '⏸ 🛒 📖'],
+            ['Mirar (3D)', 'arrastra a la derecha'], ['Gancho (3D)', 'Gancho (mantener)']
+        ];
+        return '<div style="margin-top:8px;font-size:12px;color:#4dd0e1">📱 Pantalla táctil</div>' +
+            tabla(filasTactil) +
+            '<div style="font-size:11px;color:#90a4ae;margin-top:4px">En 3D la mira se acerca sola un poco ' +
+            'a lo que tengas casi enfrente mientras disparas. En iPhone, para jugar a pantalla completa: ' +
+            'Compartir → «Agregar a inicio».</div>';
+    }
     if (!mandoActivo) return tabla(filas);
 
     const e = etiquetasMando();
@@ -485,6 +500,7 @@ function empezarJuego() {
     jugador.vida = CFG.vidaMax; jugador.estamina = CFG.estaminaMax;
     vidaDibujada = -1;
     audio();                                    // desbloquea WebAudio con un gesto
+    pantallaCompletaAlJugar();                  // en el celular, dentro del mismo toque
     // Primero las cinco preguntas (se pueden saltar): al final se repiten y la
     // diferencia es lo que el juego enseñó.
     quizInicio(() => { ocultarMenu(); iniciarNivel(1); });
@@ -497,7 +513,7 @@ function mostrarDerrota() {
         desc: 'Caíste en el nivel ' + nivelActual + '.' + reporteFinal() +
               '<div style="color:#90a4ae;font-size:11px;margin-top:8px">El nivel se regenera con la ' +
               'misma semilla, así que el trazado será idéntico.</div>',
-        boton: 'Reintentar nivel', accion: () => { ocultarMenu(); reiniciarJugador(true); vidaDibujada = -1; iniciarNivel(nivelActual); },
+        boton: 'Reintentar nivel', accion: () => { pantallaCompletaAlJugar(); ocultarMenu(); reiniciarJugador(true); vidaDibujada = -1; iniciarNivel(nivelActual); },
         boton2: 'Menú principal', accion2: menuPrincipal
     });
 }

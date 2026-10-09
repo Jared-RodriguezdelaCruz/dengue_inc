@@ -277,7 +277,8 @@ function dibujarMenuVerbos(c, cx, cy) {
     for (let i = 0; i < 4; i++) {
         const v = VERBOS[orden[i]];
         ctx.fillStyle = v.color;
-        ctx.fillText((i + 1) + ' ' + v.nombre, cx - w / 2 + 30 + i * 57, cy - 13);
+        // Con el dedo no hay teclas 1-4: las medidas son botones (01d-tactil.js).
+        ctx.fillText((tactilVisible() ? '' : (i + 1) + ' ') + v.nombre, cx - w / 2 + 30 + i * 57, cy - 13);
     }
     ctx.textAlign = 'left';
     ctx.restore();
