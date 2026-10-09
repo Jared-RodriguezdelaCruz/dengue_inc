@@ -162,15 +162,20 @@ let ratonDX = 0, ratonDY = 0;
 // teclado no suelta un botón que el mando sigue manteniendo, ni al revés.
 const padTeclas = {};
 const padNuevas = {};
+// Lo táctil igual, con los suyos (ver 01d-tactil.js): el joystick y los botones
+// en pantalla escriben los mismos códigos que el teclado.
+const tactilTeclas = {};
+const tactilNuevas = {};
 
-const pulsada  = c => !!teclasNuevas[c] || !!padNuevas[c];
-const abajo    = c => !!teclas[c] || !!padTeclas[c];
+const pulsada  = c => !!teclasNuevas[c] || !!padNuevas[c] || !!tactilNuevas[c];
+const abajo    = c => !!teclas[c] || !!padTeclas[c] || !!tactilTeclas[c];
 const cualqPulsada = (...cs) => cs.some(pulsada);
 const cualqAbajo   = (...cs) => cs.some(abajo);
 
 function limpiarFlancos() {
     for (const k in teclasNuevas) teclasNuevas[k] = false;
     for (const k in padNuevas) padNuevas[k] = false;
+    for (const k in tactilNuevas) tactilNuevas[k] = false;
     ratonNuevo[0] = ratonNuevo[1] = ratonNuevo[2] = false;
     ratonDX = ratonDY = 0;
 }

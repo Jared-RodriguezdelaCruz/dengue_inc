@@ -84,6 +84,8 @@ function padActual() {
 
 /** Vibración corta. Silenciosa si el mando o el navegador no la soportan. */
 function vibrar(ms, fuerza) {
+    // En el celular vibra el teléfono (Android; iOS no lo permite).
+    if (tactilVisible() && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* sin vibración */ } return; }
     const gp = mandoActivo ? padActual() : null;
     if (!gp || !gp.vibrationActuator) return;
     try {

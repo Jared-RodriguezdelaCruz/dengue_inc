@@ -81,6 +81,9 @@ function loop(t) {
         fase = 'mando';
         actualizarMando(dtReal);
 
+        fase = 'tactil';
+        actualizarTactil(dtReal);
+
         fase = 'transicion';
         actualizarTransicion(dtReal);
 

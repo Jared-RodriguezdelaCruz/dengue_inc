@@ -46,7 +46,11 @@ const totalCerrados = () => {
     const v = cerradosPorVerbo;
     return v.lava + v.tapa + v.voltea + v.tira + v.abate;
 };
+// Con el dedo, los controles se nombran como dicen los botones (01d-tactil.js).
+const JOYSTICK = 'joystick: apoya el pulgar izquierdo';
+
 function teclasMedidas() {
+    if (tactilVisible()) return 'toca su medida en los botones de abajo';
     return mandoActivo
         ? 'cruceta: ↑ lava · → tapa · ↓ voltea · ← tira'
         : kbd('1') + ' lava ' + kbd('2') + ' tapa ' + kbd('3') + ' voltea ' + kbd('4') + ' tira';
@@ -55,16 +59,19 @@ function teclasMedidas() {
 const PASOS_TUTORIAL = {
     d2: [
         { txt: () => 'Muévete',
-          teclas: () => mandoActivo ? 'stick izquierdo' : kbd('A') + kbd('D') + ' o ' + kbd('←') + kbd('→'),
+          teclas: () => tactilVisible() ? JOYSTICK
+                      : mandoActivo ? 'stick izquierdo' : kbd('A') + kbd('D') + ' o ' + kbd('←') + kbd('→'),
           hecho: s => Math.abs(jugador.x - s.x0) > 80 },
         { txt: () => 'Salta',
-          teclas: () => mandoActivo ? kbd(etiquetasMando().A) : kbd('W') + ' · ' + kbd('↑') + ' · ' + kbd('Espacio'),
+          teclas: () => tactilVisible() ? kbd('Saltar')
+                      : mandoActivo ? kbd(etiquetasMando().A) : kbd('W') + ' · ' + kbd('↑') + ' · ' + kbd('Espacio'),
           hecho: () => !jugador.enSuelo && jugador.vy < 0 },
         { txt: () => 'Dash: un instante invulnerable',
-          teclas: () => mandoActivo ? kbd(etiquetasMando().B) : kbd('Shift'),
+          teclas: () => tactilVisible() ? kbd('Dash') : mandoActivo ? kbd(etiquetasMando().B) : kbd('Shift'),
           hecho: () => jugador.dashT > 0 },
         { txt: () => 'Raqueta: achicharra y devuelve los proyectiles morados',
-          teclas: () => mandoActivo ? kbd(etiquetasMando().Y) : kbd('F') + ' · clic derecho',
+          teclas: () => tactilVisible() ? kbd('Raqueta')
+                      : mandoActivo ? kbd(etiquetasMando().Y) : kbd('F') + ' · clic derecho',
           hecho: () => jugador.parryT > 0 },
         { txt: () => criaderoCercano2D() ? 'Ciérralo con la medida que pide' : 'Busca un envase con agua →',
           teclas: () => criaderoCercano2D() ? teclasMedidas() : 'de ahí salen los mosquitos',
@@ -72,18 +79,21 @@ const PASOS_TUTORIAL = {
     ],
     d3: [
         { txt: () => 'Mira alrededor',
-          teclas: () => mandoActivo ? 'stick derecho'
+          teclas: () => tactilVisible() ? 'arrastra el dedo en la mitad derecha'
+                      : mandoActivo ? 'stick derecho'
                       : (document.pointerLockElement ? 'mueve el ratón' : 'haz clic en la vista y mueve el ratón'),
           hecho: s => s.giro > 1 },
         { txt: () => 'Camina',
-          teclas: () => mandoActivo ? 'stick izquierdo' : kbd('W') + kbd('A') + kbd('S') + kbd('D'),
+          teclas: () => tactilVisible() ? JOYSTICK
+                      : mandoActivo ? 'stick izquierdo' : kbd('W') + kbd('A') + kbd('S') + kbd('D'),
           hecho: s => Math.hypot(camera3D.position.x - s.x0, camera3D.position.z - s.z0) > 4 },
         { txt: () => 'Ataca',
-          teclas: () => mandoActivo ? kbd(etiquetasMando().RT) + ' · ' + kbd(etiquetasMando().X)
+          teclas: () => tactilVisible() ? kbd('Atacar') + ' · mantenlo para una ráfaga'
+                      : mandoActivo ? kbd(etiquetasMando().RT) + ' · ' + kbd(etiquetasMando().X)
                                     : 'clic izquierdo · ' + kbd('J'),
           hecho: () => jugador.ataqueCd > 0 },
         { txt: () => 'Esquiva con el dash',
-          teclas: () => mandoActivo ? kbd(etiquetasMando().B) : kbd('Shift'),
+          teclas: () => tactilVisible() ? kbd('Dash') : mandoActivo ? kbd(etiquetasMando().B) : kbd('Shift'),
           hecho: () => jugador.dashT > 0 },
         { txt: () => 'Sigue la brújula hasta el envase',
           teclas: () => 'la flecha de abajo apunta al criadero',
@@ -138,7 +148,8 @@ function actualizarTutorial(dt) {
                 marcarTutorialVisto(s.modo);
                 s.fin = TUTORIAL_FIN;
                 s.htmlFin = '<div class="tu-txt">¡Listo! Ya sabes lo básico</div>' +
-                            '<div class="tu-teclas">Esc pausa · T tienda · C fichero</div>';
+                            '<div class="tu-teclas">' + (tactilVisible() ? '⏸ pausa · 🛒 tienda · 📖 fichero'
+                                                                         : 'Esc pausa · T tienda · C fichero') + '</div>';
                 pintarTutorial(s.htmlFin, 'fin');
                 sfx.nivel();
                 return;
