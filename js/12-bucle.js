@@ -84,7 +84,12 @@ function loop(t) {
         fase = 'transicion';
         actualizarTransicion(dtReal);
 
-        if (modoRender === '2d') {
+        if (estado === estados.PATIO) {
+            // Modo Patio (11e): escena fija, sin cámara ni enemigos.
+            fase = 'patio'; actualizarPatio(dt);
+            msLogica = performance.now() - t0;
+            dibujarPatio();
+        } else if (modoRender === '2d') {
             const jugando = estado === estados.J2D;
             if (jugando && dt > 0) {
                 fase = 'jugador2d';   actualizarJugadorComun(dt); actualizarJugador2D(dt);
@@ -124,6 +129,8 @@ function loop(t) {
             fase = 'colonia'; actualizarColonia(dt);
             fase = 'fichas';  actualizarFichas(dt);
             fase = 'guero';   actualizarGuero(dt);
+            fase = 'ivan';    actualizarIvan(dt);
+            fase = 'lluvia';  actualizarLluvia(dt);
         }
 
         // HUD continuo: solo toca unos pocos estilos, y no cada frame.

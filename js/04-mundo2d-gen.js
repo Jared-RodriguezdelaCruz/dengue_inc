@@ -157,11 +157,14 @@ function addCharco(x, ancho, y) {
  *  repone mosquitos sin fin: por eso matar adultos no cierra un nivel. */
 function addCriadero(tipo, x, y) {
     const d = CRIADEROS[tipo];
+    // La primera cría tarda más: es la ventana para cerrarlo antes de que nazca
+    // un solo mosquito (CICLO_PRIMERO, 11b).
+    const prod = CICLO_PRIMERO + rndRango(0, 90);
     criaderos.push({
         tipo, verbo: d.verbo, x: x - d.ancho / 2, y: y - d.alto, ancho: d.ancho, alto: d.alto,
         activo: true, neutralizado: false, vaciado: false, tRevive: 0,
         conVerbo: null,                       // con qué se neutralizó, para el reporte
-        prod: rndRango(0, 90), producidos: 0, vivos: 0,  // cadencia, total y descendencia viva
+        prod, prodMax: prod, producidos: 0, vivos: 0,  // ciclo de cría, total y descendencia viva
         radio: 250,                           // zona de vuelo de su descendencia
         fase: rndRango(0, 6.28), sacude: 0
     });

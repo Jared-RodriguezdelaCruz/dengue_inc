@@ -47,11 +47,12 @@ else if (version && !build[1].endsWith(version))
   mal(`BUILD ('${build[1]}') no termina en la versión de index.html (?v=${version}): súbanlos juntos`);
 if (errores.length === antes) bien(`index.html carga ${locales.length} archivos locales, todos con ?v=${version}`);
 
-// 3. Datos del dengue: cada ficha y cada mito cita una fuente de FUENTES
+// 3. Datos del dengue: cada ficha, mito, realidad y pregunta cita una fuente de FUENTES
 antes = errores.length;
 let datos = null;
 try {
-  datos = vm.runInNewContext(readFileSync('js/01b-datos-dengue.js', 'utf8') + '\n;({ FUENTES, FICHAS, MITOS })');
+  datos = vm.runInNewContext(readFileSync('js/01b-datos-dengue.js', 'utf8') +
+                             '\n;({ FUENTES, FICHAS, MITOS, REALIDADES, QUIZ, IVAN, TRIAGE })');
 } catch (e) {
   mal(`js/01b-datos-dengue.js no se pudo evaluar: ${e.message}`);
 }
@@ -70,8 +71,28 @@ if (datos) {
     if (!m.mito || !m.real) mal(`Hay un mito sin "mito" o sin "real": ${JSON.stringify(m)}`);
     if (!fuentes.has(m.fuente)) mal(`El mito "${m.mito}" no cita una fuente de FUENTES`);
   }
+  for (const r of datos.REALIDADES) {
+    if (!r.real || !r.porque) mal(`Hay una realidad sin "real" o sin "porque": ${JSON.stringify(r)}`);
+    if (!fuentes.has(r.fuente)) mal(`La realidad "${r.real}" no cita una fuente de FUENTES`);
+  }
+  // El quiz, la consulta de Ivan y el triage comparten formato: pregunta, 2-4 opciones,
+  // la correcta, su explicación, su fuente y, si abre una ficha, que exista.
+  const preguntas = [...datos.QUIZ, ...datos.IVAN.preguntas, ...datos.TRIAGE];
+  for (const q of preguntas) {
+    const nombre = q.pregunta || '(sin pregunta)';
+    if (!q.pregunta || !q.explica) mal(`La pregunta "${nombre}" no tiene pregunta o explicación`);
+    if (!Array.isArray(q.opciones) || q.opciones.length < 2 || q.opciones.length > 4)
+      mal(`La pregunta "${nombre}" debe tener de 2 a 4 opciones`);
+    else if (!(q.correcta >= 0 && q.correcta < q.opciones.length))
+      mal(`La pregunta "${nombre}" marca una respuesta correcta que no existe`);
+    if (!fuentes.has(q.fuente)) mal(`La pregunta "${nombre}" no cita una fuente de FUENTES`);
+    if (q.ficha && !ids.has(q.ficha)) mal(`La pregunta "${nombre}" abre la ficha "${q.ficha}", que no existe`);
+  }
+  if (datos.IVAN.fallos.length !== datos.IVAN.preguntas.length)
+    mal('IVAN necesita un texto en "fallos" por cada pregunta, en el mismo orden');
   if (errores.length === antes)
-    bien(`${datos.FICHAS.length} fichas y ${datos.MITOS.length} mitos citan su fuente`);
+    bien(`${datos.FICHAS.length} fichas, ${datos.MITOS.length} mitos, ${datos.REALIDADES.length} ` +
+         `realidades y ${preguntas.length} preguntas citan su fuente`);
 }
 
 if (errores.length) {

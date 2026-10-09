@@ -304,6 +304,7 @@ function limpiarNivel3D() {
     mosquitos3D = []; monedas3D = []; proy3D = []; tinacos3D = []; criaderos3D = [];
     meta3D = null; murosInst = null; P3.n = 0;
     reiniciarGuero();          // su malla vive en grupoNivel: ya quedó liberada
+    reiniciarIvan();
     limpiarGancho3D();         // no puede seguir jalando hacia un mosquito del nivel anterior
     for (const a of anillos) { a.libre = true; a.mesh.visible = false; }
 }
@@ -661,6 +662,7 @@ function giroFijo(x, z) {
 /** Un criadero en 3D: el mismo envase, con el mismo verbo, que en 2D. */
 function crearCriadero3D(tipo, x, z) {
     const d = CRIADEROS[tipo];
+    const prod = CICLO_PRIMERO + rndRango(0, 90);   // la primera cría tarda más (11b)
     const m = modeloEnvase3D(tipo);
     m.grupo.position.set(x, 0, z);
     m.grupo.rotation.y = giroFijo(x, z);
@@ -670,7 +672,7 @@ function crearCriadero3D(tipo, x, z) {
         tipo, verbo: d.verbo, x, y: 0, z, malla: m.grupo, agua: m.agua,
         aguaY: m.aguaY, mats: m.mats, radioCol: m.radio, gris: false,
         activo: true, neutralizado: false, vaciado: false, tRevive: 0, conVerbo: null,
-        prod: rndRango(0, 90), producidos: 0, vivos: 0,
+        prod, prodMax: prod, producidos: 0, vivos: 0,
         radio: 9, fase: rndRango(0, 6.28)
     };
     criaderos3D.push(c);
@@ -711,7 +713,7 @@ function actualizarCriaderos3D(dt) {
 
         c.prod -= dt;
         if (c.prod > 0) continue;
-        c.prod = Math.max(80, 180 - nivelActual * 12);
+        reiniciarCiclo(c, Math.max(80, 180 - nivelActual * 12));
         if (c.vivos >= 3 || mosquitos3D.length > 26) continue;
 
         const e = crearMosquito3D(rndProb(0.6) ? 'enjambre' : 'zumbador',
@@ -720,6 +722,7 @@ function actualizarCriaderos3D(dt) {
         c.vivos++; c.producidos++;
         fxChispas3D(c.x, c.aguaY + 0.1, c.z, 6, 0.2, 0.7, 0.45, 0.05);
         tono(150, 0.14, 'sawtooth', 0.035, 90);
+        if (c.producidos === 1) desbloquearFicha('ciclo');
         if (c.producidos === 6) desbloquearFicha('criadero_infinito');
     }
 }
@@ -752,6 +755,8 @@ function poblarSalas3D(n) {
             // El último nivel no termina cruzando un portal: termina decidiendo
             // qué hacer con Güero, que está aquí cursando la fase crítica.
             if (nivelActual >= 5) crearGuero3D(cx - 2.6, cz + 2.2);
+            // Ivan, en la fase febril: se le atiende con la cuadra ya sin criaderos.
+            if (nivelActual === NIVEL_IVAN) crearIvan3D(cx - 2.6, cz + 2.2);
             continue;
         }
         if (s.tipo === 'criadero') {

@@ -270,14 +270,114 @@ canvas { display: block; }
 #fichero .ficha .src { font-size: 9px; color: #78909c; font-style: italic; }
 #fichero .ficha.bloq { border-left-color: #37474f; opacity: .45; }
 
-/* Mito vs realidad, entre niveles */
-.mito {
-    background: rgba(0,0,0,.32); border-radius: 8px; padding: 12px 15px;
-    margin: 14px auto; max-width: 560px; text-align: left;
+/* Repaso entre niveles: las fichas que se abrieron, en corto */
+.repaso {
+    max-width: 560px; margin: 4px auto 12px; text-align: left;
+    border-left: 3px solid #1abc9c; padding: 2px 0 2px 12px;
 }
-.mito .m-falso { color: #ff7675; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
-.mito .m-real  { color: #7bed9f; font-size: 13px; line-height: 1.5; }
-.mito .m-src   { color: #78909c; font-size: 10px; font-style: italic; margin-top: 7px; }
+.repaso h3 { color: #1abc9c; font-size: 13px; letter-spacing: .6px; margin: 2px 0 6px; }
+.repaso .rp-f { font-size: 11.5px; line-height: 1.45; color: #b8c7d1; margin: 4px 0; }
+.repaso .rp-f b { color: #ecf0f1; }
+.repaso .rp-pie { font-size: 10px; color: #78909c; margin-top: 6px; }
+
+/* ¿Mito o realidad? y quiz: se contesta antes de ver la explicación */
+.reto, .quiz {
+    background: rgba(0,0,0,.32); border-radius: 8px; padding: 12px 15px;
+    margin: 10px auto; max-width: 560px; text-align: left;
+}
+.reto .r-cab { font-size: 10px; letter-spacing: 1.2px; color: #f1c40f; font-weight: bold; }
+.reto .r-txt { font-size: 14px; line-height: 1.45; color: #ecf0f1; margin: 6px 0 2px; }
+.r-ops { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.r-ops button {
+    flex: 1 1 140px; text-align: left; cursor: pointer;
+    background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.14);
+    color: #ecf0f1; border-radius: 6px; padding: 8px 10px;
+    font-family: inherit; font-size: 13px; line-height: 1.35;
+}
+.r-ops button:hover:not(:disabled) { border-color: #f1c40f; }
+.r-ops button:disabled { cursor: default; opacity: .55; }
+.r-ops button .k {
+    display: inline-block; min-width: 18px; margin-right: 7px; padding: 0 4px;
+    border-radius: 3px; background: rgba(255,255,255,.14); color: #f1c40f;
+    font-size: 11px; font-weight: bold; text-align: center;
+}
+.r-ops button.bien { opacity: 1; border-color: #2ecc71; background: rgba(46,204,113,.18); }
+.r-ops button.mal  { opacity: 1; border-color: #e74c3c; background: rgba(231,76,60,.18); }
+.r-ops button.era  { opacity: 1; border-color: #2ecc71; border-style: dashed; }
+.r-res { font-size: 12px; line-height: 1.5; color: #cfd8dc; margin-top: 9px; padding: 7px 10px; border-radius: 4px; }
+.r-res.bien { background: rgba(46,204,113,.13); border-left: 3px solid #2ecc71; }
+.r-res.mal  { background: rgba(231,76,60,.14);  border-left: 3px solid #e74c3c; }
+.r-res b { color: #ecf0f1; }
+.r-res .premio { color: #f1c40f; font-weight: bold; white-space: nowrap; }
+.r-res .r-src { font-size: 10px; color: #78909c; font-style: italic; margin-top: 4px; }
+.quiz .q-intro { font-size: 11.5px; line-height: 1.5; color: #90a4ae; }
+.quiz .q-preg { font-size: 16px; line-height: 1.4; color: #ecf0f1; font-weight: bold; margin: 10px 0 2px; }
+.quiz .r-ops { flex-direction: column; }
+.quiz .r-ops button { flex: 0 0 auto; }
+
+/* Antes → después del quiz, en la pantalla final */
+.quiz-res { max-width: 560px; margin: 10px auto; text-align: left; }
+.quiz-res h3 { color: #1abc9c; font-size: 15px; margin: 6px 0 8px; }
+.quiz-res p { font-size: 12px; line-height: 1.5; color: #cfd8dc; margin: 8px 0 0; }
+.qb { display: flex; align-items: center; gap: 10px; margin: 5px 0; font-size: 12px; }
+.qb .qb-et { width: 62px; color: #90a4ae; }
+.qb .qb-b { flex: 1; height: 12px; background: rgba(255,255,255,.08); border-radius: 6px; overflow: hidden; }
+.qb .qb-b div { height: 100%; border-radius: 6px; }
+.qb .qb-b .antes   { background: #546e7a; }
+.qb .qb-b .despues { background: linear-gradient(90deg, #16a085, #2ecc71); }
+.qb .qb-n { width: 34px; text-align: right; font-weight: bold; color: #f1c40f; }
+
+/* Revisa tu casa: la lista para el patio de verdad */
+.revisa-casa {
+    max-width: 560px; margin: 14px auto 6px; text-align: left;
+    background: rgba(26,188,156,.08); border: 2px solid rgba(26,188,156,.45);
+    border-radius: 8px; padding: 12px 15px;
+}
+.revisa-casa h3 { color: #1abc9c; font-size: 15px; margin: 0 0 2px; }
+.revisa-casa .rc-sub { font-size: 11px; color: #90a4ae; margin-bottom: 6px; }
+.revisa-casa .rc-g { padding: 6px 0; border-top: 1px solid rgba(255,255,255,.08); font-size: 12.5px; }
+.revisa-casa .rc-v { font-weight: bold; margin-right: 10px; }
+.revisa-casa label { margin-right: 12px; color: #ecf0f1; white-space: nowrap; }
+.revisa-casa .rc-box { margin-right: 4px; color: #90a4ae; }
+.revisa-casa .rc-p { font-size: 10.5px; color: #90a4ae; margin-top: 2px; }
+.revisa-casa .rc-acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.btn.peq-linea { padding: 7px 14px; font-size: 13px; }
+
+/* Aprende: lo mismo que enseña el juego, para consultar sin jugar */
+.ap-sub { font-size: 13px; color: #90a4ae; margin-bottom: 10px; }
+.ap-tabs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 640px; margin: 0 auto 10px; }
+.ap-tabs button {
+    background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.14); color: #cfd8dc;
+    border-radius: 16px; padding: 5px 12px; cursor: pointer; font-family: inherit; font-size: 12.5px;
+}
+.ap-tabs button:hover { border-color: #1abc9c; }
+.ap-tabs button.activa { background: #16a085; border-color: #1abc9c; color: #fff; font-weight: bold; }
+.ap-cont { max-width: 640px; margin: 0 auto; text-align: left; }
+.ap-ficha {
+    background: rgba(255,255,255,.05); border-left: 3px solid #1abc9c;
+    border-radius: 5px; padding: 8px 12px; margin-bottom: 8px;
+}
+.ap-ficha b { font-size: 13.5px; color: #ecf0f1; }
+.ap-ficha p { font-size: 12px; line-height: 1.5; color: #b8c7d1; margin: 4px 0 2px; }
+.ap-ficha .src { font-size: 10px; color: #78909c; font-style: italic; }
+.ap-ficha .ap-env { font-size: 11.5px; font-weight: bold; margin-left: 6px; }
+.ap-ficha.mito { border-left-color: #e74c3c; }
+.ap-ficha.mito b { color: #ff7675; }
+.ap-ficha.real { border-left-color: #2ecc71; }
+.ap-ficha.real b { color: #7bed9f; }
+
+/* La lluvia (11b): vuelve a llenar lo que quedó boca arriba. Bajo el HUD. */
+#lluvia {
+    position: absolute; inset: 0; z-index: 11; pointer-events: none; display: none;
+    background: repeating-linear-gradient(105deg, transparent 0 13px, rgba(174,214,241,.38) 13px 14px);
+    background-size: 120px 120px; box-shadow: inset 0 0 0 2000px rgba(40,60,80,.14);
+    animation: cae-lluvia .32s linear infinite;
+}
+#game-container.lloviendo #lluvia { display: block; }
+@keyframes cae-lluvia { from { background-position: 0 0 } to { background-position: -32px 120px } }
+
+/* Modo Patio: sin vida, fiebre ni monedas; la escena se explica sola. */
+#game-container.modo-patio .hud { display: none; }
 
 /* Reporte final */
 .rep { max-width: 560px; margin: 8px auto 14px; text-align: left; }

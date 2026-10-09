@@ -52,6 +52,8 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
   - `11-flujo.js` — niveles, tienda, HUD, menús y transiciones
   - `11b-educacion.js` — capa educativa, fichas, reportes y estadísticas
   - `11c-guero.js` — lógica del personaje Güero y el final
+  - `11d-ivan.js` — Ivan, el caso de la fase febril en el nivel 2
+  - `11e-patio.js` — Modo Patio: inspeccionar una casa sin enemigos
   - `12-bucle.js` — bucle principal y arranque
 
 ## Cómo ejecutar
@@ -131,6 +133,16 @@ Una de las partes más importantes del juego es la capa de aprendizaje. El jugad
 - vaciar un recipiente sin corregir la causa puede ser una trampa,
 - la prevención debe basarse en eliminar o tratar correctamente los criaderos,
 - la fiebre, los serotipos y la vacunación tienen consecuencias reales que se explican dentro del juego.
+
+Se aprende jugando y decidiendo, no solo leyendo:
+
+- **El juego premia lo que enseña:** cerrar un criadero da monedas y el mosquito que acaba de salir de uno no da nada. El abate solo sirve donde el agua se guarda.
+- **Quiz antes y después:** las mismas 5 preguntas al empezar y antes del final, para ver cuánto se aprendió. El resultado se guarda en el navegador para los playtests.
+- **Entre niveles:** repaso de las fichas que se abrieron y retos que se contestan antes de ver la respuesta (¿mito o realidad?, ¿a dónde llevas al vecino?).
+- **En el mundo:** cada criadero muestra el ciclo huevos → larvas → pupas, llueve una vez por nivel, e Ivan (nivel 2) y Güero (nivel 5) enseñan las dos fases de la enfermedad.
+- **Fuera de la partida:** *Modo Patio* (una casa con 10 criaderos, sin enemigos), *Aprende* (todo el contenido con sus fuentes) y, al terminar, la lista *Revisa tu casa* para imprimir o mandar por WhatsApp.
+
+Todo dato sale de `js/01b-datos-dengue.js` con su fuente, y la Action *Validar* revisa que cada ficha, mito, realidad y pregunta la cite.
 
 ## Nota sobre la semilla
 

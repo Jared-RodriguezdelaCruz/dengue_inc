@@ -304,10 +304,10 @@ function actualizarObjetos3D(dt) {
             // Con Güero sin resolver el portal es decorado: no se sale de aquí
             // dejándolo tirado, y el juego lo dice en vez de fallar en silencio.
             if (cam.position.distanceTo(meta3D.position) < 2.6) {
-                if (gueroListo()) completarNivel();
+                if (gueroListo() && ivanListo()) completarNivel();
                 else if (!avisoGuero) {
                     avisoGuero = 90;
-                    aviso('NO TE VAS SIN GÜERO', 1800);
+                    aviso(ivanListo() ? 'NO TE VAS SIN GÜERO' : 'NO TE VAS SIN ATENDER A IVAN', 1800);
                 }
             }
         }

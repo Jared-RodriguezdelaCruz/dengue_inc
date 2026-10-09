@@ -25,7 +25,7 @@ function cerrarTienda() {
     capturarRaton3D();
 }
 
-const PRECIOS = { repelente: 5, abate: 10, suero: 8, paracetamol: 4, aine: 3, vacuna: 20 };
+const PRECIOS = { insecticida: 5, abate: 10, repelente: 4, suero: 8, paracetamol: 4, aine: 3, vacuna: 20 };
 
 function comprar(id) {
     const costo = PRECIOS[id];
@@ -46,6 +46,13 @@ function comprar(id) {
         actualizarHUD(); refrescarTienda();
         return;
     }
+    // El repelente se gasta: protege un rato, no es un arma.
+    if (id === 'repelente') {
+        if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
+        fichas -= costo; aplicarRepelente();
+        actualizarHUD(); refrescarTienda();
+        return;
+    }
     if (id === 'suero') {
         if (jugador.vida >= CFG.vidaMax) { aviso('VIDA COMPLETA', 700); return; }
         if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
@@ -56,11 +63,13 @@ function comprar(id) {
     if (inventario.includes(id)) { armaActiva = id; actualizarHUD(); refrescarTienda(); return; }
     if (fichas < costo) { aviso('SIN MONEDAS', 700); sfx.parryFail(); return; }
     fichas -= costo; inventario.push(id); armaActiva = id;
+    // Comprar con qué matar adultos es el momento de saber que eso no cierra nada.
+    if (id === 'insecticida') desbloquearFicha('criadero_infinito');
     sfx.nivel(); actualizarHUD(); refrescarTienda();
 }
 
 function refrescarTienda() {
-    for (const id of ['repelente', 'abate']) {
+    for (const id of ['insecticida', 'abate']) {
         const b = document.getElementById('btn-' + id);
         if (inventario.includes(id)) {
             b.textContent = armaActiva === id ? 'Equipado' : 'Equipar';
@@ -70,6 +79,9 @@ function refrescarTienda() {
             b.className = fichas >= PRECIOS[id] ? '' : 'caro';
         }
     }
+    const br = document.getElementById('btn-repelente');
+    br.textContent = 'Comprar (' + PRECIOS.repelente + ')';
+    br.className = fichas >= PRECIOS.repelente ? '' : 'caro';
     const bp = document.getElementById('btn-paracetamol');
     bp.textContent = 'Comprar (' + PRECIOS.paracetamol + ')';
     bp.className = fichas >= PRECIOS.paracetamol ? '' : 'caro';
@@ -108,7 +120,7 @@ function actualizarHUD() {
     pintarCorazones();
     document.getElementById('ui-fichas').textContent = fichas;
     document.getElementById('ui-arma').textContent =
-        armaActiva === 'botas' ? 'Botas' : (armaActiva === 'abate' ? 'Abate' : 'Repelente');
+        armaActiva === 'botas' ? 'Botas' : (armaActiva === 'abate' ? 'Abate' : 'Insecticida');
     document.getElementById('ui-nivel').textContent =
         'Nivel ' + nivelActual + (NIVEL_ES_2D(nivelActual) ? ' · 2D' : ' · 3D');
     document.getElementById('ui-semilla').textContent = 'semilla ' + semillaRun;
@@ -140,11 +152,16 @@ function pintarPromptVerbos() {
     if (!el) return;
     const c = (modoRender === '3d' && estado === estados.J3D) ? criaderoCercano3D() : null;
     if (!c) { el.classList.add('oculto'); promptVerbosPrev = ''; return; }
-    // Se repintaba veinte veces por segundo para mostrar siempre lo mismo.
-    if (c.tipo === promptVerbosPrev) { el.classList.remove('oculto'); return; }
-    promptVerbosPrev = c.tipo;
+    // Se repintaba veinte veces por segundo para mostrar siempre lo mismo: solo
+    // cambia con el envase o con la etapa de su cría.
+    const etapa = c.activo ? etapaCriadero(c).etapa : null;
+    const clave = c.tipo + (etapa ? etapa.nombre : '');
+    if (clave === promptVerbosPrev) { el.classList.remove('oculto'); return; }
+    promptVerbosPrev = clave;
     const orden = ['lava', 'tapa', 'voltea', 'tira'];
-    let html = '<div class="pv-tit">' + CRIADEROS[c.tipo].nombre + '</div><div>';
+    let html = '<div class="pv-tit">' + CRIADEROS[c.tipo].nombre +
+               (etapa ? ' · <span style="color:' + etapa.color + '">' + etapa.nombre + '</span>' : '') +
+               '</div><div>';
     for (let i = 0; i < 4; i++) {
         const v = VERBOS[orden[i]];
         html += '<span class="pv-v" style="color:' + v.color + '">' + (i + 1) + ' ' + v.nombre + '</span>';
@@ -163,6 +180,8 @@ function latirCorazones() {
 }
 
 function actualizarHUDContinuo() {
+    // El Modo Patio no tiene vida, fiebre ni objetivo de partida.
+    if (estado === estados.PATIO) return;
     // Red de seguridad para cualquier camino que cambie la vida sin avisar.
     pintarCorazones();
 
@@ -187,6 +206,9 @@ function actualizarHUDContinuo() {
         cont.classList.remove('febril', 'critica');
     }
     document.getElementById('ui-casos').textContent = casosColonia;
+    const elRep = document.getElementById('ui-repelente');
+    elRep.classList.toggle('oculto', jugador.repelente <= 0);
+    if (jugador.repelente > 0) elRep.textContent = '🧴 repelente ' + Math.ceil(jugador.repelente / 60) + ' s';
     pintarPromptVerbos();
 
     elEstamina.style.width = (jugador.estamina / CFG.estaminaMax * 100) + '%';
@@ -230,6 +252,8 @@ function actualizarHUDContinuo() {
         } else if (criaderosVivos() > 0) {
             objetivo('Cierra los criaderos — quedan ' + criaderosVivos(),
                      'Acércate a un envase y pulsa 1-4. La flecha te lleva al más cercano.');
+        } else if (!ivanListo()) {
+            objetivo('Atiende a Ivan', 'Tiene fiebre. La flecha te lleva con él.');
         } else if (!gueroListo()) {
             objetivo('Encuentra a Güero', 'La columna naranja marca dónde está.');
         } else {
@@ -265,6 +289,7 @@ function objetivo3D() {
         if (d < mejorD) { mejorD = d; mejor = c; }
     }
     if (mejor) return { x: mejor.x, z: mejor.z, txt: CRIADEROS[mejor.tipo].nombre, meta: false };
+    if (ivan && !ivan.resuelto) return { x: ivan.x, z: ivan.z, txt: IVAN.nombre, meta: false };
     if (guero && !guero.resuelto)
         return { x: guero.x, z: guero.z, txt: GUERO.nombre, meta: false };
     if (meta3D && metaAbierta)
@@ -314,6 +339,7 @@ function pintarLegenda() {
 const elPantalla = document.getElementById('pantalla-mensaje');
 let accionMenu = () => {};
 let accionMenu2 = null;
+let accionMenu3 = null;
 
 function tablaControles() {
     const filas = [
@@ -369,6 +395,7 @@ function alternarSonidosMenu() {
 }
 
 function mostrarMenu(o) {
+    opcionesActivas = null;              // las teclas 1-4 ya no contestan lo de antes
     document.getElementById('pm-titulo').innerHTML = o.titulo;
     document.getElementById('pm-desc').innerHTML = o.desc || '';
     document.getElementById('pm-controles').innerHTML = o.controles ? tablaControles() : '';
@@ -382,13 +409,23 @@ function mostrarMenu(o) {
     const b2 = document.getElementById('pm-boton2');
     if (o.boton2) { b2.textContent = o.boton2; b2.style.display = 'inline-block'; accionMenu2 = o.accion2; }
     else { b2.style.display = 'none'; accionMenu2 = null; }
+    const b3 = document.getElementById('pm-boton3');
+    if (o.boton3) { b3.textContent = o.boton3; b3.style.display = 'inline-block'; accionMenu3 = o.accion3; }
+    else { b3.style.display = 'none'; accionMenu3 = null; }
     accionMenu = o.accion;
     elPantalla.classList.remove('oculto');
     if (document.pointerLockElement) document.exitPointerLock();
 }
-function ocultarMenu() { elPantalla.classList.add('oculto'); }
+function ocultarMenu() { elPantalla.classList.add('oculto'); opcionesActivas = null; }
+
+/** Cambia el botón principal sin redibujar el menú (el quiz pasa de «Saltar» a «Siguiente»). */
+function cambiarBotonMenu(txt, accion) {
+    document.getElementById('pm-boton').textContent = txt;
+    accionMenu = accion;
+}
 function accionBotonMenu()  { if (accionMenu) accionMenu(); }
 function accionBotonMenu2() { if (accionMenu2) accionMenu2(); }
+function accionBotonMenu3() { if (accionMenu3) accionMenu3(); }
 
 function hashSemilla(txt) {
     if (/^\d+$/.test(txt)) return parseInt(txt, 10) % 2147483647;
@@ -410,6 +447,10 @@ function menuPrincipal() {
               'mecánica que abre el escudo del jefe.',
         controles: true, semilla: true,
         boton: 'Iniciar', accion: empezarJuego,
+        // Sin enemigos: encontrar y cerrar los criaderos de una casa (11e).
+        boton2: 'Modo Patio', accion2: abrirPatio,
+        // Para consultar sin jugar: lo mismo que enseña el juego, con sus fuentes.
+        boton3: 'Aprende', accion3: () => abrirAprende('medidas'),
         pie: BUILD
     });
 }
@@ -424,8 +465,9 @@ function empezarJuego() {
     jugador.vida = CFG.vidaMax; jugador.estamina = CFG.estaminaMax;
     vidaDibujada = -1;
     audio();                                    // desbloquea WebAudio con un gesto
-    ocultarMenu();
-    iniciarNivel(1);
+    // Primero las cinco preguntas (se pueden saltar): al final se repiten y la
+    // diferencia es lo que el juego enseñó.
+    quizInicio(() => { ocultarMenu(); iniciarNivel(1); });
 }
 
 function mostrarDerrota() {
@@ -440,9 +482,14 @@ function mostrarDerrota() {
     });
 }
 
-/** El final del juego. No lo decide cruzar el portal: lo decide Güero. */
+/** El final del juego. No lo decide cruzar el portal: lo decide Güero. Antes
+ *  de contarlo, las mismas cinco preguntas del principio. */
 function finalGuero() {
     estado = estados.MENU;
+    quizFinal(pantallaFinal);
+}
+
+function pantallaFinal() {
     const salvado = guero && guero.salvado;
     if (salvado) sfx.nivel(); else sfx.muerte();
     mostrarMenu({
@@ -451,10 +498,12 @@ function finalGuero() {
                 ? 'Cerraste los criaderos en las dos dimensiones. Sin criadero no hay mosquito; ' +
                   'sin mosquito no hay dengue.'
                 : 'Llegaste al final, pero el dengue no se mide en niveles terminados.') +
-              desenlaceGuero() + reporteFinal() +
+              desenlaceGuero() + resultadoQuiz() + repasoFichas('Lo último que aprendiste') +
+              reporteFinal() + revisaTuCasa() +
               '<div style="color:#90a4ae;font-size:11px;margin-top:8px">Semilla jugada: ' + semillaRun + '</div>',
         boton: 'Jugar otra vez', accion: menuPrincipal
     });
+    montarRevisaTuCasa();
 }
 
 function pausar() {
@@ -483,6 +532,7 @@ function iniciarNivel(n) {
     if (tiendaAbierta()) cerrarTienda();
     tokensAtaque = 0;
     limpiarParticulas();
+    programarLluvia();
 
     if (NIVEL_ES_2D(n)) {
         modoRender = '2d';
@@ -525,13 +575,17 @@ function pantallaEntreNiveles(n) {
         d += '<div class="rep-nota">Un criadero revivió porque tiraste el agua sin tallar la ' +
              'pared. Los huevos aguantan meses secos: por eso la campaña dice <b>LAVA</b>.</div>';
     d += '</div>';
-    d += mitoDelNivel();
+    d += repasoFichas('Lo que aprendiste en este nivel');
+    d += '<div id="retos"></div>';
     mostrarMenu({
         titulo: 'Nivel ' + (n - 1) + ' cerrado',
         desc: d,
         boton: 'Nivel ' + n,
         accion: () => { ocultarMenu(); iniciarNivel(n); }
     });
+    // Después de mostrarMenu: los botones se montan con sus listeners sobre el
+    // DOM ya puesto, no como HTML que se reescribe.
+    montarRetos(document.getElementById('retos'), retosDelNivel(n));
 }
 
 function completarNivel() {

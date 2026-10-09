@@ -56,6 +56,7 @@
       <div class="hud" id="hud-sup-der">
           <span id="ui-fichas">0</span> 💰<br>
           <span style="color:#f1c40f" id="ui-arma">Botas</span><br>
+          <span style="color:#7bed9f;display:block" id="ui-repelente" class="oculto"></span>
           <span style="font-size:11px; color:#90a4ae">T tienda · C fichero · ESC pausa</span>
       </div>
 
@@ -74,6 +75,7 @@
       <div id="prompt-verbos" class="oculto"></div>
 
       <div id="crosshair"></div>
+      <div id="lluvia"></div>
       <div id="vineta"></div>
       <div id="destello"></div>
       <div id="aviso-central"></div>
@@ -91,6 +93,7 @@
           <div style="margin-top:20px; display:flex; gap:12px;">
               <button class="btn" id="pm-boton" onclick="accionBotonMenu()">Iniciar</button>
               <button class="btn azul" id="pm-boton2" style="display:none" onclick="accionBotonMenu2()">Menú</button>
+              <button class="btn azul" id="pm-boton3" style="display:none" onclick="accionBotonMenu3()">Aprende</button>
           </div>
       </div>
     </div>
@@ -110,17 +113,24 @@
         <div class="nota">Cada compra es una medida real contra el <i>Aedes aegypti</i>.</div>
         <div class="item">
             <div>
-                <h3>🧴 Repelente — 5 💰</h3>
-                <p>Disparo rápido en línea recta. <b>En la vida real:</b> aplícalo sobre la piel expuesta para evitar picaduras.</p>
+                <h3>🧯 Insecticida — 5 💰</h3>
+                <p>Disparo rápido en línea recta. <b>En la vida real:</b> mata mosquitos adultos y da alivio de días, pero si el criadero sigue ahí, los repone.</p>
             </div>
-            <button id="btn-repelente" onclick="comprar('repelente')">Comprar</button>
+            <button id="btn-insecticida" onclick="comprar('insecticida')">Comprar</button>
         </div>
         <div class="item">
             <div>
                 <h3>🎒 Abate — 10 💰</h3>
-                <p>Se lanza en arco y <b>explota</b> al impactar. <b>En la vida real:</b> larvicida para tinacos y agua estancada.</p>
+                <p>Se lanza en arco y <b>explota</b>. Solo cierra tinacos, cisternas y tambos. <b>En la vida real:</b> larvicida para el agua que sí se guarda; lo demás se lava, se voltea o se tira.</p>
             </div>
             <button id="btn-abate" onclick="comprar('abate')">Comprar</button>
+        </div>
+        <div class="item">
+            <div>
+                <h3>🧴 Repelente — 4 💰</h3>
+                <p>30 s en que casi no te pican. <b>En la vida real:</b> se pone en la piel expuesta; no mata mosquitos ni cierra criaderos.</p>
+            </div>
+            <button id="btn-repelente" onclick="comprar('repelente')">Comprar</button>
         </div>
         <div class="item">
             <div>
@@ -177,6 +187,8 @@
 <script src="js/11-flujo.js?v=b6"></script>
 <script src="js/11b-educacion.js?v=b6"></script>
 <script src="js/11c-guero.js?v=b6"></script>
+<script src="js/11d-ivan.js?v=b6"></script>
+<script src="js/11e-patio.js?v=b6"></script>
 <script src="js/12-bucle.js?v=b6"></script>
 </body>
 </html>

@@ -367,7 +367,8 @@ function matarMosquito3D(e) {
         sfx.golpe();
     }
     if (e.origen) e.origen.vivos = Math.max(0, e.origen.vivos - 1);
-    fichas += e.arq.valor; actualizarHUD(); sfx.moneda();
+    const valor = valorMosquito(e);           // el de un criadero vivo no paga
+    if (valor > 0) { fichas += valor; actualizarHUD(); sfx.moneda(); }
     grupoNivel.remove(e.malla);
     // Las alas son hijos con recursos propios (compartidos entre las dos):
     // sin liberarlos se acumulan en la GPU tras varias oleadas.

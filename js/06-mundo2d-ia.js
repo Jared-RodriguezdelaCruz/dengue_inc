@@ -356,7 +356,7 @@ function actualizarCriaderos2D(dt) {
 
         c.prod -= dt;
         if (c.prod > 0) continue;
-        c.prod = Math.max(70, 165 - nivelActual * 12);
+        reiniciarCiclo(c, Math.max(70, 165 - nivelActual * 12));
 
         if (c.vivos >= 3 || enemigos.length > 26) continue;
         const tipo = rndProb(0.65) ? 'enjambre' : 'zumbador';
@@ -367,7 +367,9 @@ function actualizarCriaderos2D(dt) {
         fxHumo(c.x + c.ancho / 2, c.y + 6, 7, COL.VERDE, 16);
         tono(150, 0.14, 'sawtooth', 0.035, 90);
 
-        // A la sexta cría queda claro que esto no se acaba a tiros.
+        // El primer mosquito que sale enseña el ciclo; a la sexta cría queda
+        // claro que esto no se acaba a tiros.
+        if (c.producidos === 1) desbloquearFicha('ciclo');
         if (c.producidos === 6) desbloquearFicha('criadero_infinito');
     }
 }
