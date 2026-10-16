@@ -92,6 +92,11 @@ function loop(t) {
             fase = 'patio'; actualizarPatio(dt);
             msLogica = performance.now() - t0;
             dibujarPatio();
+        } else if (estado === estados.BUSCA) {
+            // Busca el criadero (11i): también escena fija.
+            fase = 'busca'; actualizarBusca(dt);
+            msLogica = performance.now() - t0;
+            dibujarBusca();
         } else if (modoRender === '2d') {
             const jugando = estado === estados.J2D;
             if (jugando && dt > 0) {

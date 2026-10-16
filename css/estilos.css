@@ -376,8 +376,9 @@ canvas { display: block; }
 #game-container.lloviendo #lluvia { display: block; }
 @keyframes cae-lluvia { from { background-position: 0 0 } to { background-position: -32px 120px } }
 
-/* Modo Patio: sin vida, fiebre ni monedas; la escena se explica sola. */
-#game-container.modo-patio .hud { display: none; }
+/* Modo Patio y Busca el criadero: sin vida, fiebre ni monedas; la escena se explica sola. */
+#game-container.modo-patio .hud,
+#game-container.modo-busca .hud { display: none; }
 
 /* Reporte final */
 .rep { max-width: 560px; margin: 8px auto 14px; text-align: left; }
@@ -626,13 +627,14 @@ canvas { display: block; }
     97% { opacity: .85; transform: translate(3px, 0);    clip-path: inset(70% 0 5% 0); }
 }
 .t-sub {
-    margin: 10px 0 24px 4px; font-size: 13px; font-weight: 700; letter-spacing: 6px;
+    margin: 10px 0 18px 4px; font-size: 13px; font-weight: 700; letter-spacing: 6px;
     text-transform: uppercase; color: #29f0ff; text-shadow: 0 0 8px rgba(41, 240, 255, .7);
 }
 .t-lista { display: flex; flex-direction: column; gap: 3px; }
 .t-item {
     position: relative; text-align: left; background: none; border: 0; cursor: pointer;
-    padding: 6px 16px 6px 30px; color: rgba(245, 233, 255, .62);
+    /* 4 px y no 6: con siete opciones la descripción ya pisaba la ayuda de abajo. */
+    padding: 4px 16px 4px 30px; color: rgba(245, 233, 255, .62);
     font: italic 800 22px 'Segoe UI', Tahoma, sans-serif; letter-spacing: 3px; text-transform: uppercase;
     transform: skewX(-8deg); transition: color .1s, background .1s;
 }
@@ -685,6 +687,8 @@ canvas { display: block; }
 .t-btn.sel { box-shadow: 0 0 0 2px #fff, 0 0 18px rgba(255, 46, 136, .85); }
 .t-btn:focus-visible, .t-item:focus-visible, .t-fila:focus-visible { outline: none; }
 .t-nota { margin-top: 10px; font-size: 12px; color: #7bed9f; min-height: 16px; }
+/* El récord de cada lugar de Busca el criadero, debajo de su nombre. */
+.t-rec { display: block; margin-top: 3px; font-size: 11px; letter-spacing: 1px; text-transform: none; color: #ffe9a8; }
 
 /* Filas de opciones: en el título y en la pausa. */
 .t-opciones { text-align: left; width: 100%; max-width: 520px; margin: 0 auto; }

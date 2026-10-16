@@ -71,7 +71,8 @@ const CFG = {
     ganchoAlcance: 16, ganchoVel: 0.9, ganchoCoste: 30, ganchoCd: 75, ganchoGolpe: 1,
 };
 
-const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa', PATIO:'patio' };
+const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa', PATIO:'patio',
+                  BUSCA:'busca' };
 let estado = estados.MENU;
 let estadoPrevio = estados.J2D;
 
@@ -227,6 +228,7 @@ function accionGlobal(code) {
         else if (estado === estados.J2D || estado === estados.J3D) pausar();
         else if (estado === estados.PAUSA) reanudar();
         else if (estado === estados.PATIO) salirPatio();
+        else if (estado === estados.BUSCA) salirBusca();
     }
 }
 

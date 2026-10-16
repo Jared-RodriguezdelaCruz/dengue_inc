@@ -249,13 +249,13 @@ elTactil.addEventListener('click', e => {
 let tactilModoPrev = '', medidasPrev = null, cdDashPrev = -1, cdRaqPrev = -1, gueroPrev = false;
 const elPanelGueroT = document.getElementById('panel-guero');
 
-/** Qué parte de la capa se ve: todo jugando, solo ⏸ en el Modo Patio, nada en
- *  los menús. Solo toca el DOM cuando algo cambia. */
+/** Qué parte de la capa se ve: todo jugando, solo ⏸ en el Modo Patio y en Busca
+ *  el criadero, nada en los menús. Solo toca el DOM cuando algo cambia. */
 function modoCapaTactil() {
     if (!tactilVisible()) return '';
     if (estado === estados.J2D) return 'd2';
     if (estado === estados.J3D) return 'd3';
-    if (estado === estados.PATIO) return 'patio';
+    if (estado === estados.PATIO || estado === estados.BUSCA) return 'patio';
     return '';
 }
 

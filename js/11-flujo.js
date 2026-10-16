@@ -191,8 +191,8 @@ function latirCorazones() {
 }
 
 function actualizarHUDContinuo() {
-    // El Modo Patio no tiene vida, fiebre ni objetivo de partida.
-    if (estado === estados.PATIO) return;
+    // El Modo Patio y Busca el criadero no tienen vida, fiebre ni objetivo de partida.
+    if (estado === estados.PATIO || estado === estados.BUSCA) return;
     // Red de seguridad para cualquier camino que cambie la vida sin avisar.
     pintarCorazones();
 
