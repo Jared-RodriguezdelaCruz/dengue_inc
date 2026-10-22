@@ -191,8 +191,8 @@ function latirCorazones() {
 }
 
 function actualizarHUDContinuo() {
-    // El Modo Patio no tiene vida, fiebre ni objetivo de partida.
-    if (estado === estados.PATIO) return;
+    // Las escenas fijas no tienen vida, fiebre ni objetivo de partida.
+    if (ESCENAS_FIJAS[estado]) return;
     // Red de seguridad para cualquier camino que cambie la vida sin avisar.
     pintarCorazones();
 
@@ -489,6 +489,114 @@ function menuPrincipal() {
     mostrarTitulo();
 }
 
+// --- Escenas fijas (Modo Patio 11e, Busca el criadero 11i) ---------------------
+/** El canvas 2D a la vista, sin puntero bloqueado ni HUD de partida. */
+function entrarEscenaFija(nuevoEstado) {
+    estado = nuevoEstado;
+    if (document.pointerLockElement) document.exitPointerLock();
+    canvas.style.display = 'block';
+    document.getElementById('container3d').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'none';
+    contenedor.classList.add('escena-fija');
+}
+
+function salirEscenaFija() {
+    contenedor.classList.remove('escena-fija');
+    if (modoRender === '3d') {                   // el menú vuelve sobre lo que había
+        canvas.style.display = 'none';
+        document.getElementById('container3d').style.display = 'block';
+    }
+    objetivo('', '');
+    menuPrincipal();
+}
+
+/** Los textos que suben y se desvanecen sobre la escena. */
+function actualizarTextosEscena(textos, dt) {
+    for (let i = textos.length - 1; i >= 0; i--) {
+        const tx = textos[i];
+        tx.t -= dt; tx.y -= 0.5 * dt;
+        if (tx.t <= 0) textos.splice(i, 1);
+    }
+}
+
+function dibujarTextosEscena(textos) {
+    ctx.textAlign = 'center'; ctx.font = 'bold 15px Segoe UI';
+    for (const tx of textos) {
+        ctx.globalAlpha = Math.min(1, tx.t / 25);
+        ctx.fillStyle = tx.color; ctx.fillText(tx.txt, tx.x, tx.y);
+    }
+    ctx.globalAlpha = 1; ctx.textAlign = 'left';
+}
+
+/** El récord guardado en `clave`, o null si no hay o viene mal (otra versión,
+ *  editado a mano): un récord roto no debe tumbar el menú. */
+function leerRecord(clave) {
+    try {
+        const r = JSON.parse(localStorage.getItem(clave) || 'null');
+        if (!r || !Number.isFinite(r.mejor)) return null;
+        return { mejor: r.mejor, estrellas: clamp(Math.floor(r.estrellas) || 0, 0, 3) };
+    } catch (e) { return null; }                 // sin almacenamiento: sin récord
+}
+
+/** Guarda el mejor tiempo y las mejores estrellas, cada uno por su lado.
+ *  Devuelve el mejor tiempo, o null si no hay dónde guardarlo. */
+function guardarRecord(clave, tiempo, estrellas) {
+    const previo = leerRecord(clave);
+    const r = { mejor: previo ? Math.min(previo.mejor, tiempo) : tiempo,
+                estrellas: previo ? Math.max(previo.estrellas, estrellas) : estrellas };
+    try { localStorage.setItem(clave, JSON.stringify(r)); return r.mejor; }
+    catch (e) { return null; }
+}
+
+// --- El mejor resultado de cada semilla -----------------------------------------
+//  Una lista y no un objeto: las claves numéricas de un objeto se ordenan por
+//  número, no por llegada, y hay que poder recortar las más viejas.
+const CLAVE_SEMILLAS = 'dengueinc.semillas';
+const MAX_SEMILLAS = 50;
+
+/** Las partidas guardadas, sin las que vienen mal (otra versión, editadas a mano). */
+function leerSemillas() {
+    try {
+        const l = JSON.parse(localStorage.getItem(CLAVE_SEMILLAS) || '[]');
+        if (!Array.isArray(l)) return [];
+        return l.filter(r => r && Number.isFinite(r.s) && Number.isInteger(r.nivel) &&
+                             (!r.final || Number.isFinite(r.casos)));
+    } catch (e) { return []; }                   // sin almacenamiento: sin récords
+}
+
+function recordSemilla(s) { return leerSemillas().find(r => r.s === s) || null; }
+
+/** ¿`a` supera a `b`? Gana la que llegó más lejos: salvar a Güero, terminar, el
+ *  nivel; si empatan dos terminadas, la de menos casos en la colonia. */
+function mejorPartida(a, b) {
+    if (!b) return true;
+    const rango = r => (r.salvado ? 2 : r.final ? 1 : 0) * 10 + r.nivel;
+    const d = rango(a) - rango(b);
+    return d ? d > 0 : a.final && a.casos < b.casos;
+}
+
+function guardarSemilla(partida) {
+    const l = leerSemillas();
+    const i = l.findIndex(r => r.s === partida.s);
+    const previo = i >= 0 ? l.splice(i, 1)[0] : null;
+    l.push(mejorPartida(partida, previo) ? partida : previo);    // la más reciente, al final
+    try { localStorage.setItem(CLAVE_SEMILLAS, JSON.stringify(l.slice(-MAX_SEMILLAS))); }
+    catch (e) { /* sin almacenamiento: el juego sigue igual */ }
+}
+
+/** «salvaste a Güero · 12 casos en la colonia», «llegaste al nivel 4»… */
+function textoRecordSemilla(r) {
+    if (!r.final) return 'llegaste al nivel ' + r.nivel;
+    return (r.salvado ? 'salvaste a Güero' : 'terminaste sin salvar a Güero') + ' · ' +
+           r.casos + (r.casos === 1 ? ' caso' : ' casos') + ' en la colonia';
+}
+
+/** La frase de los menús de fin de partida, o nada si no hay récord. */
+function lineaRecordSemilla() {
+    const r = recordSemilla(semillaRun);
+    return r ? ' Tu mejor con esta semilla: ' + textoRecordSemilla(r) + '.' : '';
+}
+
 function empezarJuego() {
     const inp = document.getElementById('in-semilla');
     const txt = inp ? inp.value.trim() : '';
@@ -512,7 +620,7 @@ function mostrarDerrota() {
         titulo: 'Te venció el dengue',
         desc: 'Caíste en el nivel ' + nivelActual + '.' + reporteFinal() +
               '<div style="color:#90a4ae;font-size:11px;margin-top:8px">El nivel se regenera con la ' +
-              'misma semilla, así que el trazado será idéntico.</div>',
+              'misma semilla, así que el trazado será idéntico.' + lineaRecordSemilla() + '</div>',
         boton: 'Reintentar nivel', accion: () => { pantallaCompletaAlJugar(); ocultarMenu(); reiniciarJugador(true); vidaDibujada = -1; iniciarNivel(nivelActual); },
         boton2: 'Menú principal', accion2: menuPrincipal
     });
@@ -522,6 +630,8 @@ function mostrarDerrota() {
  *  de contarlo, las mismas cinco preguntas del principio. */
 function finalGuero() {
     estado = estados.MENU;
+    guardarSemilla({ s: semillaRun, nivel: nivelActual, final: true,
+                     salvado: !!(guero && guero.salvado), casos: casosColonia });
     quizFinal(pantallaFinal);
 }
 
@@ -537,7 +647,8 @@ function pantallaFinal(deVuelta) {
                 : 'Llegaste al final, pero el dengue no se mide en niveles terminados.') +
               desenlaceGuero() + resultadoQuiz() + repasoFichas('Lo último que aprendiste') +
               reporteFinal() + revisaTuCasa() +
-              '<div style="color:#90a4ae;font-size:11px;margin-top:8px">Semilla jugada: ' + semillaRun + '</div>',
+              '<div style="color:#90a4ae;font-size:11px;margin-top:8px">Semilla jugada: ' + semillaRun + '.' +
+              lineaRecordSemilla() + '</div>',
         boton: 'Jugar otra vez', accion: menuPrincipal,
         boton2: 'Créditos', accion2: creditosFinal
     });
@@ -593,6 +704,8 @@ function iniciarNivel(n) {
     if (ficheroAbierto()) cerrarFichero();
     if (tiendaAbierta()) cerrarTienda();
     tokensAtaque = 0;
+    // Hasta dónde llegó esta semilla, aunque luego salgas por «Menú principal».
+    guardarSemilla({ s: semillaRun, nivel: n, final: false, salvado: false, casos: 0 });
     reiniciarJefe3D();       // la Hembra solo existe en el nivel 4
     limpiarParticulas();
     programarLluvia();
