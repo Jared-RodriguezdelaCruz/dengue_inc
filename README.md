@@ -190,6 +190,18 @@ El juego usa una semilla para generar niveles reproducibles. Si ingresas una sem
 - Las texturas de `assets/textures/` deben ser PNG con transparencia y con el personaje mirando a la derecha (el juego las voltea según la dirección). Abriendo con doble clic (`file://`), el 3D no puede usar texturas y se queda con colores: para verlas, usa el servidor local.
 - Si quieres probar cambios visuales o gameplay, puedes abrir el juego y generar una nueva semilla para observar distintos recorridos.
 
+## Cómo contribuir
+
+Todo cambio entra por Pull Request revisado:
+
+1. Toma una tarea de Notion (`DI-xxx`) y crea tu rama desde `develop`: `feature/<área>-<descripción>` o `fix/<descripción>`.
+2. Haz commits con [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) y corre `node .github/scripts/validar.mjs` antes de subir.
+3. Abre un PR a `develop` con el título `tipo(área): qué cambia (DI-xxx)` y llena la plantilla.
+4. Espera los checks (**Validar** y **Título del PR**) y la aprobación del dueño del área, que GitHub pide solo según `CODEOWNERS`.
+5. Al fusionar, el bot avisa en Discord. Para publicar, Ana aprueba el PR de release de `develop` a `main` y GitHub Pages se actualiza solo.
+
+`main` y `develop` están protegidas: nadie hace push directo. Las reglas completas, cómo revisar un PR y la definición de terminado están en [CONTRIBUTING.md](CONTRIBUTING.md); el plan y las tareas, en [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## Créditos y propósito
 
 Este proyecto es una propuesta didáctica y lúdica para comunicar la problemática del dengue en Aguascalientes. Su enfoque principal es enseñar prevención, reforzar conceptos epidemiológicos y mostrar que el dengue se controla mejor cuando se eliminan los criaderos y se toman decisiones informadas.
