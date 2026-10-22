@@ -32,10 +32,11 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
 - Sistema de combate con dash, raqueta, esquives y ataque
 - Capa educativa con fichas, mitos reales, estadísticas y reportes finales
 - Uso de Three.js para la parte 3D
-- Pantalla de título estilo Katana Zero (VHS y neón) con Jugar, Modo Patio, Aprende, Opciones, Ayuda y Créditos, que se maneja con teclado, ratón, mando o con el dedo
+- Pantalla de título estilo Katana Zero (VHS y neón) con Jugar, Modo Patio, Busca el criadero, Aprende, Opciones, Ayuda y Créditos, que se maneja con teclado, ratón, mando o con el dedo
 - Se juega en celular: joystick y botones en pantalla, mirar arrastrando el dedo en 3D y el marco escalado a cualquier pantalla
 - Minitutorial la primera vez que se juega en 2D y en 3D
 - Opciones que se guardan en el navegador: volumen de música y efectos, sensibilidad 3D, reducir destellos y sacudidas, tutorial (y pantalla completa)
+- Progreso guardado en el navegador: el total de fichas de todas tus partidas y el mejor resultado de cada semilla (cada partida sigue descubriendo las fichas desde cero)
 - Favicon y vista previa al compartir el link (Open Graph)
 - Sin necesidad de un servidor para abrirse en navegador local
 
@@ -66,6 +67,7 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
   - `11f-menu.js` — pantalla de título y submenús (Jugar, Opciones, Ayuda, Créditos)
   - `11g-tutorial.js` — minitutorial del primer nivel 2D y el primer 3D
   - `11h-gata.js` — la Gorda, gata aliada (2D y 3D)
+  - `11i-busca.js` — Busca el criadero: encontrar criaderos escondidos entre el desorden, con señuelos
   - `12-bucle.js` — bucle principal y arranque
 - `assets/` — texturas, sonidos, favicon (`favicon.svg`, `icono-32.png`, `icono-180.png`) y la imagen para compartir (`og-imagen.png`)
 
@@ -124,6 +126,13 @@ http://localhost:8000
 - `3` — voltea
 - `4` — tira
 
+### Busca el criadero
+- Clic, o flechas y `Espacio` — revisar lo que está bajo la lupa
+- Clic en la lista de arriba a la derecha, o en algo ya revisado — tarjeta con qué es, por qué junta agua y su medida (no cuesta tiempo)
+- `H` — pista (marca un área con un criadero; suma 5 s)
+- `Esc` — salir
+- Con mando: el stick o la cruceta mueven la lupa, `A` revisa, `Y` pide la pista y `Menu` sale
+
 ### Mando (Xbox, PlayStation, Nintendo y genéricos)
 Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. Los botones van por posición (Xbox / PlayStation / Nintendo):
 
@@ -144,7 +153,7 @@ Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. 
 El código está en `js/01c-mando.js`.
 
 ### En celular (pantalla táctil)
-Se juega en horizontal; en vertical el juego pide girar el teléfono y se pausa. Al tocar «Empezar» se pide pantalla completa (también está en Opciones). Los controles solo aparecen jugando, y se van solos si usas teclado, ratón o mando.
+Se juega en horizontal; en vertical el juego pide girar el teléfono y se pausa (en Modo Patio y Busca el criadero, se detiene el reloj). Al tocar «Empezar» se pide pantalla completa (también está en Opciones). Los controles solo aparecen jugando, y se van solos si usas teclado, ratón o mando.
 
 - Joystick (apoya el pulgar izquierdo donde quieras) — mover (en 3D: caminar; abajo + Dash: esquive)
 - Arrastrar el dedo en la mitad derecha — mirar (3D). Mientras disparas, la mira se acerca un poco a un mosquito o a la Hembra si están casi enfrente: menos de 8°, nunca a través de un muro
@@ -152,6 +161,7 @@ Se juega en horizontal; en vertical el juego pide girar el teléfono y se pausa.
 - Junto a un envase salen sus cuatro medidas como botones (siempre las cuatro: cuál toca no lo dice)
 - `⏸` pausa · `🛒` tienda · `📖` fichero, arriba a la derecha
 - Modo Patio: toca un envase y luego su medida
+- Busca el criadero: toca lo que puede juntar agua; toca la lista o lo ya revisado para ver qué es; `💡` arriba a la izquierda es la pista
 
 En iPhone, Safari no deja poner una página a pantalla completa: Compartir → «Agregar a inicio» la abre sin barras. Para probar desde el celular sin publicar, corre `python -m http.server 8765 --bind 0.0.0.0` en la PC y abre `http://<IP de la PC>:8765` en la misma red Wi-Fi.
 
@@ -174,9 +184,9 @@ Se aprende jugando y decidiendo, no solo leyendo:
 - **Entre niveles:** repaso de las fichas que se abrieron y retos que se contestan antes de ver la respuesta (¿mito o realidad?, ¿a dónde llevas al vecino?).
 - **Los jefes enseñan algo:** el del nivel 3 solo baja el escudo con la raqueta; la Hembra del nivel 4 no cae mientras sus envases tengan agua (o solo se hayan vaciado), así que hay que cerrarlos con su medida.
 - **En el mundo:** cada criadero muestra el ciclo huevos → larvas → pupas, llueve una vez por nivel, e Ivan (nivel 2) y Güero (nivel 5) enseñan las dos fases de la enfermedad. A los dos se les atiende con los criaderos ya cerrados: un enfermo rodeado de criaderos vuelve a alimentar la cadena.
-- **Fuera de la partida:** *Modo Patio* (una casa con 10 criaderos, sin enemigos), *Aprende* (todo el contenido con sus fuentes) y, al terminar, la lista *Revisa tu casa* para imprimir o mandar por WhatsApp.
+- **Fuera de la partida:** *Modo Patio* (una casa con 10 criaderos, sin enemigos), *Busca el criadero* (ocho criaderos escondidos en un tianguis, entre señuelos que ya no juntan agua: la misma cubeta es criadero boca arriba y deja de serlo volteada), *Aprende* (todo el contenido con sus fuentes) y, al terminar, la lista *Revisa tu casa* para imprimir o mandar por WhatsApp.
 
-Todo dato sale de `js/01b-datos-dengue.js` con su fuente, y la Action *Validar* revisa que cada ficha, mito, realidad y pregunta la cite.
+Todo dato sale de `js/01b-datos-dengue.js` con su fuente, y la Action *Validar* revisa que cada ficha, mito, realidad, pregunta y envase la cite.
 
 ## Nota sobre la semilla
 
