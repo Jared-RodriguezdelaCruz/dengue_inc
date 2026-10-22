@@ -24,6 +24,7 @@ const PATIO_SITIOS = [
 ];
 
 let patio = null;
+ESCENAS_FIJAS[estados.PATIO] = { actualizar: actualizarPatio, dibujar: dibujarPatio, salir: salirPatio };
 
 /** Pantalla de entrada: qué es y cómo se juega. */
 function abrirPatio() {
@@ -57,12 +58,7 @@ function empezarPatio() {
                           px: s[1] - w / 2, py: s[2] - h, w: w, h: h,
                           activo: true, neutralizado: false, vaciado: false, tRevive: 0 });
     }
-    estado = estados.PATIO;
-    if (document.pointerLockElement) document.exitPointerLock();
-    canvas.style.display = 'block';
-    document.getElementById('container3d').style.display = 'none';
-    document.getElementById('crosshair').style.display = 'none';
-    contenedor.classList.add('modo-patio');
+    entrarEscenaFija(estados.PATIO);
     objetivo('Encuentra y cierra los 10 criaderos',
              tactilVisible() ? 'Toca un envase y luego su medida. ⏸ para salir.'
                              : 'Apunta a un envase y elige su medida (1-4). Esc para salir.');
@@ -70,13 +66,7 @@ function empezarPatio() {
 
 function salirPatio() {
     patio = null;
-    contenedor.classList.remove('modo-patio');
-    if (modoRender === '3d') {                   // el menú vuelve sobre lo que había
-        canvas.style.display = 'none';
-        document.getElementById('container3d').style.display = 'block';
-    }
-    objetivo('', '');
-    menuPrincipal();
+    salirEscenaFija();
 }
 
 // --- Lógica ------------------------------------------------------------------
@@ -141,11 +131,7 @@ function actualizarPatio(dt) {
             sfx.parryFail();
         }
     }
-    for (let i = patio.textos.length - 1; i >= 0; i--) {
-        const tx = patio.textos[i];
-        tx.t -= dt; tx.y -= 0.5 * dt;
-        if (tx.t <= 0) patio.textos.splice(i, 1);
-    }
+    actualizarTextosEscena(patio.textos, dt);
     if (patio.fin) return;
 
     // Ratón: apuntar selecciona; clic en una medida la aplica. Sobre una medida
@@ -175,17 +161,13 @@ function terminarPatio() {
     patio.fin = true;
     const t = patio.t, fallos = patio.errores + patio.trampas;
     const estrellas = fallos === 0 && t <= 60 ? 3 : fallos <= 2 ? 2 : 1;
-    let mejor = null;
-    try {
-        const k = 'dengueinc.patio';
-        const previo = JSON.parse(localStorage.getItem(k) || 'null');
-        mejor = previo && previo.mejor <= t ? previo.mejor : t;
-        localStorage.setItem(k, JSON.stringify({ mejor: mejor }));
-    } catch (e) { /* sin almacenamiento: sin récord */ }
+    const mejor = guardarRecord('dengueinc.patio', t, estrellas);
 
     // El estado sigue en PATIO: la casa se queda detrás del resultado y Esc sale.
+    // Si en estos 700 ms salió y empezó otra, el resultado ya no es de esta.
+    const actual = patio;
     setTimeout(() => {
-        if (!patio) return;
+        if (patio !== actual) return;
         let d = '<div style="font-size:34px;color:#f1c40f;letter-spacing:6px">' +
                 '★'.repeat(estrellas) + '<span style="color:#37474f">' + '★'.repeat(3 - estrellas) + '</span></div>';
         d += '<div class="rep">';
@@ -281,13 +263,7 @@ function dibujarPatio() {
     // está en la azotea y su panel sube hasta el borde de arriba.
     dibujarHUDPatio();
     dibujarSeleccionPatio();
-
-    ctx.textAlign = 'center'; ctx.font = 'bold 15px Segoe UI';
-    for (const tx of patio.textos) {
-        ctx.globalAlpha = Math.min(1, tx.t / 25);
-        ctx.fillStyle = tx.color; ctx.fillText(tx.txt, tx.x, tx.y);
-    }
-    ctx.globalAlpha = 1; ctx.textAlign = 'left';
+    dibujarTextosEscena(patio.textos);
 }
 
 /** Marco del envase elegido y, encima, sus cuatro medidas (clicables). */

@@ -249,13 +249,13 @@ elTactil.addEventListener('click', e => {
 let tactilModoPrev = '', medidasPrev = null, cdDashPrev = -1, cdRaqPrev = -1, gueroPrev = false;
 const elPanelGueroT = document.getElementById('panel-guero');
 
-/** Qué parte de la capa se ve: todo jugando, solo ⏸ en el Modo Patio y en Busca
- *  el criadero, nada en los menús. Solo toca el DOM cuando algo cambia. */
+/** Qué parte de la capa se ve: todo jugando, solo ⏸ en las escenas fijas (Modo
+ *  Patio, Busca el criadero), nada en los menús. Solo toca el DOM cuando algo cambia. */
 function modoCapaTactil() {
     if (!tactilVisible()) return '';
     if (estado === estados.J2D) return 'd2';
     if (estado === estados.J3D) return 'd3';
-    if (estado === estados.PATIO || estado === estados.BUSCA) return 'patio';
+    if (ESCENAS_FIJAS[estado]) return 'escena';
     return '';
 }
 
@@ -372,9 +372,11 @@ function pantallaCompletaAlJugar() { if (tactilVisible()) pedirPantallaCompleta(
 //  El aviso lo muestra el CSS; aquí solo se pausa la partida para que nadie
 //  pierda vida mientras gira el teléfono. Una tablet en vertical sí cabe.
 const mqVertical = window.matchMedia('(orientation: portrait) and (max-width: 700px)');
+// Las escenas fijas no tienen pausa: el bucle les detiene el reloj mientras tanto.
+const telefonoVertical = () => modoTactil && mqVertical.matches;
 
 function revisarOrientacion() {
-    if (modoTactil && mqVertical.matches && (estado === estados.J2D || estado === estados.J3D)) pausar();
+    if (telefonoVertical() && (estado === estados.J2D || estado === estados.J3D)) pausar();
 }
 if (mqVertical.addEventListener) mqVertical.addEventListener('change', revisarOrientacion);
 else if (mqVertical.addListener) mqVertical.addListener(revisarOrientacion);

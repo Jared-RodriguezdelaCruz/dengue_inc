@@ -152,7 +152,7 @@ Se conecta por USB o Bluetooth; el juego lo detecta al pulsar cualquier botón. 
 El código está en `js/01c-mando.js`.
 
 ### En celular (pantalla táctil)
-Se juega en horizontal; en vertical el juego pide girar el teléfono y se pausa. Al tocar «Empezar» se pide pantalla completa (también está en Opciones). Los controles solo aparecen jugando, y se van solos si usas teclado, ratón o mando.
+Se juega en horizontal; en vertical el juego pide girar el teléfono y se pausa (en Modo Patio y Busca el criadero, se detiene el reloj). Al tocar «Empezar» se pide pantalla completa (también está en Opciones). Los controles solo aparecen jugando, y se van solos si usas teclado, ratón o mando.
 
 - Joystick (apoya el pulgar izquierdo donde quieras) — mover (en 3D: caminar; abajo + Dash: esquive)
 - Arrastrar el dedo en la mitad derecha — mirar (3D). Mientras disparas, la mira se acerca un poco a un mosquito o a la Hembra si están casi enfrente: menos de 8°, nunca a través de un muro

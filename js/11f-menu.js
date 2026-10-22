@@ -135,7 +135,7 @@ function abrirSubTitulo(id) {
             '<p class="t-txt">Ojo con los <b>señuelos</b>: la cubeta volteada o el tambo tapado ya no son ' +
             'criadero, y tocarlos cuesta 3 s. Cada partida cambia qué es qué.</p><div>';
         for (const esc in ESCENAS_BUSCA) {
-            const r = recordBusca(esc);
+            const r = leerRecord(CLAVE_BUSCA + esc);
             h += '<button type="button" class="t-op t-btn" data-acc="busca:' + esc + '">' + ESCENAS_BUSCA[esc].nombre +
                  (r ? '<span class="t-rec">' + '★'.repeat(r.estrellas) + ' · ' + r.mejor.toFixed(1) + ' s</span>' : '') +
                  '</button>';

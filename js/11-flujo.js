@@ -191,8 +191,8 @@ function latirCorazones() {
 }
 
 function actualizarHUDContinuo() {
-    // El Modo Patio y Busca el criadero no tienen vida, fiebre ni objetivo de partida.
-    if (estado === estados.PATIO || estado === estados.BUSCA) return;
+    // Las escenas fijas no tienen vida, fiebre ni objetivo de partida.
+    if (ESCENAS_FIJAS[estado]) return;
     // Red de seguridad para cualquier camino que cambie la vida sin avisar.
     pintarCorazones();
 
@@ -487,6 +487,65 @@ function menuPrincipal() {
     abortarTransicion();
     ocultarMenu();
     mostrarTitulo();
+}
+
+// --- Escenas fijas (Modo Patio 11e, Busca el criadero 11i) ---------------------
+/** El canvas 2D a la vista, sin puntero bloqueado ni HUD de partida. */
+function entrarEscenaFija(nuevoEstado) {
+    estado = nuevoEstado;
+    if (document.pointerLockElement) document.exitPointerLock();
+    canvas.style.display = 'block';
+    document.getElementById('container3d').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'none';
+    contenedor.classList.add('escena-fija');
+}
+
+function salirEscenaFija() {
+    contenedor.classList.remove('escena-fija');
+    if (modoRender === '3d') {                   // el menú vuelve sobre lo que había
+        canvas.style.display = 'none';
+        document.getElementById('container3d').style.display = 'block';
+    }
+    objetivo('', '');
+    menuPrincipal();
+}
+
+/** Los textos que suben y se desvanecen sobre la escena. */
+function actualizarTextosEscena(textos, dt) {
+    for (let i = textos.length - 1; i >= 0; i--) {
+        const tx = textos[i];
+        tx.t -= dt; tx.y -= 0.5 * dt;
+        if (tx.t <= 0) textos.splice(i, 1);
+    }
+}
+
+function dibujarTextosEscena(textos) {
+    ctx.textAlign = 'center'; ctx.font = 'bold 15px Segoe UI';
+    for (const tx of textos) {
+        ctx.globalAlpha = Math.min(1, tx.t / 25);
+        ctx.fillStyle = tx.color; ctx.fillText(tx.txt, tx.x, tx.y);
+    }
+    ctx.globalAlpha = 1; ctx.textAlign = 'left';
+}
+
+/** El récord guardado en `clave`, o null si no hay o viene mal (otra versión,
+ *  editado a mano): un récord roto no debe tumbar el menú. */
+function leerRecord(clave) {
+    try {
+        const r = JSON.parse(localStorage.getItem(clave) || 'null');
+        if (!r || !Number.isFinite(r.mejor)) return null;
+        return { mejor: r.mejor, estrellas: clamp(Math.floor(r.estrellas) || 0, 0, 3) };
+    } catch (e) { return null; }                 // sin almacenamiento: sin récord
+}
+
+/** Guarda el mejor tiempo y las mejores estrellas, cada uno por su lado.
+ *  Devuelve el mejor tiempo, o null si no hay dónde guardarlo. */
+function guardarRecord(clave, tiempo, estrellas) {
+    const previo = leerRecord(clave);
+    const r = { mejor: previo ? Math.min(previo.mejor, tiempo) : tiempo,
+                estrellas: previo ? Math.max(previo.estrellas, estrellas) : estrellas };
+    try { localStorage.setItem(clave, JSON.stringify(r)); return r.mejor; }
+    catch (e) { return null; }
 }
 
 function empezarJuego() {

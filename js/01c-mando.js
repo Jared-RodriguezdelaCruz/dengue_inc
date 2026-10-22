@@ -285,10 +285,16 @@ function actualizarMando(dtReal) {
     }
 
     // --- Lupa de Busca el criadero (11i): el stick o la cruceta mueven el puntero ---
+    //  Solo si se mueven: con el mando conectado también se puede jugar con el ratón.
     if (estado === estados.BUSCA && !completo) {
         const k = VEL_LUPA_MANDO * Math.min(dtReal, 3);
         const cruz = (mas, menos) => (ahora[mas] ? 0.5 : 0) - (ahora[menos] ? 0.5 : 0);
-        ratonX = clamp(ratonX + (curvaStick(lx, ZONA_MUERTA_CAM) + cruz('Digit2', 'Digit4')) * k, 0, ANCHO);
-        ratonY = clamp(ratonY + (curvaStick(ly, ZONA_MUERTA_CAM) + cruz('Digit3', 'Digit1')) * k, 0, ALTO);
+        const dx = (curvaStick(lx, ZONA_MUERTA_CAM) + cruz('Digit2', 'Digit4')) * k;
+        const dy = (curvaStick(ly, ZONA_MUERTA_CAM) + cruz('Digit3', 'Digit1')) * k;
+        if (dx || dy) {
+            ratonX = clamp(ratonX + dx, 0, ANCHO);
+            ratonY = clamp(ratonY + dy, 0, ALTO);
+            busca.lupa = true;
+        }
     }
 }

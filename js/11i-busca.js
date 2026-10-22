@@ -34,7 +34,7 @@ const FICHA_BUSCA = { x: 180, y: 8, w: LISTA_X - 190, h: 82 };
 // de señuelo si su tipo tiene `seguro`; si no, ese sitio queda vacío.
 // El desorden de cada escena nunca lleva recipientes: todo lo que parece
 // envase se puede tocar. Ningún sitio va arriba de y = 95 ni bajo la lista
-// (x > 600, y < 240): ahí está el HUD.
+// (x > 600, y < 260; con el dedo baja para dejarle la esquina al ⏸): ahí está el HUD.
 const ESCENAS_BUSCA = {
     tianguis: {
         nombre: 'Vulcanizadora y tianguis',
@@ -68,8 +68,10 @@ const BOCAS_BUSCA = {
 const ALTO_EXTRA_BUSCA = { maceta: 40, florero: 18 };
 
 let busca = null;
+ESCENAS_FIJAS[estados.BUSCA] = { actualizar: actualizarBusca, dibujar: dibujarBusca, salir: salirBusca };
 const capasBusca = {};               // id → { fondo, frente }: lo fijo se pinta una vez
 const spritesBusca = {};             // 'tipo:c' / 'tipo:s' → sprite a 2x, para que la miniatura no se vea borrosa
+const tamNombresBusca = {};          // 'tipo' / 'tipo:d' (con el dedo) → letra con la que su nombre cabe en la lista
 
 // La lupa se dibuja con teclado o mando; con el ratón o el dedo estorba.
 document.addEventListener('mousemove', () => { if (busca) busca.lupa = false; });
@@ -98,7 +100,8 @@ function empezarBusca(id) {
 
     busca = { id: id, esc: esc, objs: [], total: criaderos.length, encontrados: 0,
               t: 0, castigo: 0, errores: 0, pistas: 0, tUltimo: 0, aire: [],
-              pista: null, textos: [], botonPista: null, lupa: false, fin: false,
+              pista: null, textos: [], botonPista: { x: 10, y: 10, w: 160, h: 34 },
+              lupa: mandoActivo, fin: false,       // con mando, la lupa enseña dónde está el puntero
               lista: [], cajasLista: [], ficha: null,
               gracia: 8 };     // frames: el clic o el Enter que abrió el modo no cuenta
     esc.sitios.forEach((s, i) => {
@@ -120,25 +123,14 @@ function empezarBusca(id) {
         .filter(f => f.total);
     if (!capasBusca[id]) capasBusca[id] = { fondo: capaBusca(esc.fondo), frente: capaBusca(esc.frente) };
 
-    estado = estados.BUSCA;
-    if (document.pointerLockElement) document.exitPointerLock();
-    canvas.style.display = 'block';
-    document.getElementById('container3d').style.display = 'none';
-    document.getElementById('crosshair').style.display = 'none';
-    contenedor.classList.add('modo-busca');
+    entrarEscenaFija(estados.BUSCA);
     objetivo('Encuentra los ' + busca.total + ' criaderos',
              'Toca lo que puede juntar agua. Lo tapado o volteado ya no es criadero: tocarlo cuesta tiempo.');
 }
 
 function salirBusca() {
     busca = null;
-    contenedor.classList.remove('modo-busca');
-    if (modoRender === '3d') {                   // el menú vuelve sobre lo que había
-        canvas.style.display = 'none';
-        document.getElementById('container3d').style.display = 'block';
-    }
-    objetivo('', '');
-    menuPrincipal();
+    salirEscenaFija();
 }
 
 function elegirLugarBusca() {
@@ -153,25 +145,8 @@ function capaBusca(pintar) {
     return c;
 }
 
-// --- Récord --------------------------------------------------------------------
-const CLAVE_BUSCA = 'dengueinc.busca';
-
-function recordBusca(id) {
-    try { return (JSON.parse(localStorage.getItem(CLAVE_BUSCA) || '{}') || {})[id] || null; }
-    catch (e) { return null; }                   // sin almacenamiento: sin récord
-}
-
-/** Guarda el mejor tiempo y las mejores estrellas; devuelve el mejor tiempo o null. */
-function guardarRecordBusca(id, tiempo, estrellas) {
-    try {
-        const todo = JSON.parse(localStorage.getItem(CLAVE_BUSCA) || '{}') || {};
-        const previo = todo[id];
-        todo[id] = { mejor: previo ? Math.min(previo.mejor, tiempo) : tiempo,
-                     estrellas: previo ? Math.max(previo.estrellas, estrellas) : estrellas };
-        localStorage.setItem(CLAVE_BUSCA, JSON.stringify(todo));
-        return todo[id].mejor;
-    } catch (e) { return null; }
-}
+// Récord de cada lugar (leerRecord / guardarRecord, 11-flujo): 'dengueinc.busca.tianguis'…
+const CLAVE_BUSCA = 'dengueinc.busca.';
 
 // --- Lógica ------------------------------------------------------------------
 function textoBusca(txt, x, y, color) {
@@ -276,11 +251,7 @@ function pistaBusca() {
 function actualizarBusca(dt) {
     if (!busca) return;
     if (!busca.fin) busca.t += dt / 60;
-    for (let i = busca.textos.length - 1; i >= 0; i--) {
-        const tx = busca.textos[i];
-        tx.t -= dt; tx.y -= 0.5 * dt;
-        if (tx.t <= 0) busca.textos.splice(i, 1);
-    }
+    actualizarTextosEscena(busca.textos, dt);
     if (busca.pista && (busca.pista.t -= dt) <= 0) busca.pista = null;
     if (busca.fin) return;
     if (busca.gracia > 0) { busca.gracia -= dt; return; }
@@ -306,13 +277,15 @@ function terminarBusca() {
     const tiempo = busca.t + busca.castigo;
     const estrellas = busca.errores === 0 && busca.pistas === 0 && tiempo <= 60 ? 3
                     : busca.errores <= 2 ? 2 : 1;
-    const mejor = guardarRecordBusca(id, tiempo, estrellas);
+    const mejor = guardarRecord(CLAVE_BUSCA + id, tiempo, estrellas);
     sfx.nivel();
     destellar('#2ecc71', 0.22, 480);
 
     // El estado sigue en BUSCA: el lugar se queda detrás del resultado y Esc sale.
+    // Si en estos 700 ms salió y empezó otra, el resultado ya no es de esta.
+    const actual = busca;
     setTimeout(() => {
-        if (!busca) return;
+        if (busca !== actual) return;
         let d = '<div style="font-size:34px;color:#f1c40f;letter-spacing:6px">' +
                 '★'.repeat(estrellas) + '<span style="color:#37474f">' + '★'.repeat(3 - estrellas) + '</span></div>';
         d += '<div class="rep">';
@@ -386,16 +359,11 @@ function dibujarBusca() {
         ctx.restore();
     }
 
-    ctx.textAlign = 'center'; ctx.font = 'bold 15px Segoe UI';
-    for (const tx of busca.textos) {
-        ctx.globalAlpha = Math.min(1, tx.t / 25);
-        ctx.fillStyle = tx.color; ctx.fillText(tx.txt, tx.x, tx.y);
-    }
-    ctx.globalAlpha = 1; ctx.textAlign = 'left';
+    dibujarTextosEscena(busca.textos);
 
     dibujarHUDBusca();
     dibujarFichaBusca();
-    if ((busca.lupa || mandoActivo) && !busca.fin) dibujarLupa(ratonX, ratonY);
+    if (busca.lupa && !busca.fin) dibujarLupa(ratonX, ratonY);
 }
 
 function dibujarObjBusca(o, t) {
@@ -446,15 +414,19 @@ function miniBusca(tipo, criadero, x, y, lado) {
 function dibujarHUDBusca() {
     ctx.save();
     const x = LISTA_X, dedo = tactilVisible();
+    // La esquina de arriba a la derecha es del ⏸ (01d), que en un teléfono de
+    // 16:9 cae sobre el canvas: el marcador acaba antes de x = 860 y, con el
+    // dedo, la lista baja.
     ctx.fillStyle = 'rgba(12,20,28,.8)'; ctx.fillRect(x, 10, LISTA_ANCHO, 34);
     ctx.font = 'bold 15px Segoe UI';
     ctx.fillStyle = '#f1c40f'; ctx.fillText('⏱ ' + (busca.t + busca.castigo).toFixed(1) + ' s', x + 12, 33);
-    ctx.fillStyle = '#2ecc71'; ctx.fillText('🔍 ' + busca.encontrados + '/' + busca.total, x + 140, 33);
-    ctx.fillStyle = '#e67e22'; ctx.fillText('✗ ' + busca.errores, x + 260, 33);
-    dibujarListaBusca(x, 50, dedo);
+    ctx.fillStyle = '#2ecc71'; ctx.fillText('🔍 ' + busca.encontrados + '/' + busca.total, x + 120, 33);
+    ctx.fillStyle = '#e67e22'; ctx.fillText('✗ ' + busca.errores, x + 210, 33);
+    dibujarListaBusca(x, dedo ? 68 : 50, dedo);
 
     // Botón de pista: con el dedo es la única forma de pedirla, por eso crece.
-    const b = busca.botonPista = { x: 10, y: 10, w: 160, h: dedo ? 46 : 34 };
+    const b = busca.botonPista;
+    b.h = dedo ? 46 : 34;
     const late = !busca.fin && !busca.pista && busca.t - busca.tUltimo > BUSCA_PISTA_SOLA;
     ctx.globalAlpha = late ? 0.7 + 0.3 * Math.sin(performance.now() * 0.008) : 1;
     ctx.fillStyle = 'rgba(12,20,28,.8)'; ctx.fillRect(b.x, b.y, b.w, b.h);
@@ -484,10 +456,10 @@ function dibujarListaBusca(x, y, dedo) {
     ctx.fillStyle = 'rgba(12,20,28,.8)'; ctx.fillRect(x, y, LISTA_ANCHO, 26 + filas * (filaH + 4));
     ctx.font = 'bold 11px Segoe UI'; ctx.fillStyle = '#bdc3c7';
     ctx.fillText('Lo que buscas · ' + (dedo ? 'toca' : 'clic en') + ' uno para verlo', x + 8, y + 16);
-    busca.cajasLista.length = 0;
     busca.lista.forEach((f, i) => {
         const cx = x + 8 + (i % 2) * (celdaW + 6), cy = y + 24 + Math.floor(i / 2) * (filaH + 4);
-        busca.cajasLista.push({ x: cx, y: cy, w: celdaW, h: filaH, fila: f });
+        const caja = busca.cajasLista[i] || (busca.cajasLista[i] = { fila: f });
+        caja.x = cx; caja.y = cy; caja.w = celdaW; caja.h = filaH;
         const listo = f.encontrados === f.total;
         const encima = !dedo && ratonX >= cx && ratonX <= cx + celdaW && ratonY >= cy && ratonY <= cy + filaH;
         ctx.fillStyle = listo ? 'rgba(46,204,113,.2)' : encima ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.06)';
@@ -504,11 +476,18 @@ function dibujarListaBusca(x, y, dedo) {
             ctx.fillText(f.encontrados + '/' + f.total, cx + celdaW - 6, cy + filaH / 2 + 4);
         }
         ctx.textAlign = 'left';
-        // «Bebedero de mascota» no cabe a 12 px: la letra baja hasta 10.
-        const nombre = CRIADEROS[f.tipo].nombre, libre = celdaW - lado - 36;
-        let tam = dedo ? 13 : 12;
-        do ctx.font = 'bold ' + tam + 'px Segoe UI';
-        while (ctx.measureText(nombre).width > libre && --tam > 9);
+        // «Bebedero de mascota» no cabe a 12 px: la letra baja hasta 10. Se mide
+        // una vez por tipo y por modo, no en cada cuadro.
+        const nombre = CRIADEROS[f.tipo].nombre, clave = f.tipo + (dedo ? ':d' : '');
+        let tam = tamNombresBusca[clave];
+        if (!tam) {
+            const libre = celdaW - lado - 36;
+            tam = dedo ? 13 : 12;
+            ctx.font = 'bold ' + tam + 'px Segoe UI';
+            while (tam > 10 && ctx.measureText(nombre).width > libre) ctx.font = 'bold ' + --tam + 'px Segoe UI';
+            tamNombresBusca[clave] = tam;
+        }
+        ctx.font = 'bold ' + tam + 'px Segoe UI';
         ctx.fillStyle = listo ? '#a9dfbf' : '#ecf0f1';
         ctx.fillText(nombre, cx + lado + 8, cy + filaH / 2 + 4);
     });

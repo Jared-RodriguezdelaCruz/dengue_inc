@@ -105,6 +105,32 @@ if (datos) {
          `realidades, ${preguntas.length} preguntas y ${envases.length} envases citan su fuente`);
 }
 
+// 4. Busca el criadero: cada envase de una escena existe y tiene su dibujo y su agua
+antes = errores.length;
+let busca = null;
+try {
+  // Lo único de otros archivos que 11i usa al cargarse.
+  const globales = { ANCHO: 960, ALTO: 540, estados: {}, ESCENAS_FIJAS: {}, document: { addEventListener() {} } };
+  busca = vm.runInNewContext(readFileSync('js/11i-busca.js', 'utf8') +
+                             '\n;({ ESCENAS_BUSCA, PINTA_BUSCA, BOCAS_BUSCA })', globales);
+} catch (e) {
+  mal(`js/11i-busca.js no se pudo evaluar: ${e.message}`);
+}
+if (busca && datos) {
+  const escenas = Object.entries(busca.ESCENAS_BUSCA);
+  for (const [id, esc] of escenas) {
+    for (const tipo of new Set(esc.sitios.map(s => s[0]))) {
+      if (!datos.CRIADEROS[tipo]) mal(`La escena "${id}" de Busca usa "${tipo}", que no está en CRIADEROS`);
+      if (typeof busca.PINTA_BUSCA[tipo] !== 'function') mal(`La escena "${id}" de Busca usa "${tipo}", que no tiene dibujo en PINTA_BUSCA`);
+      const boca = busca.BOCAS_BUSCA[tipo];
+      if (!Array.isArray(boca) || boca.length !== 4 || !boca.every(Number.isFinite))
+        mal(`La escena "${id}" de Busca usa "${tipo}", que no tiene su agua en BOCAS_BUSCA ([x, y, radio x, radio y])`);
+    }
+  }
+  if (errores.length === antes)
+    bien(`${escenas.length} escena(s) de Busca el criadero: cada envase tiene datos, dibujo y agua`);
+}
+
 if (errores.length) {
   console.log(`\n❌ ${errores.length} problema(s). Corrígelos y vuelve a subir tu rama.`);
   process.exit(1);
