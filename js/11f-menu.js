@@ -126,6 +126,9 @@ function abrirSubTitulo(id) {
             '<label class="t-semilla">Semilla <span>(vacía = una nueva)</span>' +
             '<input id="in-semilla" class="t-op" type="text" autocomplete="off" spellcheck="false" value="' +
             semillaRun + '"></label>' +
+            '<div class="t-nota" id="t-rec-semilla"></div>' +
+            (fichasColeccion.size ? '<p class="t-txt">Fichero: ' + fichasColeccion.size + '/' + FICHAS.length +
+                                    ' fichas descubiertas en tus partidas.</p>' : '') +
             '<div><button type="button" class="t-op t-btn" data-acc="empezar">Empezar</button>' +
             '<button type="button" class="t-op t-btn sec" data-acc="volver">Volver</button></div>';
     } else if (id === 'busca') {
@@ -164,12 +167,22 @@ function abrirSubTitulo(id) {
     if (inp) inp.addEventListener('keydown', e => {
         if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); e.stopPropagation(); empezarJuego(); }
     });
+    if (inp) { inp.addEventListener('input', pintarRecordSemilla); pintarRecordSemilla(); }
     for (const op of controlesTitulo())
         op.addEventListener('mouseenter', () => marcarTitulo(controlesTitulo().indexOf(op), true));
     // En la ayuda lo primero es leer: la selección empieza en el primer botón,
     // que está al final, pero el texto se queda arriba.
     marcarTitulo(0, id === 'ayuda' || id === 'creditos');
     if (id === 'ayuda' || id === 'creditos') elTPanel.scrollTop = 0;
+}
+
+/** Lo que ya lograste con la semilla escrita; cambia mientras se escribe. */
+function pintarRecordSemilla() {
+    const el = document.getElementById('t-rec-semilla'), inp = document.getElementById('in-semilla');
+    if (!el || !inp) return;
+    const txt = inp.value.trim();
+    const r = txt !== '' ? recordSemilla(hashSemilla(txt)) : null;
+    el.textContent = r ? 'Con esta semilla: ' + textoRecordSemilla(r) + '.' : '';
 }
 
 function accionPanelTitulo(acc) {

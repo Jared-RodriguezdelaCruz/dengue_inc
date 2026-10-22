@@ -36,6 +36,7 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
 - Se juega en celular: joystick y botones en pantalla, mirar arrastrando el dedo en 3D y el marco escalado a cualquier pantalla
 - Minitutorial la primera vez que se juega en 2D y en 3D
 - Opciones que se guardan en el navegador: volumen de música y efectos, sensibilidad 3D, reducir destellos y sacudidas, tutorial (y pantalla completa)
+- Progreso guardado en el navegador: el total de fichas de todas tus partidas y el mejor resultado de cada semilla (cada partida sigue descubriendo las fichas desde cero)
 - Favicon y vista previa al compartir el link (Open Graph)
 - Sin necesidad de un servidor para abrirse en navegador local
 
