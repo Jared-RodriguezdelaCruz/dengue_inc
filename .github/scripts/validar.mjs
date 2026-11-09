@@ -52,7 +52,7 @@ antes = errores.length;
 let datos = null;
 try {
   datos = vm.runInNewContext(readFileSync('js/01b-datos-dengue.js', 'utf8') +
-                             '\n;({ FUENTES, FICHAS, MITOS, REALIDADES, QUIZ, IVAN, TRIAGE })');
+                             '\n;({ FUENTES, VERBOS, CRIADEROS, FICHAS, MITOS, REALIDADES, QUIZ, IVAN, TRIAGE })');
 } catch (e) {
   mal(`js/01b-datos-dengue.js no se pudo evaluar: ${e.message}`);
 }
@@ -90,9 +90,45 @@ if (datos) {
   }
   if (datos.IVAN.fallos.length !== datos.IVAN.preguntas.length)
     mal('IVAN necesita un texto en "fallos" por cada pregunta, en el mismo orden');
+  // Los envases: su nombre, su nota y su medida salen en pantalla, y el texto de
+  // señuelo (Busca el criadero) también es una afirmación que necesita fuente.
+  const envases = Object.entries(datos.CRIADEROS);
+  for (const [tipo, c] of envases) {
+    for (const campo of ['nombre', 'nota'])
+      if (!c[campo]) mal(`El envase "${tipo}" no tiene ${campo}`);
+    if (!datos.VERBOS[c.verbo]) mal(`El envase "${tipo}" pide la medida "${c.verbo}", que no está en VERBOS`);
+    if (!fuentes.has(c.fuente)) mal(`El envase "${tipo}" no cita una fuente de FUENTES`);
+    if ('seguro' in c && !c.seguro) mal(`El envase "${tipo}" tiene "seguro" vacío`);
+  }
   if (errores.length === antes)
     bien(`${datos.FICHAS.length} fichas, ${datos.MITOS.length} mitos, ${datos.REALIDADES.length} ` +
-         `realidades y ${preguntas.length} preguntas citan su fuente`);
+         `realidades, ${preguntas.length} preguntas y ${envases.length} envases citan su fuente`);
+}
+
+// 4. Busca el criadero: cada envase de una escena existe y tiene su dibujo y su agua
+antes = errores.length;
+let busca = null;
+try {
+  // Lo único de otros archivos que 11i usa al cargarse.
+  const globales = { ANCHO: 960, ALTO: 540, estados: {}, ESCENAS_FIJAS: {}, document: { addEventListener() {} } };
+  busca = vm.runInNewContext(readFileSync('js/11i-busca.js', 'utf8') +
+                             '\n;({ ESCENAS_BUSCA, PINTA_BUSCA, BOCAS_BUSCA })', globales);
+} catch (e) {
+  mal(`js/11i-busca.js no se pudo evaluar: ${e.message}`);
+}
+if (busca && datos) {
+  const escenas = Object.entries(busca.ESCENAS_BUSCA);
+  for (const [id, esc] of escenas) {
+    for (const tipo of new Set(esc.sitios.map(s => s[0]))) {
+      if (!datos.CRIADEROS[tipo]) mal(`La escena "${id}" de Busca usa "${tipo}", que no está en CRIADEROS`);
+      if (typeof busca.PINTA_BUSCA[tipo] !== 'function') mal(`La escena "${id}" de Busca usa "${tipo}", que no tiene dibujo en PINTA_BUSCA`);
+      const boca = busca.BOCAS_BUSCA[tipo];
+      if (!Array.isArray(boca) || boca.length !== 4 || !boca.every(Number.isFinite))
+        mal(`La escena "${id}" de Busca usa "${tipo}", que no tiene su agua en BOCAS_BUSCA ([x, y, radio x, radio y])`);
+    }
+  }
+  if (errores.length === antes)
+    bien(`${escenas.length} escena(s) de Busca el criadero: cada envase tiene datos, dibujo y agua`);
 }
 
 if (errores.length) {

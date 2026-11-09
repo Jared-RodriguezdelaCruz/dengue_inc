@@ -71,9 +71,13 @@ const CFG = {
     ganchoAlcance: 16, ganchoVel: 0.9, ganchoCoste: 30, ganchoCd: 75, ganchoGolpe: 1,
 };
 
-const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa', PATIO:'patio' };
+const estados = { MENU:'menu', J2D:'2d', J3D:'3d', TRANSICION:'transicion', PAUSA:'pausa', PATIO:'patio',
+                  BUSCA:'busca' };
 let estado = estados.MENU;
 let estadoPrevio = estados.J2D;
+// Escenas fijas (Modo Patio, Busca el criadero): sin cámara, HUD ni pausa. Cada
+// una se registra en su archivo; el bucle, Esc y la capa táctil solo miran aquí.
+const ESCENAS_FIJAS = {};            // estado → { actualizar(dt), dibujar(), salir() }
 
 let nivelActual = 1;
 let fichas = 0;
@@ -226,7 +230,7 @@ function accionGlobal(code) {
         else if (tiendaAbierta()) cerrarTienda();
         else if (estado === estados.J2D || estado === estados.J3D) pausar();
         else if (estado === estados.PAUSA) reanudar();
-        else if (estado === estados.PATIO) salirPatio();
+        else if (ESCENAS_FIJAS[estado]) ESCENAS_FIJAS[estado].salir();
     }
 }
 

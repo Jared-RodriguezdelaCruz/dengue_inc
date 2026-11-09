@@ -294,11 +294,26 @@ let fichaVisible = null, tFichaVisible = 0;
 // se repasan juntas en la pausa entre niveles, que es cuando sí se leen.
 const fichasPorRepasar = [];
 
+// Las fichas de todas tus partidas. Cada partida sigue empezando de cero: se
+// descubren jugando, y en un playtest la siguiente persona en la misma compu
+// las vuelve a descubrir. Esto solo las cuenta.
+const CLAVE_FICHAS = 'dengueinc.fichas';
+const fichasColeccion = new Set();
+try {
+    const l = JSON.parse(localStorage.getItem(CLAVE_FICHAS) || '[]');
+    if (Array.isArray(l)) for (const id of l) if (FICHAS.some(f => f.id === id)) fichasColeccion.add(id);
+} catch (e) { /* sin almacenamiento: la colección vale esta sesión */ }
+
 function desbloquearFicha(id) {
     if (fichasVistas.has(id)) return;
     const f = FICHAS.find(x => x.id === id);
     if (!f) return;
     fichasVistas.add(id);
+    if (!fichasColeccion.has(id)) {
+        fichasColeccion.add(id);
+        try { localStorage.setItem(CLAVE_FICHAS, JSON.stringify([...fichasColeccion])); }
+        catch (e) { /* vale esta sesión */ }
+    }
     colaFichas.push(f);
     fichasPorRepasar.push(f);
     tono(880, 0.09, 'triangle', 0.05);
@@ -524,6 +539,8 @@ function reporteFinal() {
     h += '<div class="rep-pills">' + resumenSerotipos() + '</div>';
     h += '<div class="rep-fila"><b>Fichas descubiertas</b><span>' +
          fichasVistas.size + '/' + FICHAS.length + '</span></div>';
+    if (fichasColeccion.size > fichasVistas.size)
+        h += '<div class="rep-detalle">En todas tus partidas: ' + fichasColeccion.size + '/' + FICHAS.length + '</div>';
     if (retosContestados > 0)
         h += '<div class="rep-fila"><b>Retos entre niveles</b><span>' +
              retosAcertados + '/' + retosContestados + '</span></div>';

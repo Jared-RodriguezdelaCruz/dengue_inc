@@ -41,28 +41,47 @@ const VERBOS = {
 };
 
 // --- Envases reales, cada uno con su medida correcta -----------------------
-// ancho/alto son para dibujarlos en 2D.
+// ancho/alto son para dibujarlos en 2D. `seguro` es cómo se ve ese envase cuando
+// ya no puede juntar agua: Busca el criadero (11i) lo usa de señuelo. El que no
+// lo tiene no sale de señuelo, porque siempre pide su medida (un florero con
+// agua se talla, esté como esté).
 const CRIADEROS = {
     tinaco:   { verbo: 'tapa',   nombre: 'Tinaco',            icono: '🛢️', ancho: 52, alto: 46,
-                nota: 'Guarda agua que sí ocupas: por eso se tapa, no se tira.' },
+                nota: 'Guarda agua que sí ocupas: por eso se tapa, no se tira.',
+                seguro: 'Con la tapa bien puesta, el mosquito no entra a poner huevos.',
+                fuente: FUENTES.ssa },
     cisterna: { verbo: 'tapa',   nombre: 'Cisterna',          icono: '🕳️', ancho: 58, alto: 34,
-                nota: 'Depósito grande y oscuro; el mosquito entra por cualquier rendija.' },
+                nota: 'Depósito grande y oscuro; el mosquito entra por cualquier rendija.',
+                seguro: 'Cerrada, sin rendijas: el mosquito no tiene por dónde entrar.',
+                fuente: FUENTES.ssa },
     tambo:    { verbo: 'tapa',   nombre: 'Tambo',             icono: '🛢️', ancho: 44, alto: 48,
-                nota: 'Muy común en azoteas y patios de Aguascalientes.' },
+                nota: 'Muy común en azoteas y patios de Aguascalientes.',
+                seguro: 'Tapado: el agua que guardas queda fuera del alcance del mosquito.',
+                fuente: FUENTES.ssa },
     cubeta:   { verbo: 'voltea', nombre: 'Cubeta',            icono: '🪣', ancho: 34, alto: 34,
-                nota: 'El criadero número uno: basta una lluvia para llenarla.' },
+                nota: 'El criadero número uno: basta una lluvia para llenarla.',
+                seguro: 'Boca abajo no junta lluvia.',
+                fuente: FUENTES.ssa },
     maceta:   { verbo: 'voltea', nombre: 'Plato de maceta',   icono: '🪴', ancho: 38, alto: 20,
-                nota: 'El plato de abajo junta agua aunque riegues poco.' },
+                nota: 'El plato de abajo junta agua aunque riegues poco.',
+                fuente: FUENTES.ssa },
     carretilla:{verbo: 'voltea', nombre: 'Carretilla',        icono: '🛞', ancho: 48, alto: 30,
-                nota: 'Cualquier cosa cóncava olvidada boca arriba junta lluvia.' },
+                nota: 'Cualquier cosa cóncava olvidada boca arriba junta lluvia.',
+                seguro: 'Volteada no junta lluvia.',
+                fuente: FUENTES.ssa },
     llanta:   { verbo: 'tira',   nombre: 'Llanta',            icono: '🛞', ancho: 44, alto: 40,
-                nota: 'Guarda agua por dentro y la sombra la mantiene fresca.' },
+                nota: 'Guarda agua por dentro y la sombra la mantiene fresca.',
+                fuente: FUENTES.ssa },
     botella:  { verbo: 'tira',   nombre: 'Botellas y latas',  icono: '🍾', ancho: 30, alto: 32,
-                nota: 'La basura del patio es criadero: poca agua le basta.' },
+                nota: 'La basura del patio es criadero: poca agua le basta.',
+                seguro: 'Cerrada con su tapa, no le entra agua.',
+                fuente: FUENTES.ssa },
     florero:  { verbo: 'lava',   nombre: 'Florero',           icono: '🏺', ancho: 28, alto: 34,
-                nota: 'Cambiar el agua no basta: hay que tallar el vidrio.' },
+                nota: 'Cambiar el agua no basta: hay que tallar el vidrio.',
+                fuente: FUENTES.ssa },
     bebedero: { verbo: 'lava',   nombre: 'Bebedero de mascota',icono:'🐕', ancho: 36, alto: 22,
-                nota: 'Se lava a diario con cepillo, no solo se rellena.' }
+                nota: 'Se lava a diario con cepillo, no solo se rellena.',
+                fuente: FUENTES.ssa }
 };
 
 /** Envases que aparecen en cada nivel: de lo obvio a lo que nadie revisa. */

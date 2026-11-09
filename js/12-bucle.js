@@ -87,11 +87,13 @@ function loop(t) {
         fase = 'transicion';
         actualizarTransicion(dtReal);
 
-        if (estado === estados.PATIO) {
-            // Modo Patio (11e): escena fija, sin cámara ni enemigos.
-            fase = 'patio'; actualizarPatio(dt);
+        const escena = ESCENAS_FIJAS[estado];
+        if (escena) {
+            // Escena fija (Modo Patio, Busca el criadero): sin cámara ni enemigos.
+            // Con el teléfono en vertical el aviso de girar la tapa: el reloj se detiene.
+            fase = estado; escena.actualizar(telefonoVertical() ? 0 : dt);
             msLogica = performance.now() - t0;
-            dibujarPatio();
+            escena.dibujar();
         } else if (modoRender === '2d') {
             const jugando = estado === estados.J2D;
             if (jugando && dt > 0) {

@@ -42,6 +42,7 @@ const ZONA_MUERTA_MOV = 0.4;
 const ZONA_MUERTA_CAM = 0.15;
 const PASO_SCROLL_MANDO = 90;   // px por pulsación de cruceta al llegar al borde de un panel
 const VEL_SCROLL_MANDO = 16;    // px por frame con el stick derecho a tope
+const VEL_LUPA_MANDO = 9;       // px por frame con el stick izquierdo a tope en Busca el criadero
 
 const padPrev = {};           // estado del frame anterior, por código virtual
 let indicePad = -1;
@@ -281,5 +282,19 @@ function actualizarMando(dtReal) {
         const k = CFG.velCamaraMando * Math.min(dtReal, 3);
         ratonDX += curvaStick(ax(2), ZONA_MUERTA_CAM) * k;
         ratonDY += curvaStick(ax(3), ZONA_MUERTA_CAM) * k;
+    }
+
+    // --- Lupa de Busca el criadero (11i): el stick o la cruceta mueven el puntero ---
+    //  Solo si se mueven: con el mando conectado también se puede jugar con el ratón.
+    if (estado === estados.BUSCA && !completo) {
+        const k = VEL_LUPA_MANDO * Math.min(dtReal, 3);
+        const cruz = (mas, menos) => (ahora[mas] ? 0.5 : 0) - (ahora[menos] ? 0.5 : 0);
+        const dx = (curvaStick(lx, ZONA_MUERTA_CAM) + cruz('Digit2', 'Digit4')) * k;
+        const dy = (curvaStick(ly, ZONA_MUERTA_CAM) + cruz('Digit3', 'Digit1')) * k;
+        if (dx || dy) {
+            ratonX = clamp(ratonX + dx, 0, ANCHO);
+            ratonY = clamp(ratonY + dy, 0, ALTO);
+            busca.lupa = true;
+        }
     }
 }

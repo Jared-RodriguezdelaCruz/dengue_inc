@@ -25,6 +25,8 @@ const ITEMS_TITULO = [
       desc: 'Cinco niveles que cambian con cada semilla: plataformas 2D y exploración 3D.' },
     { id: 'patio',    txt: 'Modo Patio', accion: () => abrirPatio(),
       desc: 'Sin mosquitos: encuentra los diez criaderos de una casa, contra reloj.' },
+    { id: 'busca',    txt: 'Busca el criadero', sub: true,
+      desc: 'Un lugar lleno de cosas y ocho criaderos escondidos. Ojo con los señuelos.' },
     { id: 'aprende',  txt: 'Aprende',    accion: () => abrirAprende('medidas'),
       desc: 'Todo lo que enseña el juego, con sus fuentes, sin tener que jugar.' },
     { id: 'opciones', txt: 'Opciones',   sub: true,
@@ -124,8 +126,24 @@ function abrirSubTitulo(id) {
             '<label class="t-semilla">Semilla <span>(vacía = una nueva)</span>' +
             '<input id="in-semilla" class="t-op" type="text" autocomplete="off" spellcheck="false" value="' +
             semillaRun + '"></label>' +
+            '<div class="t-nota" id="t-rec-semilla"></div>' +
+            (fichasColeccion.size ? '<p class="t-txt">Fichero: ' + fichasColeccion.size + '/' + FICHAS.length +
+                                    ' fichas descubiertas en tus partidas.</p>' : '') +
             '<div><button type="button" class="t-op t-btn" data-acc="empezar">Empezar</button>' +
             '<button type="button" class="t-op t-btn sec" data-acc="volver">Volver</button></div>';
+    } else if (id === 'busca') {
+        h = '<h2>Busca el criadero</h2>' +
+            '<p class="t-txt">Un lugar lleno de cosas y <b>ocho criaderos</b> escondidos entre el desorden. ' +
+            'Toca lo que puede juntar agua: lo que está boca arriba, destapado o tirado.</p>' +
+            '<p class="t-txt">Ojo con los <b>señuelos</b>: la cubeta volteada o el tambo tapado ya no son ' +
+            'criadero, y tocarlos cuesta 3 s. Cada partida cambia qué es qué.</p><div>';
+        for (const esc in ESCENAS_BUSCA) {
+            const r = leerRecord(CLAVE_BUSCA + esc);
+            h += '<button type="button" class="t-op t-btn" data-acc="busca:' + esc + '">' + ESCENAS_BUSCA[esc].nombre +
+                 (r ? '<span class="t-rec">' + '★'.repeat(r.estrellas) + ' · ' + r.mejor.toFixed(1) + ' s</span>' : '') +
+                 '</button>';
+        }
+        h += '<button type="button" class="t-op t-btn sec" data-acc="volver">Volver</button></div>';
     } else if (id === 'opciones') {
         h = '<h2>Opciones</h2><div id="t-opciones"></div>' +
             '<button type="button" class="t-op t-btn sec" data-acc="volver">Volver</button>';
@@ -149,6 +167,7 @@ function abrirSubTitulo(id) {
     if (inp) inp.addEventListener('keydown', e => {
         if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); e.stopPropagation(); empezarJuego(); }
     });
+    if (inp) { inp.addEventListener('input', pintarRecordSemilla); pintarRecordSemilla(); }
     for (const op of controlesTitulo())
         op.addEventListener('mouseenter', () => marcarTitulo(controlesTitulo().indexOf(op), true));
     // En la ayuda lo primero es leer: la selección empieza en el primer botón,
@@ -157,9 +176,19 @@ function abrirSubTitulo(id) {
     if (id === 'ayuda' || id === 'creditos') elTPanel.scrollTop = 0;
 }
 
+/** Lo que ya lograste con la semilla escrita; cambia mientras se escribe. */
+function pintarRecordSemilla() {
+    const el = document.getElementById('t-rec-semilla'), inp = document.getElementById('in-semilla');
+    if (!el || !inp) return;
+    const txt = inp.value.trim();
+    const r = txt !== '' ? recordSemilla(hashSemilla(txt)) : null;
+    el.textContent = r ? 'Con esta semilla: ' + textoRecordSemilla(r) + '.' : '';
+}
+
 function accionPanelTitulo(acc) {
     if (acc === 'empezar') empezarJuego();
     else if (acc === 'volver') volverTitulo();
+    else if (acc.startsWith('busca:')) abrirBusca(acc.slice(6));
     else if (acc === 'tutorial') {
         repetirTutorial();
         const n = document.getElementById('t-nota-tutorial');
