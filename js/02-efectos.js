@@ -281,13 +281,18 @@ let vinetaT = 0;
 function pulsoVineta(fr) { vinetaT = Math.max(vinetaT, fr); }
 
 let avisoTimer = null;
+/** `ms` es cuánto se ve. Antes la animación CSS lo apagaba a los 0.7 s fuera
+ *  cual fuera `ms`: «IVAN TIENE FIEBRE · PRIMERO CIERRA…» no se alcanzaba a leer. */
 function aviso(texto, ms) {
+    ms = ms || 800;
     elAviso.textContent = texto;
+    elAviso.style.setProperty('--dur', ms + 'ms');
+    elAviso.classList.toggle('largo', texto.length > 32);   // que uno largo no tape el centro
     elAviso.classList.remove('mostrar');
     void elAviso.offsetWidth;              // fuerza reinicio de la animación
     elAviso.classList.add('mostrar');
     clearTimeout(avisoTimer);
-    avisoTimer = setTimeout(() => elAviso.classList.remove('mostrar'), ms || 800);
+    avisoTimer = setTimeout(() => elAviso.classList.remove('mostrar'), ms);
 }
 
 // ---------------------------------------------------------------------------

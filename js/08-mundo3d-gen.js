@@ -21,10 +21,13 @@ const cargarTextura3D = ruta => TEXTURAS_3D ? new THREE.TextureLoader().load(rut
 
 // Sin ajuste de espacio de color: en r128 el renderer sale en lineal y las
 // texturas lineales se ven tal cual (THREE.SRGBColorSpace no existe hasta r152).
+// El coco es la broma del Modo Coco (P): sin él, mosquitos de color. Donde el
+// Modo Coco no se puede activar, ni se descarga.
+const cargarCoco3D = ruta => MODO_COCO_PERMITIDO ? cargarTextura3D(ruta) : null;
 const texturasEnemigos3D = {
-    base: cargarTextura3D('assets/textures/enemy_base.png'),
-    mini: cargarTextura3D('assets/textures/enemy_mini.png'),
-    giant: cargarTextura3D('assets/textures/enemy_giant.png')
+    base: cargarCoco3D('assets/textures/enemy_base.png'),
+    mini: cargarCoco3D('assets/textures/enemy_mini.png'),
+    giant: cargarCoco3D('assets/textures/enemy_giant.png')
 };
 function texturaEnemigo3D(tipo) {
     if (tipo === 'enjambre') return texturasEnemigos3D.mini;
@@ -32,6 +35,22 @@ function texturaEnemigo3D(tipo) {
     return texturasEnemigos3D.base;
 }
 const BLANCO3 = new THREE.Color(0xffffff);
+
+/** Viste al mosquito según el Modo Coco. Con textura, el color del arquetipo se
+ *  aclara: la tiñe sin taparla y el tipo se sigue leyendo. En r128 quitar o
+ *  poner un `map` cambia el shader: hace falta needsUpdate. */
+function pielMosquito3D(e) {
+    const tex = debugMode ? texturaEnemigo3D(e.tipo) : null;
+    const mat = e.malla.material;
+    mat.color.set(e.arq.color);
+    if (tex) mat.color.lerp(BLANCO3, 0.4);
+    if (mat.map !== tex) { mat.map = tex; mat.needsUpdate = true; }
+}
+
+/** Al activar o quitar el Modo Coco, los que ya vuelan cambian de piel. */
+function pielMosquitos3D() {
+    for (const e of mosquitos3D) pielMosquito3D(e);
+}
 
 const GW = 46, GH = 46;          // celdas de la rejilla del mapa
 const CELDA3 = 3.2;              // unidades de mundo por celda
@@ -259,7 +278,7 @@ function iniciarMotor3D() {
 
     crearRaqueta3D();
 
-    renderer.domElement.addEventListener('click', () => capturarRaton3D(true));
+    renderer.domElement.addEventListener('click', () => capturarRaton3D());
 }
 
 /**
@@ -267,16 +286,13 @@ function iniciarMotor3D() {
  * de la pausa, la tienda o el fichero, y con cualquier tecla: así no hace falta
  * el clic extra. El navegador solo lo permite dentro de un gesto (clic o tecla);
  * fuera de uno —la transición al nivel 5, el botón A del mando— lo rechaza y se
- * queda el aviso de «haz clic». Con el panel de Güero abierto solo captura un
- * clic sobre la vista (`aunConGuero`): ahí el ratón hace falta para elegir.
+ * queda el aviso de «haz clic».
  */
-function capturarRaton3D(aunConGuero) {
+function capturarRaton3D() {
     // Con el dedo se mira arrastrando: no hay ratón que capturar.
     if (modoTactil) return;
     if (estado !== estados.J3D || !renderer || document.pointerLockElement) return;
     if (tiendaAbierta() || ficheroAbierto()) return;
-    const pg = document.getElementById('panel-guero');
-    if (!aunConGuero && pg && !pg.classList.contains('oculto')) return;
     const p = renderer.domElement.requestPointerLock();
     if (p && p.catch) p.catch(() => {});      // rechazado fuera de un gesto: no pasa nada
 }
@@ -687,12 +703,9 @@ function crearMosquito3D(tipo, x, z, y) {
     const a = ARQUETIPOS[tipo];
     const escala = tipo === 'enjambre' ? 0.62 : (tipo === 'mutante' ? 1.7 : 1);
     const g = new THREE.BoxGeometry(0.62 * escala, 0.5 * escala, 0.92 * escala);
-    // Con textura, el color del arquetipo se aclara: la tiñe sin taparla y el
-    // tipo se sigue leyendo. El destello va por emissive (ver 10-mundo3d-ia.js).
-    const tex = texturaEnemigo3D(tipo);
-    const color = new THREE.Color(a.color);
-    if (tex) color.lerp(BLANCO3, 0.4);
-    const mat = new THREE.MeshLambertMaterial({ map: tex, color, emissive: 0x000000 });
+    // El color y el coco los pone pielMosquito3D. El destello va por emissive
+    // (ver 10-mundo3d-ia.js).
+    const mat = new THREE.MeshLambertMaterial({ emissive: 0x000000 });
     const malla = new THREE.Mesh(g, mat);
     malla.position.set(x, y === undefined ? 1.6 + Math.random() * 1.4 : y, z);
 
@@ -716,6 +729,7 @@ function crearMosquito3D(tipo, x, z, y) {
         fase: rndRango(0, 6.28),
         serotipo: serotipoDeNivel(nivelActual), origen: null
     };
+    pielMosquito3D(e);
     mosquitos3D.push(e);
     return e;
 }
@@ -947,6 +961,8 @@ function criaderoCercano3D() {
 
 /** Producción infinita y reactivación de los que solo se vaciaron. */
 function actualizarCriaderos3D(dt) {
+    // El que estás atendiendo no suelta mosquitos: nacían encima de ti.
+    const atendido = criaderoCercano3D();
     for (const c of criaderos3D) {
         c.fase += dt * 0.05;
 
@@ -962,7 +978,7 @@ function actualizarCriaderos3D(dt) {
             }
             continue;
         }
-        if (!c.activo || c.neutralizado) continue;
+        if (!c.activo || c.neutralizado || c === atendido) continue;
 
         c.prod -= dt;
         if (c.prod > 0) continue;

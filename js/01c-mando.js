@@ -99,8 +99,7 @@ function vibrar(ms, fuerza) {
 //  Con un panel abierto, la cruceta (y el stick) mueven un foco entre sus
 //  botones y A pulsa el que esté marcado; el stick derecho desplaza el texto
 //  (ver scrollDePanel, más abajo). Los paneles a pantalla completa se
-//  tragan todo lo demás; el de Güero se ve en plena partida, así que solo
-//  captura la cruceta vertical y A: el jugador tiene que poder seguir moviéndose.
+//  tragan todo lo demás. (La consulta de Güero ya es una de esas ventanas.)
 let focoPanel = null, focoIdx = 0, focoEl = null;
 let navRepT = 0, navDirPrev = 0;
 
@@ -112,8 +111,6 @@ function panelConFoco() {
     if (pm && !pm.classList.contains('oculto')) return { el: pm, completo: true };
     if (tiendaAbierta())  return { el: document.getElementById('tienda'),  completo: true };
     if (ficheroAbierto()) return { el: document.getElementById('fichero'), completo: true };
-    const g = document.getElementById('panel-guero');
-    if (g && !g.classList.contains('oculto') && estado === estados.J3D) return { el: g, completo: false };
     return null;
 }
 

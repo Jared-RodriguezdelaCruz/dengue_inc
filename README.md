@@ -29,7 +29,7 @@ El objetivo del juego es cerrar los criaderos activos, evitar contagios en la co
 - La Gorda, una gata aliada que se compra en la tienda y caza mosquitos en 2D y 3D
 - Generación procedural de niveles con semilla configurable
 - Sistema de tienda, inventario, fichas y mejoras
-- Sistema de combate con dash, raqueta, esquives y ataque
+- Sistema de combate con dash, raqueta, esquives y ataque; 5 corazones de vida
 - Capa educativa con fichas, mitos reales, estadísticas y reportes finales
 - Uso de Three.js para la parte 3D
 - Pantalla de título estilo Katana Zero (VHS y neón) con Jugar, Modo Patio, Busca el criadero, Aprende, Opciones, Ayuda y Créditos, que se maneja con teclado, ratón, mando o con el dedo
@@ -180,10 +180,10 @@ Una de las partes más importantes del juego es la capa de aprendizaje. El jugad
 Se aprende jugando y decidiendo, no solo leyendo:
 
 - **El juego premia lo que enseña:** cerrar un criadero da monedas y el mosquito que acaba de salir de uno no da nada. El abate solo sirve donde el agua se guarda.
-- **Quiz antes y después:** las mismas 5 preguntas al empezar y antes del final, para ver cuánto se aprendió. El resultado se guarda en el navegador para los playtests.
+- **Quiz antes y después:** las mismas 5 preguntas al empezar y antes del final, para ver cuánto se aprendió. Al empezar solo se confirma que la respuesta quedó guardada; las correctas se ven al final. El resultado se guarda en el navegador para los playtests.
 - **Entre niveles:** repaso de las fichas que se abrieron y retos que se contestan antes de ver la respuesta (¿mito o realidad?, ¿a dónde llevas al vecino?).
 - **Los jefes enseñan algo:** el del nivel 3 solo baja el escudo con la raqueta; la Hembra del nivel 4 no cae mientras sus envases tengan agua (o solo se hayan vaciado), así que hay que cerrarlos con su medida.
-- **En el mundo:** cada criadero muestra el ciclo huevos → larvas → pupas, llueve una vez por nivel, e Ivan (nivel 2) y Güero (nivel 5) enseñan las dos fases de la enfermedad. A los dos se les atiende con los criaderos ya cerrados: un enfermo rodeado de criaderos vuelve a alimentar la cadena.
+- **En el mundo:** cada criadero muestra el ciclo huevos → larvas → pupas, llueve una vez por nivel, e Ivan (nivel 2) y Güero (nivel 5) enseñan las dos fases de la enfermedad. A los dos se les atiende con los criaderos ya cerrados: un enfermo rodeado de criaderos vuelve a alimentar la cadena. Su consulta pausa el nivel y da 3 minutos para decidir; se contesta con clic, con `1`-`4`, con el mando o con el dedo.
 - **Fuera de la partida:** *Modo Patio* (una casa con 10 criaderos, sin enemigos), *Busca el criadero* (ocho criaderos escondidos en un tianguis, entre señuelos que ya no juntan agua: la misma cubeta es criadero boca arriba y deja de serlo volteada), *Aprende* (todo el contenido con sus fuentes) y, al terminar, la lista *Revisa tu casa* para imprimir o mandar por WhatsApp.
 
 Todo dato sale de `js/01b-datos-dengue.js` con su fuente, y la Action *Validar* revisa que cada ficha, mito, realidad, pregunta y envase la cite.
@@ -196,7 +196,7 @@ El juego usa una semilla para generar niveles reproducibles. Si ingresas una sem
 
 - Si modificas archivos JavaScript, recuerda mantener el orden de carga definido en `index.html`.
 - El proyecto usa caché-busting mediante parámetros como `?v=b6` en los scripts para evitar que el navegador use versiones antiguas. Al subir `BUILD` en `js/01-nucleo.js`, sube también el `?v=` de `index.html` (el CI revisa que coincidan).
-- **Modo Coco (para probar):** `P` activa modo dios, espadazo y dash apuntados con el ratón (2D). Solo funciona en local (`file://`, `localhost`) o si la URL lleva `?coco`; en la versión publicada no se puede activar por accidente.
+- **Modo Coco (para probar):** `P` activa modo dios, espadazo y dash apuntados con el ratón (2D), y los mosquitos se vuelven cocos. Solo funciona en local (`file://`, `localhost`) o si la URL lleva `?coco`; en la versión publicada no se puede activar por accidente.
 - Las texturas de `assets/textures/` deben ser PNG con transparencia y con el personaje mirando a la derecha (el juego las voltea según la dirección). Abriendo con doble clic (`file://`), el 3D no puede usar texturas y se queda con colores: para verlas, usa el servidor local.
 - Si quieres probar cambios visuales o gameplay, puedes abrir el juego y generar una nueva semilla para observar distintos recorridos.
 

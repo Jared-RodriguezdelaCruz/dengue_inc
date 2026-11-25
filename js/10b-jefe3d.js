@@ -31,6 +31,47 @@ const JEFE3D = {
     aturdeParry: 110, dañoParry: 3, desplome: 120
 };
 
+// Lo que dice al despertar y al caer: tranquila, sin prisa, como quien ya ganó.
+// Cada línea repasa algo del juego: pica de día, desova en el agua que se
+// guarda, cerrar la fuente es lo que funciona y sus huevos aguantan secos.
+const DIALOGO_HEMBRA = {
+    inicio: [
+        'Ah… llegaste. Pensé que te ibas a quedar persiguiendo a mis hijas por los pasillos.',
+        'Yo pico de día, sin prisa. Como quien hace bien su trabajo.',
+        'Tres envases con agua. Mientras sigan ahí, yo sigo aquí. No es personal: es aritmética.'
+    ],
+    muerte: [
+        'Mm. Cerraste el agua antes de pegarme. Casi nadie lo piensa.',
+        'No celebres todavía. Mis huevos aguantan meses secos en la cubeta que se te olvidó.',
+        'Nos vemos después de la lluvia.'
+    ]
+};
+const elDialogoJefe = document.getElementById('dialogo-jefe');
+let dialogoJ3D = null;          // { lineas, i, t }: la línea i se ve t frames más
+
+/** Frames que se ve una línea: lo que tarda en leerse con calma. */
+const durLineaJefe = txt => 90 + txt.length * 3.2;
+
+function hablarHembra(lineas) { dialogoJ3D = { lineas: lineas, i: -1, t: 0 }; }
+
+function callarHembra() {
+    dialogoJ3D = null;
+    if (elDialogoJefe) elDialogoJefe.classList.add('oculto');
+}
+
+/** Corre en frames, como el resto: en la pausa se detiene con el nivel. */
+function actualizarDialogoJefe3D(dt) {
+    const D = dialogoJ3D;
+    if (!D) return;
+    D.t -= dt;
+    if (D.t > 0) return;
+    if (++D.i >= D.lineas.length) { callarHembra(); return; }
+    D.t = durLineaJefe(D.lineas[D.i]);
+    elDialogoJefe.innerHTML = '<div class="dj-quien">' + JEFE3D.nombre + '</div>' +
+                              '<div class="dj-linea">«' + D.lineas[D.i] + '»</div>';
+    elDialogoJefe.classList.remove('oculto');
+}
+
 function jefe3DListo() { return !jefe3D || jefe3D.muerto; }
 
 /** Sus envases que todavía guardan agua (o huevos pegados). */
@@ -62,6 +103,7 @@ function jefe3DEnCono(origen, dir, alcance, dot) {
 /** Al cambiar de nivel o de partida. Sus mallas viven en grupoNivel. */
 function reiniciarJefe3D() {
     jefe3D = null;
+    callarHembra();
     barraPrev = '';
     const el = document.getElementById('jefe3d');
     if (el) el.classList.add('oculto');
@@ -197,7 +239,10 @@ function dentroArenaJefe3D(x, z) {
 function despertarJefe3D() {
     const J = jefe3D;
     J.despierta = true;
-    J.est = 'flota'; J.cd = 80;
+    // Se presenta sin prisa y no ataca hasta terminar de hablar.
+    J.est = 'flota';
+    J.cd = DIALOGO_HEMBRA.inicio.reduce((s, l) => s + durLineaJefe(l), 0);
+    hablarHembra(DIALOGO_HEMBRA.inicio);
     aviso(J.fase === 1 ? 'LA HEMBRA · MIENTRAS SUS ENVASES TENGAN AGUA, NO CAE' : 'LA HEMBRA', 2600);
     sfx.telegrafia();
     tono(70, 0.9, 'sawtooth', 0.1, 140);
@@ -248,6 +293,7 @@ function matarJefe3D() {
     fxExplosion3D(J.x, J.y, J.z, 4.5, 1, 0.5, 0.2);
     anillo3D(J.x, J.y, J.z, 9, 0xffb347);
     aviso('LA HEMBRA CAYÓ', 2400);
+    hablarHembra(DIALOGO_HEMBRA.muerte);
     destellar('#ffd9a0', 0.35, 520);
     sacudida3D = Math.max(sacudida3D, 0.45);
     congelar(12); sfx.explosion();
@@ -305,6 +351,7 @@ function contactoPicada(J, cam) {
 }
 
 function actualizarJefe3D(dt) {
+    actualizarDialogoJefe3D(dt);         // también después de caer: sus últimas palabras
     const J = jefe3D;
     if (!J || J.muerto) return;
     const cam = camera3D.position;

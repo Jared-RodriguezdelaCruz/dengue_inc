@@ -259,7 +259,7 @@ function actualizarHUDContinuo() {
             objetivo('🖱️ Haz clic o pulsa una tecla para capturar el ratón', '');
         } else if (guero && guero.encontrado && !guero.resuelto) {
             objetivo('Decide qué hacer con Güero',
-                     'Está en fase crítica. El panel de la derecha tiene las opciones.');
+                     'Está en fase crítica. Elige antes de que se acabe el reloj.');
         } else if (jefe3D && jefe3D.despierta && !jefe3D.muerto) {
             const quedan = envasesJefe3D();
             if (quedan > 0)
@@ -747,6 +747,10 @@ function pantallaEntreNiveles(n) {
     const v = cerradosPorVerbo;
     const cerrados = v.lava + v.tapa + v.voltea + v.tira + v.abate;
     let d = '<div class="rep">';
+    // En la grieta el aviso de Güero dura poco: aquí se lee a su ritmo.
+    if (n - 1 === NIVEL_JEFE_2D)
+        d += '<div class="rep-nota"><b>¡Güero está del otro lado de la grieta!</b> ' +
+             'Tiene dengue. Llegarás a él en el nivel 5.</div>';
     d += '<div class="rep-fila"><b>Criaderos cerrados en total</b><span>' + cerrados + '</span></div>';
     d += '<div class="rep-fila"><b>Casos en la colonia</b><span class="' +
          (casosColonia > 15 ? 'malo' : 'bueno') + '">' + casosColonia + '</span></div>';
