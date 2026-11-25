@@ -10,9 +10,9 @@
 //  criadero vivo no deja nada. La tienda lo dice claro: ningún gato controla el
 //  dengue.
 //
-//  Mientras llega la imagen de la Gorda, se dibuja con formas: en 2D con el
-//  canvas y en 3D low poly. Para usar la imagen en 2D basta con cambiar
-//  dibujarGata2D por un spriteHorneado. Nada de esto usa rnd().
+//  Se dibuja con formas, en 2D con el canvas y en 3D low poly, a partir de la
+//  foto de la Gorda de verdad: siamesa (seal point), cuerpo crema, máscara,
+//  orejas, patas y cola café oscuro, y ojos azules. Nada de esto usa rnd().
 // ---------------------------------------------------------------------------
 
 let gataComprada = false;
@@ -160,7 +160,7 @@ function actualizarGata2D(dt) {
     g.paso += Math.abs(g.vx) * dt * 0.08;
 }
 
-/** La Gorda con formas: cuerpo redondo, cabeza, orejas, cola que se mueve. */
+/** La Gorda con formas: siamesa, cuerpo redondo, máscara, cola que se mueve. */
 function dibujarGata2D() {
     const g = gata2D;
     if (!g || g.x + g.ancho < camX - 40 || g.x > camX + ANCHO + 40) return;
@@ -171,37 +171,40 @@ function dibujarGata2D() {
     if (g.dir < 0) ctx.scale(-1, 1);
     if (enAire) ctx.scale(0.92, 1.1);
 
-    const piel = '#9a9aa3', raya = '#6c6c76', panza = '#d9d4cc';
+    // Seal point: crema en el cuerpo y café foca en las puntas.
+    const piel = '#e3d1b3', punta = '#3b2a20', panza = '#f3eadb', mascara = '#4a3427';
     // Cola
-    ctx.strokeStyle = raya; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.strokeStyle = punta; ctx.lineWidth = 5; ctx.lineCap = 'round';
     const ola = Math.sin(t * 4) * 4;
     ctx.beginPath(); ctx.moveTo(-13, -11);
     ctx.quadraticCurveTo(-27, -14 + ola, -22, -27 + ola); ctx.stroke();
     // Patas (se alternan al caminar)
-    ctx.fillStyle = raya;
+    ctx.fillStyle = punta;
     const p = Math.sin(g.paso * 6) * 2.5;
     for (const [x, d] of [[-10, p], [-4, -p], [5, -p], [11, p]]) ctx.fillRect(x - 2, -6 + (enAire ? -2 : 0), 4, 6 + d * 0.3);
     // Cuerpo, gordo
     ctx.fillStyle = piel;
-    ctx.beginPath(); ctx.ellipse(0, -11, 16, 10.5, 0, 0, 6.284); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, -11, 16.5, 11, 0, 0, 6.284); ctx.fill();
     ctx.fillStyle = panza;
-    ctx.beginPath(); ctx.ellipse(1, -7.5, 10, 5, 0, 0, 6.284); ctx.fill();
-    ctx.fillStyle = raya;
-    for (const x of [-8, -3, 2]) ctx.fillRect(x, -21, 2.5, 6);
-    // Cabeza
+    ctx.beginPath(); ctx.ellipse(1, -7.5, 10.5, 5.2, 0, 0, 6.284); ctx.fill();
+    // Cabeza crema con orejas oscuras
     ctx.fillStyle = piel;
     ctx.beginPath(); ctx.arc(13, -18, 8, 0, 6.284); ctx.fill();
+    ctx.fillStyle = punta;
     ctx.beginPath(); ctx.moveTo(7, -23); ctx.lineTo(9, -31); ctx.lineTo(13, -25); ctx.fill();
     ctx.beginPath(); ctx.moveTo(14, -25); ctx.lineTo(19, -31); ctx.lineTo(20, -22); ctx.fill();
-    // Ojos (cerrados un instante cada tanto) y nariz
+    // Máscara: la cara oscura que va de los ojos a la nariz
+    ctx.fillStyle = mascara;
+    ctx.beginPath(); ctx.ellipse(15.5, -17.5, 5.3, 5, 0, 0, 6.284); ctx.fill();
+    // Ojos azules (cerrados un instante cada tanto) y nariz
     const parpadea = (t % 3.2) < 0.12;
-    ctx.fillStyle = '#c6e94a';
+    ctx.fillStyle = '#8cc8f0';
     if (parpadea) { ctx.fillRect(12, -19.5, 3, 1); ctx.fillRect(17, -19.5, 3, 1); }
     else {
         ctx.fillRect(12, -21, 3, 3.5); ctx.fillRect(17, -21, 3, 3.5);
         ctx.fillStyle = '#1b1b1b'; ctx.fillRect(13, -21, 1, 3.5); ctx.fillRect(18, -21, 1, 3.5);
     }
-    ctx.fillStyle = '#e88a9a'; ctx.fillRect(19.5, -16.5, 2.5, 2);
+    ctx.fillStyle = '#2a1d16'; ctx.fillRect(19.5, -16.5, 2.5, 2);
     ctx.restore();
 }
 
@@ -209,31 +212,37 @@ function dibujarGata2D() {
 /** Low poly: icosaedros, conos y cilindros con sombreado plano. Frente: +Z. */
 function crearModeloGata3D() {
     const g = new THREE.Group();
-    // Más oscuros que en 2D: con las luces de la escena, el gris claro sale blanco.
-    const piel = new THREE.MeshLambertMaterial({ color: 0x66666f, flatShading: true });
-    const raya = new THREE.MeshLambertMaterial({ color: 0x3f3f47, flatShading: true });
+    // Siamesa: crema y café foca. Más oscuros que en 2D: con las luces de la
+    // escena, el crema claro sale blanco.
+    const piel = new THREE.MeshLambertMaterial({ color: 0x9c8a6c, flatShading: true });
+    const punta = new THREE.MeshLambertMaterial({ color: 0x2e2018, flatShading: true });
     const cuerpo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 1), piel);
-    cuerpo.scale.set(1, 0.78, 1.35);
+    cuerpo.scale.set(1.05, 0.8, 1.35);
     cuerpo.position.y = 0.4;
     g.add(cuerpo);
     const cabeza = new THREE.Mesh(new THREE.IcosahedronGeometry(0.26, 1), piel);
     cabeza.position.set(0, 0.62, 0.55);
     g.add(cabeza);
+    // La máscara: un icosaedro café al frente de la cabeza, de los ojos a la nariz.
+    const mascara = new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 1), punta);
+    mascara.scale.set(1, 0.9, 0.7);
+    mascara.position.set(0, 0.6, 0.71);
+    g.add(mascara);
     for (const s of [-1, 1]) {
-        const oreja = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 4), raya);
+        const oreja = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 4), punta);
         oreja.position.set(s * 0.13, 0.86, 0.52);
         g.add(oreja);
-        const ojo = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 4), new THREE.MeshBasicMaterial({ color: 0xc6e94a }));
-        ojo.position.set(s * 0.1, 0.67, 0.78);
+        const ojo = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 4), new THREE.MeshBasicMaterial({ color: 0x8cc8f0 }));
+        ojo.position.set(s * 0.1, 0.67, 0.8);
         g.add(ojo);
     }
-    const cola = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.65, 5).translate(0, 0.32, 0), raya);
+    const cola = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.65, 5).translate(0, 0.32, 0), punta);
     cola.position.set(0, 0.5, -0.5);
     cola.rotation.x = -0.7;
     g.add(cola);
     const patas = [];
     for (const [x, z] of [[-0.2, 0.32], [0.2, 0.32], [-0.2, -0.3], [0.2, -0.3]]) {
-        const pata = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.24, 5), raya);
+        const pata = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.24, 5), punta);
         pata.position.set(x, 0.12, z);
         g.add(pata);
         patas.push(pata);

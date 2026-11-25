@@ -393,11 +393,11 @@ const DATOS_REALES = {
 const GUERO = {
     nombre: 'Güero',
     destino: 'Universidad Tecnológica El Retoño',
-    // Duración de su fase crítica, en frames de 60 fps. Solo corre desde que lo
-    // encuentras: explorar no debe castigarse, tardar en decidir sí.
-    reloj: 1500,
+    // Duración de su fase crítica, en frames de 60 fps (3 min). Solo corre en la
+    // consulta: explorar no debe castigarse, tardar en decidir sí. Con 25 s no
+    // alcanzaba a leerse todo.
+    reloj: 10800,
 
-    hallado: 'GÜERO ESTÁ AQUÍ · TIENE DENGUE',
     // Como Ivan: con criaderos vivos alrededor, curarlo solo compra tiempo.
     esperar: 'GÜERO TIENE DENGUE · PRIMERO CIERRA LOS CRIADEROS',
     intro: 'Le bajó la fiebre hace rato y dice que ya se siente mejor. ' +
@@ -456,6 +456,10 @@ const IVAN = {
     nombre: 'Ivan',
     hallado: 'IVAN TIENE FIEBRE',
     esperar: 'IVAN TIENE FIEBRE · PRIMERO CIERRA LOS CRIADEROS DE LA CUADRA',
+    // Tiempo para las tres decisiones, en frames de 60 fps (3 min), como Güero.
+    reloj: 10800,
+    tarde: 'Se acabó el tiempo antes de decidirlo todo. En la fase febril, lo que no se ' +
+           'decide a tiempo también cuenta: lo que quedó pendiente, nadie lo hizo por Ivan.',
     intro: 'Ivan empezó ayer con fiebre de 39 °C, dolor de cabeza y dolor detrás de los ojos. ' +
            'Vive con su familia. Tú decides cómo lo cuidan.',
     preguntas: [

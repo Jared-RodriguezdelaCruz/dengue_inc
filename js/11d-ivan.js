@@ -9,8 +9,9 @@
 //  solo se le puede atender con la cuadra ya sin criaderos: un enfermo rodeado de
 //  criaderos vivos vuelve a alimentar la cadena (ficha «colonia»).
 //
-//  La consulta pausa el nivel: la fase febril no es una carrera contra el reloj,
-//  es una decisión. Los textos y las fuentes viven en IVAN (01b).
+//  La consulta pausa el nivel y da 3 minutos (IVAN.reloj): de sobra para leer y
+//  decidir, pero lo que no se decide a tiempo también cuenta. Los textos y las
+//  fuentes viven en IVAN (01b).
 // ---------------------------------------------------------------------------
 
 const NIVEL_IVAN = 2;
@@ -68,7 +69,8 @@ function crearIvan3D(x, z) {
     g.position.set(x, 0, z);
     grupoNivel.add(g);
     ivan = { grupo: g, luz: luz, baliza: baliza, x: x, z: z,
-             visto: false, resuelto: false, bien: false, motivos: [], avisoT: 0, fase: 0 };
+             visto: false, resuelto: false, bien: false, motivos: [], avisoT: 0, fase: 0,
+             consulta: false, t: IVAN.reloj, cortar: null };
     return ivan;
 }
 
@@ -81,6 +83,13 @@ function actualizarIvan(dt) {
     ivan.luz.intensity = ivan.resuelto ? 1.1 : 1 + Math.sin(ivan.fase * 4) * 0.4;
     ivan.baliza.material.opacity = 0.2 + Math.sin(ivan.fase * 2) * 0.08;
 
+    // El reloj corre dentro de la consulta, que pausa el nivel.
+    if (ivan.consulta) {
+        ivan.t -= dt;
+        if (ivan.t <= 0) { ivan.t = 0; ivan.cortar(); }
+        else pintarRelojConsulta(ivan.t, IVAN.reloj, 'TIEMPO PARA DECIDIR');
+        return;
+    }
     if (estado !== estados.J3D) return;
     if (ivan.avisoT > 0) ivan.avisoT -= dt;
     ivan.grupo.rotation.y = Math.atan2(camera3D.position.x - ivan.x, camera3D.position.z - ivan.z);
@@ -94,15 +103,22 @@ function actualizarIvan(dt) {
     consultaIvan();
 }
 
-/** Tres decisiones, cada una con su explicación y su fuente. */
+/** Tres decisiones, cada una con su explicación y su fuente, en 3 minutos. Si se
+ *  acaba el tiempo, lo que faltó por decidir cuenta como fallado. */
 function consultaIvan() {
     estado = estados.MENU;
-    correrPreguntas({ lista: IVAN.preguntas, titulo: IVAN.nombre + ' tiene fiebre', intro: IVAN.intro,
-                      conRespuesta: true, saltable: false, fin: 'Ver cómo le fue' },
-                    function (aciertos, bienes) {
+    ivan.consulta = true;
+    ivan.cortar = correrPreguntas({ lista: IVAN.preguntas, titulo: IVAN.nombre + ' tiene fiebre', intro: IVAN.intro,
+                                    conRespuesta: true, saltable: false, fin: 'Ver cómo le fue',
+                                    antes: HTML_RELOJ_CONSULTA },
+                                  function (aciertos, bienes, contestadas) {
+        ivan.consulta = false;
         ivan.resuelto = true;
         ivan.bien = aciertos === IVAN.preguntas.length;
-        ivan.motivos = IVAN.fallos.filter((_, i) => !bienes[i]);
+        // Una pregunta que no alcanzaste a contestar no es «le diste ibuprofeno»:
+        // esas van juntas en el motivo de llegar tarde.
+        ivan.motivos = IVAN.fallos.filter((_, i) => !bienes[i] && i < contestadas);
+        if (contestadas < IVAN.preguntas.length) ivan.motivos.push(IVAN.tarde);
         ivanResultado = { aciertos: aciertos, de: IVAN.preguntas.length };
         if (aciertos > 0) { fichas += aciertos * PREMIO_IVAN; actualizarHUD(); }
         ivan.baliza.material.color.setHex(ivan.bien ? 0x2ecc71 : 0xe67e22);
