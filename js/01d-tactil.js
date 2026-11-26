@@ -246,8 +246,7 @@ elTactil.addEventListener('click', e => {
 });
 
 // --- Por frame ---------------------------------------------------------------
-let tactilModoPrev = '', medidasPrev = null, cdDashPrev = -1, cdRaqPrev = -1, gueroPrev = false;
-const elPanelGueroT = document.getElementById('panel-guero');
+let tactilModoPrev = '', medidasPrev = null, cdDashPrev = -1, cdRaqPrev = -1;
 
 /** Qué parte de la capa se ve: todo jugando, solo ⏸ en las escenas fijas (Modo
  *  Patio, Busca el criadero), nada en los menús. Solo toca el DOM cuando algo cambia. */
@@ -275,9 +274,6 @@ function actualizarTactil(dtReal) {
         soltarTodoTactil();
         medidasPrev = null;
     }
-    // Con el panel de Güero abierto los rieles cambian de forma (ver el CSS).
-    const g = m === 'd3' && !elPanelGueroT.classList.contains('oculto');
-    if (g !== gueroPrev) { gueroPrev = g; document.body.classList.toggle('guero-abierto', g); }
     if (m !== 'd2' && m !== 'd3') return;
 
     // Joystick → flechas. En 2D, abajo pide más inclinación: correr en diagonal

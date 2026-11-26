@@ -277,9 +277,12 @@ function criaderoCercano2D() {
     return mejor;
 }
 
-/** Lee las teclas 1..4 y aplica el verbo al criadero que se tenga enfrente. */
+/** Lee las teclas 1..4 y aplica el verbo al criadero que se tenga enfrente.
+ *  La primera vez que llegas a cada criadero hay una tregua: decidir la medida
+ *  pide leer el envase, y el enjambre te picaba antes de que pudieras. */
 function leerVerbos(c) {
     if (!c) return;
+    if (!c.tregua) { c.tregua = true; jugador.iframes = Math.max(jugador.iframes, CFG.treguaCriadero); }
     if (pulsada('Digit1') || pulsada('Numpad1')) aplicarVerbo(c, 'lava');
     else if (pulsada('Digit2') || pulsada('Numpad2')) aplicarVerbo(c, 'tapa');
     else if (pulsada('Digit3') || pulsada('Numpad3')) aplicarVerbo(c, 'voltea');
@@ -574,35 +577,73 @@ function bloqueCifras(titulo) {
 let quizAntes = null, quizDespues = null;      // aciertos; null = se saltó
 let quizEspera = false;     // contestada y con su explicación: Enter avanza
 
+// --- Reloj de las consultas (Ivan 11d y Güero 11c) ---------------------------
+//  Va dentro del menú, que se reescribe en cada pregunta: por eso se busca al
+//  pintar y no se guarda.
+const HTML_RELOJ_CONSULTA = '<div class="c-reloj"><div></div></div><div class="c-reloj-txt"></div>';
+
+function pintarRelojConsulta(t, tMax, etiqueta) {
+    const barra = document.querySelector('#pm-desc .c-reloj > div');
+    const txt = document.querySelector('#pm-desc .c-reloj-txt');
+    if (!barra || !txt) return;
+    const s = Math.max(0, Math.ceil(t / 60));
+    barra.style.width = (clamp(t / tMax, 0, 1) * 100) + '%';
+    const nuevo = etiqueta + ' · ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    if (txt.textContent !== nuevo) txt.textContent = nuevo;
+}
+
 /**
  * Preguntas de opción múltiple, una por pantalla. Las usan el quiz y la consulta
- * de Ivan (11d). `o`: { lista, titulo, intro, conRespuesta, saltable, fin }.
- * Con `conRespuesta` se ve la explicación y su fuente antes de seguir. Al acabar
- * llama a alTerminar(aciertos, bienPorPregunta), o a alTerminar(null) si se saltó.
+ * de Ivan (11d). `o`: { lista, titulo, intro, conRespuesta, saltable, fin, antes }.
+ * Con `conRespuesta` se ve la explicación y su fuente antes de seguir; sin ella,
+ * solo que la respuesta quedó guardada. `antes` es HTML que va sobre cada
+ * pregunta (el reloj de Ivan). Al acabar llama a alTerminar(aciertos,
+ * bienPorPregunta, contestadas), o a alTerminar(null) si se saltó.
+ * Devuelve cortar(): termina ya con lo contestado; lo pendiente cuenta como fallado.
  */
 function correrPreguntas(o, alTerminar) {
     const lista = o.lista, bienes = [];
-    let i = 0, aciertos = 0, saltado = false;
-    function saltar() { saltado = true; quizEspera = false; alTerminar(null, bienes); }
+    let i = 0, aciertos = 0, terminado = false;
+    function saltar() { terminado = true; quizEspera = false; alTerminar(null, bienes); }
+    function cortar() {
+        if (terminado) return;
+        terminado = true; quizEspera = false;
+        while (bienes.length < lista.length) bienes.push(false);
+        alTerminar(aciertos, bienes, i);
+    }
     function paso() {
         quizEspera = false;
-        if (i >= lista.length) return alTerminar(aciertos, bienes);
+        if (terminado) return;
+        if (i >= lista.length) { terminado = true; return alTerminar(aciertos, bienes, i); }
         const q = lista[i];
         mostrarMenu({
             titulo: o.titulo + ' · ' + (i + 1) + '/' + lista.length,
-            desc: '<div class="quiz"><div class="q-intro">' + o.intro + '</div>' +
+            desc: '<div class="quiz">' + (o.antes || '') + '<div class="q-intro">' + o.intro + '</div>' +
                   '<div class="q-preg">' + q.pregunta + '</div><div id="q-caja"></div></div>',
             boton: o.saltable ? 'Saltar el quiz' : 'Elige una respuesta',
             accion: o.saltable ? saltar : () => {}
         });
         const caja = document.getElementById('q-caja');
         crearOpciones(caja, q.opciones, function (k, botones) {
-            if (saltado) return;
+            if (terminado) return;
             const bien = k === q.correcta;
             bienes.push(bien);
             if (bien) aciertos++;
             i++;
-            if (!o.conRespuesta) { paso(); return; }
+            const siguiente = i < lista.length ? 'Siguiente' : o.fin;
+            if (!o.conRespuesta) {
+                // Antes pasaba a la siguiente al instante y parecía que no se
+                // había contestado. No se dice cuál era: el quiz de antes mide.
+                botones[k].classList.add('elegida');
+                const res = document.createElement('div');
+                res.className = 'r-res';
+                res.innerHTML = '<b>Respuesta guardada.</b> Las correctas, con su explicación, ' +
+                                'te las enseño al final del juego.';
+                caja.appendChild(res);
+                cambiarBotonMenu(siguiente, paso);
+                quizEspera = true;
+                return;
+            }
             botones[k].classList.add(bien ? 'bien' : 'mal');
             if (!bien) botones[q.correcta].classList.add('era');
             const res = document.createElement('div');
@@ -612,18 +653,21 @@ function correrPreguntas(o, alTerminar) {
             caja.appendChild(res);
             if (bien) sfx.moneda(); else sfx.parryFail();
             if (q.ficha) desbloquearFicha(q.ficha);
-            cambiarBotonMenu(i < lista.length ? 'Siguiente' : o.fin, paso);
+            cambiarBotonMenu(siguiente, paso);
             quizEspera = true;
         });
     }
     paso();
+    return cortar;
 }
 
 function quizInicio(alTerminar) {
     quizAntes = null; quizDespues = null;
     correrPreguntas({ lista: QUIZ, titulo: 'Antes de jugar', saltable: true, conRespuesta: false,
+                      fin: 'Empezar a jugar',
                       intro: 'Cinco preguntas rápidas, sin calificación. Al final te las vuelvo a ' +
-                             'hacer para ver cuánto aprendiste. Contesta con clic o con las teclas 1-3.' },
+                             'hacer para ver cuánto aprendiste. Contesta con clic o con las teclas 1-3; ' +
+                             'Enter pasa a la siguiente.' },
                     function (n) { quizAntes = n; alTerminar(); });
 }
 

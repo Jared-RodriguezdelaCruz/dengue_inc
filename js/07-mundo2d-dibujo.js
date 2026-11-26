@@ -7,14 +7,18 @@ const canvas = document.getElementById('canvas2d');
 const ctx = canvas.getContext('2d', { alpha: false });
 const texturaJugador = new Image();
 texturaJugador.src = 'assets/textures/player.png';
+// El coco es la broma del Modo Coco (P): los mosquitos de verdad se dibujan con
+// formas. Donde el Modo Coco no se puede activar, ni se descarga.
 const texturasEnemigos = {
     base: new Image(),
     mini: new Image(),
     giant: new Image()
 };
-texturasEnemigos.base.src = 'assets/textures/enemy_base.png';
-texturasEnemigos.mini.src = 'assets/textures/enemy_mini.png';
-texturasEnemigos.giant.src = 'assets/textures/enemy_giant.png';
+if (MODO_COCO_PERMITIDO) {
+    texturasEnemigos.base.src = 'assets/textures/enemy_base.png';
+    texturasEnemigos.mini.src = 'assets/textures/enemy_mini.png';
+    texturasEnemigos.giant.src = 'assets/textures/enemy_giant.png';
+}
 
 function texturaEnemigo2D(tipo) {
     if (tipo === 'enjambre') return texturasEnemigos.mini;
@@ -596,7 +600,7 @@ function dibujarEnemigos() {
         }
         // Cuerpo
         const flash = e.flash > 0 || (e.est === 'telegrafia' && Math.floor(e.cargaT / 3) % 2 === 0);
-        const spr = spriteEnemigo(e, flash);
+        const spr = debugMode ? spriteEnemigo(e, flash) : null;    // el coco, solo en Modo Coco
         if (spr) {
             // Los sprites miran a la derecha: se voltean hacia donde va el mosquito.
             if (e.dirX < 0) ctx.scale(-1, 1);

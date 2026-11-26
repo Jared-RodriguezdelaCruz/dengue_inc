@@ -58,7 +58,8 @@ const CFG = {
     raquetaAlcance: 52, raquetaArco: 1.15,        // radianes a cada lado de la mirada
     raquetaAlcance3D: 3.1, raquetaDot3D: 0.55,
     // Vida / estamina
-    vidaMax: 3, iframesGolpe: 62,
+    vidaMax: 5, iframesGolpe: 62,         // con 3 se sentía muy difícil
+    treguaCriadero: 120,                  // al llegar a un criadero: 2 s para decidir la medida
     estaminaMax: 100, estaminaRegen: 0.42, estaminaEspera: 36,
     // Combate
     maxAtacantes: 2,                      // token global: nunca más de 2 a la vez
@@ -189,6 +190,7 @@ function activarModoDebug() {
     debugGodMode = debugMode;
     jugador.vida = debugMode ? CFG.vidaMax : Math.min(jugador.vida, CFG.vidaMax);
     jugador.estamina = debugMode ? CFG.estaminaMax : Math.min(jugador.estamina, CFG.estaminaMax);
+    pielMosquitos3D();          // en Modo Coco los mosquitos son cocos (en 2D se decide al dibujar)
     if (debugMode) {
         aviso('DEBUG MODE ON', 900);
         if (estado === estados.J2D || estado === estados.J3D) {

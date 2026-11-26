@@ -330,6 +330,8 @@ function actualizarProyectiles2D(dt) {
 // ---------------------------------------------------------------------------
 function actualizarCriaderos2D(dt) {
     const camCentro = camX + ANCHO / 2;
+    // El que estás atendiendo no suelta mosquitos: nacían encima de ti.
+    const atendido = criaderoCercano2D();
     for (const c of criaderos) {
         c.fase += dt * 0.05;
         if (c.sacude > 0) c.sacude -= dt;
@@ -349,7 +351,7 @@ function actualizarCriaderos2D(dt) {
             }
             continue;
         }
-        if (!c.activo || c.neutralizado) continue;
+        if (!c.activo || c.neutralizado || c === atendido) continue;
 
         // Fuera del viewport no produce: el culling no debe cambiar la dificultad.
         if (Math.abs(c.x - camCentro) > ANCHO + 420) continue;

@@ -152,17 +152,27 @@ canvas { display: block; }
     position: absolute; inset: 0; z-index: 55; pointer-events: none; opacity: 0;
     background: #fff;
 }
+/* Encima del destello (55): el velo blanco de la grieta tapaba «¡GÜERO ESTÁ DEL
+   OTRO LADO!». Debajo de los menús (60). */
 #aviso-central {
-    position: absolute; top: 38%; width: 100%; text-align: center; z-index: 45;
+    position: absolute; top: 38%; width: 100%; text-align: center; z-index: 56;
     font-size: 44px; font-weight: bold; pointer-events: none; opacity: 0;
     color: #f1c40f; text-shadow: 0 0 30px rgba(241,196,15,.9), 3px 3px 0 #000;
 }
-#aviso-central.mostrar { animation: pop .7s ease-out forwards; }
-@keyframes pop {
+#aviso-central.largo { font-size: 30px; padding: 0 40px; box-sizing: border-box; }
+/* Entra con el pop, se queda y sale al final de --dur (lo fija aviso() con su ms). */
+#aviso-central.mostrar {
+    opacity: 1;
+    animation: aviso-entra .25s ease-out,
+               aviso-sale .35s ease-in calc(var(--dur, 800ms) - .35s) forwards;
+}
+@keyframes aviso-entra {
     0%   { opacity: 0; transform: scale(.4); }
-    22%  { opacity: 1; transform: scale(1.18); }
-    45%  { transform: scale(1); }
-    100% { opacity: 0; transform: scale(1.05); }
+    65%  { opacity: 1; transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+@keyframes aviso-sale {
+    to { opacity: 0; transform: scale(1.05); }
 }
 
 /* Temblor del marco durante la transición dimensional */
@@ -301,6 +311,8 @@ canvas { display: block; }
     border-radius: 3px; background: rgba(255,255,255,.14); color: #f1c40f;
     font-size: 11px; font-weight: bold; text-align: center;
 }
+/* Quiz de antes: se marca lo que elegiste, sin decir si era lo correcto. */
+.r-ops button.elegida { opacity: 1; border-color: #29f0ff; background: rgba(41,240,255,.14); }
 .r-ops button.bien { opacity: 1; border-color: #2ecc71; background: rgba(46,204,113,.18); }
 .r-ops button.mal  { opacity: 1; border-color: #e74c3c; background: rgba(231,76,60,.18); }
 .r-ops button.era  { opacity: 1; border-color: #2ecc71; border-style: dashed; }
@@ -459,31 +471,31 @@ canvas { display: block; }
 #brujula-txt { font-size: 11px; color: #cfd8dc; margin-top: 2px; letter-spacing: .4px; }
 #brujula.meta #brujula-aguja { color: #bb6bd9; }
 
-/* Güero: el rescate del final. */
-#panel-guero { border-color: #e67e22; }
-#panel-guero h2 { color: #e67e22; }
-#g-estado { font-size: 12px; line-height: 1.5; color: #b8c7d1; margin-bottom: 8px; }
-#g-reloj {
+/* Reloj de las consultas (Ivan y Güero), dentro de la ventana. */
+.c-reloj {
     height: 9px; background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.35);
-    border-radius: 6px; overflow: hidden; margin-bottom: 4px;
+    border-radius: 6px; overflow: hidden; margin: 2px 0 4px;
 }
-#g-reloj div { height: 100%; background: linear-gradient(90deg, #c0392b, #ff5252); }
-#g-reloj-txt { font-size: 10px; color: #ff7675; font-weight: bold; letter-spacing: .6px; margin-bottom: 9px; }
+.c-reloj div { height: 100%; background: linear-gradient(90deg, #c0392b, #ff5252); }
+.c-reloj-txt { font-size: 10px; color: #ff7675; font-weight: bold; letter-spacing: .6px; margin-bottom: 8px; }
+
+/* Güero: el rescate del final. Señales en dos columnas y opciones en una
+   rejilla de 2×2 para que todo quepa sin desplazarse. */
+.consulta-guero { border-left: 3px solid #e67e22; }
+.consulta-guero .q-intro { font-size: 12.5px; color: #cfd8dc; margin-bottom: 8px; }
+.g-senales { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 .g-senal {
     display: flex; gap: 7px; align-items: center; font-size: 11px;
     color: #546a7b; padding: 3px 0;
 }
 .g-senal.on { color: #ff7675; font-weight: bold; }
-.g-op { margin-top: 4px; }
-.g-op button {
-    width: 100%; text-align: left; background: rgba(255,255,255,.06);
-    border: 2px solid rgba(255,255,255,.10); color: #ecf0f1; border-radius: 6px;
-    padding: 7px 9px; margin-bottom: 6px; cursor: pointer;
-    font-family: inherit; font-size: 11.5px; line-height: 1.35;
+.quiz .g-op { flex-direction: row; }
+.quiz .g-op button {
+    flex: 1 1 45%; font-size: 11.5px; line-height: 1.35; color: #b8c7d1;
 }
-.g-op button:hover { border-color: #e67e22; }
+.g-op button:hover:not(.caro) { border-color: #e67e22; }
 .g-op button.caro { opacity: .45; cursor: not-allowed; }
-.g-op button b { display: block; font-size: 12.5px; margin-bottom: 2px; }
+.g-op button b { display: block; font-size: 12.5px; margin-bottom: 2px; color: #ecf0f1; }
 
 /* Desenlace de Güero en la pantalla final */
 .desenlace { max-width: 560px; margin: 10px auto; text-align: left; border-radius: 8px; padding: 13px 16px; }
@@ -766,6 +778,17 @@ body.menos-destellos .t-logo::before, body.menos-destellos .t-logo::after { disp
 #jefe3d .j3-barra.escudo { border-color: #1abc9c; box-shadow: 0 0 10px rgba(26,188,156,.6); }
 #jefe3d .j3-barra.escudo > div { background: linear-gradient(90deg, #16a085, #48e5c2); }
 #jefe3d .j3-sub { font-size: 11px; color: #cfd8dc; letter-spacing: .5px; }
+/* Lo que dice la Hembra: subtítulo bajo su barra, sin cortar la pelea. */
+#dialogo-jefe {
+    position: absolute; left: 50%; top: 140px; transform: translateX(-50%);
+    width: min(600px, 86%); z-index: 27; pointer-events: none; text-align: left;
+    background: rgba(10, 6, 12, .82); border-left: 3px solid #ff6b6b; border-radius: 4px;
+    padding: 7px 14px 8px; text-shadow: 0 1px 3px rgba(0,0,0,.9);
+}
+#dialogo-jefe .dj-linea { animation: dj-entra .35s ease-out; }
+@keyframes dj-entra { from { opacity: 0 } to { opacity: 1 } }
+#dialogo-jefe .dj-quien { font-size: 10px; font-weight: 800; letter-spacing: 2.5px; color: #ff6b6b; }
+#dialogo-jefe .dj-linea { font-size: 15px; font-style: italic; line-height: 1.4; color: #f2e9ee; margin-top: 2px; }
 
 /* ==========================================================================
    CELULAR (01d-tactil.js): escala, controles táctiles y aviso de girar
@@ -857,7 +880,7 @@ html, body { touch-action: pan-x pan-y; -webkit-tap-highlight-color: transparent
 }
 
 /* Con controles táctiles los rieles van arriba, encima del juego, y durante la
-   partida el de la derecha (Güero) deja libre el arco de botones. */
+   partida el de la derecha (la tienda) deja libre el arco de botones. */
 body.tactil .riel {
     position: fixed; flex: 0 0 auto; width: 260px; z-index: 80; transform: none;
     top: calc(8px + env(safe-area-inset-top));
@@ -872,20 +895,6 @@ body.tactil #riel-der { right: calc(8px + env(safe-area-inset-right)); }
 body.tactil.jugando #riel-der { right: calc(64px + env(safe-area-inset-right));
     max-height: calc(100vh - 196px); max-height: calc(100dvh - 196px); }
 body.tactil #legenda, body.tactil #panel-objetivo, body.tactil .solo-teclado { display: none; }
-/* Güero en el teléfono: una franja arriba, de lado a lado, en tres columnas
-   (estado, señales y las cuatro opciones). En un riel de 190 px de alto había
-   que desplazarse para llegar a las opciones con el reloj corriendo. */
-body.tactil.jugando.guero-abierto #riel-der {
-    left: calc(8px + env(safe-area-inset-left)); width: auto;
-    max-height: calc(100vh - 186px); max-height: calc(100dvh - 186px); }
-body.tactil.guero-abierto #panel-guero {
-    display: grid; grid-template-columns: 1.1fr .9fr 1.9fr; gap: 0 14px; align-items: start; padding: 9px 12px; }
-body.tactil.guero-abierto #panel-guero h2 { font-size: 14px; }
-body.tactil.guero-abierto #g-estado { font-size: 11px; line-height: 1.35; margin-bottom: 5px; }
-body.tactil.guero-abierto .g-senal { font-size: 10.5px; padding: 1px 0; }
-body.tactil.guero-abierto .g-op { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
-body.tactil.guero-abierto .g-op button { margin: 0; padding: 6px 8px; font-size: 10.5px; line-height: 1.3; }
-body.tactil.guero-abierto .g-op button b { font-size: 11.5px; }
 body.tactil #prompt-verbos .pv-v { display: none; }
 body.tactil #prompt-verbos .pv-tit { margin-bottom: 0; }
 /* En el teléfono la ficha nueva tapaba un tercio del juego: solo el título.

@@ -15,7 +15,6 @@
 // ---------------------------------------------------------------------------
 
 let guero = null;
-const elPanelGuero = () => document.getElementById('panel-guero');
 const texturaGuero = cargarTextura3D('assets/textures/guero.png');   // null desde file://
 const audioGueroDialogue1 = new Audio('assets/sounds/guero_dialogue1.mp3');
 audioGueroDialogue1.preload = 'auto';
@@ -39,7 +38,7 @@ function detenerDialogoGuero() {
 }
 
 /**
- * El panel se MONTA una vez y después solo se mutan textos y clases.
+ * La consulta se MONTA una vez y después solo se mutan textos y clases.
  *
  * Antes esto reescribía `innerHTML` entero en cada frame, con lo que los cuatro
  * botones se destruían y se recreaban sesenta veces por segundo. Un `click` solo
@@ -48,16 +47,17 @@ function detenerDialogoGuero() {
  * el reloj y Güero moría siempre de «llegaste tarde». Los dos finales estaban
  * fuera de alcance jugando, y no se notó porque las pruebas llamaban a
  * elegirGuero() desde JS en vez de pulsar.
+ *
+ * Después vivió en el riel derecho con la partida corriendo: en 3D el ratón
+ * seguía capturado y no había cursor para clicar (se salía abriendo la tienda).
+ * Ahora es una ventana que pausa el nivel, como la de Ivan; el reloj de la fase
+ * crítica sigue corriendo dentro.
  */
-const panelG = { montado: false, barra: null, reloj: null, senales: [], botones: [] };
+const panelG = { senales: [], botones: [] };
 
 function reiniciarGuero() {
     guero = null;
     detenerDialogoGuero();
-    const el = elPanelGuero();
-    if (el) { el.classList.add('oculto'); el.innerHTML = ''; }
-    // El panel se vacía: hay que volver a montarlo, con sus listeners.
-    panelG.montado = false;
     panelG.botones.length = 0;
     panelG.senales.length = 0;
 }
@@ -139,7 +139,7 @@ function crearGuero3D(x, z) {
         encontrado: false, resuelto: false, salvado: false,
         t: GUERO.reloj, tMax: GUERO.reloj,
         tratamiento: null, motivos: [],
-        cerca: false, fase: 0, avisoT: 0
+        consulta: false, fase: 0, avisoT: 0
     };
     return guero;
 }
@@ -162,44 +162,50 @@ function actualizarGuero(dt) {
     }
     guero.baliza.material.opacity = 0.22 + Math.sin(guero.fase * 2) * 0.10;
 
+    // El reloj solo corre en la consulta: explorar no se castiga, pero quedarse
+    // mirando sí. La ventana pausa el nivel; la fase crítica no espera a nadie.
+    if (guero.consulta) {
+        guero.t -= dt;
+        if (guero.t <= 0) { guero.t = 0; resolverGuero('tarde'); }
+        else pintarPanelGuero();
+        return;
+    }
     if (estado !== estados.J3D) return;
 
     const d = camera3D.position.distanceTo(guero.grupo.position);
     if (guero.avisoT > 0) guero.avisoT -= dt;
 
-    // Con criaderos vivos no se le atiende: el panel no sale y el reloj no corre.
+    // Con criaderos vivos no se le atiende: la consulta no se abre.
     if (!guero.encontrado && criaderosVivos() > 0) {
         guero.grupo.rotation.y = Math.atan2(camera3D.position.x - guero.x, camera3D.position.z - guero.z);
         if (d < 3.4 && guero.avisoT <= 0) { guero.avisoT = 150; aviso(GUERO.esperar, 2200); }
         return;
     }
-    const cerca = d < 3.4;
 
     // Te da la cara mientras siga consciente (el frente del modelo es +Z).
     if (!guero.resuelto || guero.salvado)
         guero.grupo.rotation.y = Math.atan2(camera3D.position.x - guero.x, camera3D.position.z - guero.z);
 
-    if (cerca && !guero.encontrado) {
-        guero.encontrado = true;                 // el reloj arranca AQUÍ
-        aviso(GUERO.hallado, 2400);
+    if (d < 3.4 && !guero.encontrado) {
+        guero.encontrado = true;
         destellar('#e67e22', 0.3, 620);
         desbloquearFicha('guero_alarma');
         desbloquearFicha('fase_critica');
         reproducirDialogoGuero();
+        consultaGuero();
     }
-    if (cerca !== guero.cerca) {
-        guero.cerca = cerca;
-        if (cerca && !guero.resuelto) reproducirDialogoGuero();
-        if (!cerca && !guero.resuelto) elPanelGuero().classList.add('oculto');
-    }
-    if (cerca && !guero.resuelto) pintarPanelGuero();
+}
 
-    // El reloj solo corre desde que lo encontraste: explorar no se castiga,
-    // pero quedarse mirando sí. La fase crítica no espera a nadie.
-    if (guero.encontrado && !guero.resuelto) {
-        guero.t -= dt;
-        if (guero.t <= 0) { guero.t = 0; resolverGuero('tarde'); }
-    }
+/** Como la de Ivan: pausa el nivel y suelta el ratón (mostrarMenu). Se elige con
+ *  clic, con las teclas 1-4, con el mando o con el dedo. */
+function consultaGuero() {
+    estado = estados.MENU;
+    guero.consulta = true;
+    mostrarMenu({ titulo: GUERO.nombre + ' · fase crítica', sinAudio: true,
+                  desc: '<div class="quiz consulta-guero"></div>',
+                  boton: 'Elige qué hacer', accion: () => {} });
+    montarPanelGuero(document.querySelector('#pm-desc .consulta-guero'));
+    pintarPanelGuero();
 }
 
 /** Cuántas señales de alarma se le ven ya. Suben conforme baja el reloj. */
@@ -210,25 +216,20 @@ function senalesVisibles() {
 }
 
 function montarPanelGuero(el) {
-    // Tres bloques: en el celular se ponen lado a lado (estilos de .tactil).
-    let h = '<div class="g-info"><h2>' + GUERO.nombre + '</h2>';
-    h += '<div id="g-estado">' + GUERO.intro + '</div>';
-    h += '<div id="g-reloj"><div></div></div>';
-    h += '<div id="g-reloj-txt"></div></div><div class="g-senales">';
+    let h = '<div class="q-intro">' + GUERO.intro + '</div>' + HTML_RELOJ_CONSULTA + '<div class="g-senales">';
     for (const s of SENALES_ALARMA)
         h += '<div class="g-senal"><span class="g-ico">·</span><span>' + s.texto + '</span></div>';
-    h += '</div><div class="g-op"></div>';
+    h += '</div><div class="r-ops g-op"></div>';
     el.innerHTML = h;
 
-    panelG.barra = el.querySelector('#g-reloj div');
-    panelG.reloj = el.querySelector('#g-reloj-txt');
     panelG.senales = Array.from(el.querySelectorAll('.g-senal'));
 
     const caja = el.querySelector('.g-op');
-    panelG.botones = GUERO.opciones.map(function (o) {
+    panelG.botones = GUERO.opciones.map(function (o, i) {
         const b = document.createElement('button');
+        b.type = 'button';
         const costo = PRECIOS[o.id] || 0;
-        b.innerHTML = '<b>' + o.icono + ' ' + o.titulo +
+        b.innerHTML = '<b><span class="k">' + (i + 1) + '</span>' + o.icono + ' ' + o.titulo +
                       (costo ? ' — ' + costo + ' 💰' : '') + '</b>' + o.txt;
         // Listener de verdad, no onclick inline: el nodo vive lo que dure el
         // rescate y el navegador puede emparejar mousedown con mouseup.
@@ -236,19 +237,14 @@ function montarPanelGuero(el) {
         caja.appendChild(b);
         return { el: b, costo: costo };
     });
-    panelG.montado = true;
+    // Las teclas 1-4 (11b) pulsan estos botones. No son de un solo uso: si no
+    // alcanzan las monedas, se puede elegir otra cosa.
+    opcionesActivas = panelG.botones.map(b => b.el);
 }
 
 function pintarPanelGuero() {
-    const el = elPanelGuero();
-    if (!el || !guero) return;
-    if (!panelG.montado) montarPanelGuero(el);
-
-    const p = clamp(guero.t / guero.tMax, 0, 1);
-    const seg = Math.ceil(guero.t / 60);
-    panelG.barra.style.width = (p * 100) + '%';
-    const txt = 'FASE CRÍTICA · ' + seg + ' s';
-    if (panelG.reloj.textContent !== txt) panelG.reloj.textContent = txt;
+    if (!guero) return;
+    pintarRelojConsulta(guero.t, guero.tMax, 'FASE CRÍTICA');
 
     const n = senalesVisibles();
     for (let i = 0; i < panelG.senales.length; i++) {
@@ -262,7 +258,6 @@ function pintarPanelGuero() {
         const caro = fichas < b.costo;
         if (b.el.classList.contains('caro') !== caro) b.el.classList.toggle('caro', caro);
     }
-    el.classList.remove('oculto');
 }
 
 function elegirGuero(id) {
@@ -293,7 +288,12 @@ function resolverGuero(id) {
     guero.motivos = m;
     guero.salvado = m.length === 0;
 
-    elPanelGuero().classList.add('oculto');
+    // De vuelta al nivel. Con un clic o una tecla el navegador deja capturar el
+    // ratón; si se acabó el reloj no, y queda el «haz clic» del objetivo.
+    guero.consulta = false;
+    ocultarMenu();
+    estado = estados.J3D;
+    capturarRaton3D();
     desbloquearFicha('guero_traslado');
 
     if (guero.salvado) {
